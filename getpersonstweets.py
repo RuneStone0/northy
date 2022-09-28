@@ -6,7 +6,7 @@ import pymongo
 from dotenv import dotenv_values
 config = dotenv_values(".env")
 
-myclient = pymongo.MongoClient("mongodb://northy:IOnABlbDpAnTOTmeLUceveLYTUnbu@btc.brilliantr.com:27017")
+myclient = pymongo.MongoClient(config["mongodb_conn"])
 mydb = myclient["northy"]
 
 def get_all_tweets(screen_name):
