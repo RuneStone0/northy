@@ -1,13 +1,12 @@
 import sys
 import time
 import click
-import tweepy #https://github.com/tweepy/tweepy
+import tweepy
 from tweepy import OAuthHandler, StreamingClient
 from datetime import datetime
 from pymongo import MongoClient, DESCENDING, ASCENDING
 from pymongo.errors import DuplicateKeyError
 from dotenv import dotenv_values
-#import pandas_market_calendars as mcal
 from colorama import init, Fore, Back, Style
 from termcolor import colored
 
@@ -16,30 +15,17 @@ config = dotenv_values(".env")
 class Timon:
     def __init__(self):
         # APIv1 - Authenticate as a user
-        #auth = tweepy.AppAuthHandler(config["consumer_key"], config["consumer_secret"])
         auth = tweepy.OAuthHandler(config["consumer_key"],config["consumer_secret"])
         auth.set_access_token(config["access_key"],config["access_secret"])
 
         self.api = tweepy.API(auth, wait_on_rate_limit=True)
-        #for tweet in tweepy.Cursor(self.api.search_tweets, q='NTLiveStream').items(10):
-        #    print(tweet.text)
-        """
-        response = self.api.user_timeline(screen_name="NTLiveStream", count=10)
-        for i in response:
-            i = i._json
-            is_str = i["id_str"]
-            text = i["text"]
-            print(is_str, text)
-
-            print()
-        """
         
         # MongoDB
         client = MongoClient(config["mongodb_conn"])
         self.db = client["northy"]
 
     def __print_nice(self, tweet):
-        """
+        """ 
             Takes Tweets from DB and prints them nicely
         """
         tid = colored(tweet["tid"], "green")
