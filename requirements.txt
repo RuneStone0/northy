@@ -1,3 +1,6 @@
 tweepy
 pymongo
 python-dotenv
+Click
+colorama
+termcolor
