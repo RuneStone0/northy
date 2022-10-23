@@ -66,27 +66,6 @@ class Timon:
             #print("Duplicated Key")
             pass
 
-    def opening_hours(self):
-        import requests
-
-        """        
-        response = requests.get('https://api.tradier.com/v1/markets/calendar',
-            params={'month': '02', 'year': '2019'},
-            headers={'Authorization': 'Bearer NOTOKEN', 'Accept': 'application/json'}
-        )
-        """
-
-        response = requests.get('https://api.tradier.com/v1/markets/clock',
-            params={'delayed': 'true'},
-            headers={'Authorization': 'Bearer <TOKEN>', 'Accept': 'application/json'}
-        )
-        data = response.json()["clock"]
-        print(data)
-
-        timestamp = data["timestamp"]
-        dt_object = datetime.fromtimestamp(timestamp)
-        print(dt_object)
-
     def readdb(self, username=None, limit=10):
         pipeline = []
 
@@ -144,6 +123,7 @@ class Timon:
             self.__print_nice(data)
             self.__add_tweet_to_db(data)
 
+
 if __name__ == '__main__':
     @click.group()
     def cli():
@@ -153,6 +133,7 @@ if __name__ == '__main__':
     @click.option('--limit', default=10, help='Number of tweets to return')
     @click.option('--username', default=None, help='Filter by username')
     def readdb(username, limit):
+        """ Read Tweets from DB """
         t = Timon()
         t.readdb(username=username, limit=limit)
     
@@ -160,31 +141,20 @@ if __name__ == '__main__':
     @click.option('--limit', default=10, help='Number of tweets to return')
     @click.option('--username', default="NTLiveStream", help='Filter by username')
     def fetch(username, limit):
+        """ Fetch Tweets from user and store them in DB """
         t = Timon()
         t.fetch_latest(username=username, limit=limit)
 
     @click.command()
     @click.option('--username', default="NTLiveStream", help='Filter by username')
     def watch(username):
+        """ Watch for new Tweets by user """
         t = Timon()
         while True:
             t.watch(username=username)
             time.sleep(5)
 
-    @click.command()
-    def market():
-        t = Timon()
-        t.opening_hours()
-
-
     cli.add_command(readdb)
     cli.add_command(fetch)
     cli.add_command(watch)
-    cli.add_command(market)
-
     cli()
-
-
-
-
-
