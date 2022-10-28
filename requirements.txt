@@ -4,3 +4,4 @@ python-dotenv
 Click
 colorama
 termcolor
+pyprowl

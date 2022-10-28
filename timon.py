@@ -1,9 +1,10 @@
 import re
 import sys
 import time
-import click
 import json
+import click
 import tweepy
+import pyprowl
 from tweepy import OAuthHandler, StreamingClient
 from datetime import datetime
 from pymongo import MongoClient, DESCENDING, ASCENDING
@@ -57,11 +58,12 @@ class Timon:
         """ 
             Takes Tweets from DB and prints them nicely
         """
+        now = colored(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "yellow")
         tid = colored(tweet["tid"], "green")
         username = colored(tweet["username"], "cyan")
         created_at = colored(tweet["created_at"], "red")
         text = tweet["text"].replace('\n', '')
-        print(tid, created_at, username, text)
+        print(now, tid, created_at, username, text)
 
     def __add_tweet_to_db(self, data):
         """
@@ -137,6 +139,42 @@ class Timon:
             }
             self.__print_nice(data)
             self.__add_tweet_to_db(data)
+
+    def prowl(self, message):
+        p = pyprowl.Prowl(config["prowl_api_key"])
+
+        try:
+            p.verify_key()
+            #print("Prowl API key successfully verified!")
+        except Exception as e:
+            #print("Error verifying Prowl API key: {}".format(e))
+            exit()
+
+        try:
+            p.notify(event="Alert", description=message, priority=0, url='http://www.example.com', appName='Northy')
+            print("Notification successfully sent to Prowl!")
+        except Exception as e:
+            print("Error sending notification to Prowl: {}".format(e))
+
+    def pushalert(self):
+        """
+            This will watch for new ALERT Tweets and notify through Prowl
+        """
+        latest_id = None
+        while True:
+            # Get latest tweet ID
+            tweet = [i for i in self.db["data"].find({}).sort("created_at", -1).limit(1)][0]
+            self.__print_nice(tweet)
+
+            # New Tweet detected
+            if latest_id != tweet["tid"]:
+                # Update last seen Tweet ID
+                latest_id = tweet["tid"]
+
+                # Send push notification if Alert
+                if "ALERT" in tweet["text"]:
+                    self.prowl(tweet["text"])
+            time.sleep(0.5)
 
 class ParseAlert:
     def __init__(self, db):
@@ -385,8 +423,22 @@ if __name__ == '__main__':
         print(f"Updating backtest.json")
         p.update_backtest_file()
 
+    @click.command()
+    @click.option('--message', default="test message", help='Send a test notification through Prowl')
+    def notify(message):
+        t = Timon()
+        t.prowl(message)
+
+    @click.command()
+    def pushalert():
+        t = Timon()
+        t.pushalert()
+
+
     cli.add_command(readdb)
     cli.add_command(fetch)
     cli.add_command(watch)
     cli.add_command(backtest)
+    cli.add_command(notify)
+    cli.add_command(pushalert)
     cli()
