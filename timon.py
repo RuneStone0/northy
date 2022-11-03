@@ -176,13 +176,12 @@ class Timon:
                     self.prowl(tweet["text"])
             time.sleep(0.5)
 
-class ParseAlert:
+class Signal:
     def __init__(self, db):
         ## MongoDB
         #client = MongoClient(config["mongodb_conn"])
         #self.db = client["northy"]
         self.db = db
-        pass
 
     def __unique(self, sequence):
         """
@@ -203,11 +202,19 @@ class ParseAlert:
         text = text.replace(" IN: ", "IN ")
         return text
 
-    def text_to_signal(self, text):
-        """
-            This method will convert Northy Alert Tweets from its raw form (text) into a tradable signal.
-        """
-        text = self.__normalize_text(text)
+    def lookup(self, tid):
+        res = [i for i in self.db["data"].find({"tid": tid}).limit(1)]
+        tweet = res[0]
+        signal = self.parse(tweet)
+        text = self.__normalize_text(tweet)
+        print(colored(f"Input:\n        {text}\n", "yellow"))
+        print(colored(f"Signals:", "green"))
+        for i in signal:
+            print(colored(f"        {i}", "green"))
+        return signal
+
+    def parse(self, tweet):
+        text = self.__normalize_text(tweet)
 
         # Get all symbols in signal
         symbols = re.findall(r'(\$\w*)', text)
@@ -219,15 +226,11 @@ class ParseAlert:
             symbol = symbol[1:]  # $SPX --> SPX
             ACTION_CODE = f"{symbol}"
 
-            # Adjust position to flat (break even)
+            # Move to flat
             if "TO FLAT" in text:
-                ACTION_CODE += "_FLATADJ"
+                ACTION_CODE += "_FLAT"
 
-            # Position was stopped out @ break even
-            if "FLAT STOP" in text:
-                ACTION_CODE += "_FLATSTOP"
-
-            # Closing trade
+            # Closing trades
             if "CLOSED" in text:
                 # There are two types of CLOSE events
                 #   *  CLOSED by Stop Loss
@@ -235,9 +238,12 @@ class ParseAlert:
 
                 # profit taking
                 if "SCALE" in text:
-                    ACTION_CODE += "_CLOSE_PROFIT"
+                    IN = re.findall(r'(?:IN[\:|\s])(\d*)', text)[-1]
+                    OUT = re.findall(r'(?:OUT[\:|\s])(\d*)', text)[-1]
+                    POINTS = re.findall(r'(?:\+[\s]?)(\d*)', text)[-1]
+                    ACTION_CODE += f"_CLOSE_SCALE_IN_{IN}_OUT_{OUT}_POINTS_{POINTS}"
                 else:
-                    ACTION_CODE += "_CLOSE_STOPLOSS"
+                    ACTION_CODE += f"_CLOSE_STOPLOSS"
 
             # Re-entry
             if "RE-ENTRY" in text:
@@ -267,9 +273,26 @@ class ParseAlert:
 
             ACTIONS.append(ACTION_CODE)
 
+        # debugging
+        """
+        for a in ACTIONS:
+            if "FLAT" in a:
+                print(text)
+                print(ACTIONS)
+                print()
+            if "CLOSE" in a:
+                print(text)
+                print(ACTIONS)
+                print()
+            if "TRADE" in a:
+                print(text)
+                print(ACTIONS)
+                print()
+        """
+            
         return ACTIONS
 
-    def parse_backtest(self, username="NTLiveStream"):
+    def backtest(self, username="NTLiveStream"):
         """
             FOR VALIDATION PURPOSES ONLY
 
@@ -280,9 +303,7 @@ class ParseAlert:
             {
                 '$match': {
                     'username': username,
-                    'text': {
-                        '$regex': re.compile(r"alert:", re.IGNORECASE)
-                    }
+                    'text': { '$regex': re.compile(r"alert:", re.IGNORECASE) }
                 }
             },
             {
@@ -291,30 +312,54 @@ class ParseAlert:
                     'created_at': 1
                 }
             },
-            {
-                '$project': {
-                    'username': 0,
-                    '_id': 0
-                }
-            },
-            #{ '$limit' : 5 }
+            #{ '$limit' : 25 }
         ])
 
+        # Get signals backtesting file
+        filename = "signals-backtest.json"
+        f = open(filename)
+        manSignals = json.load(f)
+        def __get_tweet_from_dict(tid, dict):
+            for i in dict:
+                if tid == i["tid"]:
+                    return i
+        print(f"Backtesting {len(manSignals)} tweets..")
+
+        missing_backtests = []
         for tweet in result:
             # The following tweet ID is causing parsing errors. Its a one-off, so we just ignore it. No need to solve for the 1% error rates.
             # FLAT STOPPED $SPX | RE-ENTRY SHORT | IN 4211 - 10 PT STOP. | ADJUSTED $NDX STOP TO -25. |  | TAKING THE STOP RISK OVERNIGHT
             # FLAT STOPPED $NDX $SPX STOPPED $RUT  | RE-ENTRY LONG |IN 3752 |IN 11475 - 25 PT STOP |IN 1129 - 10 PT STOP
             if tweet["tid"] in [1557516667357380608, 1572963969991692292]:
                 continue
-            signal = colored(self.text_to_signal(tweet), "red")
+            dynSignal = self.parse(tweet)
             text = self.__normalize_text(tweet)
-            tid = colored(tweet["tid"], "green")
-            if "FLAT" in text:
-                print(tid, signal, text)
+            tid = tweet["tid"]
+            manSignal = __get_tweet_from_dict(tweet["tid"], manSignals)["action"]
+            
+            if manSignal[0] == "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS":
+                #print(f"{tid} not in backtest file")
+                missing_backtests.append(tid)
+            else:
+                # Compare Manual Backtest Signal against Dynamic Signal
+                match = True if set(dynSignal) == set(manSignal) else False
+                color_tid = colored(tweet["tid"], "blue")
+                if match:
+                    print(color_tid + colored(f" {dynSignal}", "green"))
+                else:
+                    print(color_tid + colored(f" MATCH ERROR", "red"))
+                    print(colored(f"   ManSignal  {manSignal}", "green"))
+                    print(colored(f"   DynSignal  {dynSignal}", "red"))
+                    sys.exit()
 
-    def update_backtest_file(self, username="NTLiveStream"):
+        print(f"{len(missing_backtests)} missing backtests:")
+        #print(missing_backtests)
+        for i in missing_backtests[:5]:
+            print(colored(i, "red"))
+
+    def generate_signals_file(self, username="NTLiveStream"):
         # Load backtest.json
-        filename = "backtest.json"
+        filename = "signals-backtest.json"
         original = dict()
         f = open(filename)
         original = json.load(f)
@@ -384,8 +429,6 @@ class ParseAlert:
                 }
                 write_json(out)
 
-    def backtest_parser(self):
-        pass
 
 if __name__ == '__main__':
     @click.group()
@@ -414,31 +457,41 @@ if __name__ == '__main__':
         """ Watch for new Tweets by user """
         t = Timon()
         while True:
-            t.watch(username=username)
-            time.sleep(5)
+            try:
+                t.watch(username=username)
+                time.sleep(5)
+            except Exception as e:
+                print(f"Exception {e}")
+                print(f"Going to sleep for 1 min.")
+                time.sleep(60)
 
-    @click.command()
-    def backtest():
-        p = ParseAlert(db)
-        print(f"Updating backtest.json")
-        p.update_backtest_file()
-
-    @click.command()
-    @click.option('--message', default="test message", help='Send a test notification through Prowl')
-    def notify(message):
-        t = Timon()
-        t.prowl(message)
 
     @click.command()
     def pushalert():
         t = Timon()
         t.pushalert()
 
+    @click.command()
+    @click.option('--generate', default=False, flag_value='generate', help='Update backtest.json file with latest signals (without overriding existing')
+    @click.option('--backtest', default=True, flag_value='backtest', help='Compare dynamicly parsed Tweets from DB against manually validated Tweets from backtest file')
+    @click.option('--lookup', type=int, help='Parse Tweet text and return signal')
+    def signal(generate, lookup, backtest):
+        s = Signal(db)
+
+        if generate:
+            print(f"Updating backtest.json")
+            s.generate_signals_file()
+
+        if lookup:
+            s.lookup(lookup)
+
+        if backtest:
+            s.backtest()
+
 
     cli.add_command(readdb)
     cli.add_command(fetch)
     cli.add_command(watch)
-    cli.add_command(backtest)
-    cli.add_command(notify)
     cli.add_command(pushalert)
+    cli.add_command(signal)
     cli()
