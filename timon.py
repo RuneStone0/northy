@@ -172,9 +172,9 @@ class Timon:
                 latest_id = tweet["tid"]
 
                 # Send push notification if Alert
-                if "ALERT" in tweet["text"]:
-                    self.prowl(tweet["text"])
-            time.sleep(0.5)
+                #if "ALERT" in tweet["text"]:
+                self.prowl(tweet["text"])
+            time.sleep(1)
 
 class Signal:
     def __init__(self, db):
