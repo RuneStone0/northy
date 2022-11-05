@@ -1,0 +1,4049 @@
+[
+    {
+        "tid": 1547926636393218051,
+        "text": "ALERT: Closed 1 scale $SPX add-on\n\nIN 3722 OUT OUT 3824 +102",
+        "action": [
+            "SPX_CLOSE_SCALE_IN_3722_OUT_3824_POINTS_102"
+        ]
+    },
+    {
+        "tid": 1548941730669625345,
+        "text": "ALERT: closed 2nd scale $SPX add on \nIN 3722 OUT 3895 + 173",
+        "action": [
+            "SPX_CLOSE_SCALE_IN_3722_OUT_3895_POINTS_173"
+        ]
+    },
+    {
+        "tid": 1549483689058467843,
+        "text": "ALERT: closed 3rd scale $SPX add on \nIN 3722 OUT 3937 +215",
+        "action": [
+            "SPX_CLOSE_SCALE_IN_3722_OUT_3937_POINTS_215"
+        ]
+    },
+    {
+        "tid": 1550160630417707008,
+        "text": "ALERT: Closed final scale $SPX add-on\nIN 3722 OUT 3983 +261",
+        "action": [
+            "SPX_CLOSE_SCALE_IN_3722_OUT_3983_POINTS_261"
+        ]
+    },
+    {
+        "tid": 1550479656805081088,
+        "text": "ALERT: Short $SPX\nIN 4000 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1550491840289406976,
+        "text": "ALERT: stop adjusted to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1550495151352528896,
+        "text": "ALERT: flat stopped $SPX short\nIN 4001 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1550496661994348545,
+        "text": "ALERT: stop adj to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1550497233585455104,
+        "text": "ALERT: Closed 1 scale $RUT\nIN 1651 OUT 1824 +173",
+        "action": [
+            "RUT_CLOSE_SCALE_IN_1651_OUT_1824_POINTS_173"
+        ]
+    },
+    {
+        "tid": 1551938929385000960,
+        "text": "ALERT: Closed 1 scale $SPX short\nIN 4001 OUT 3933 +68",
+        "action": [
+            "SPX_CLOSE_SCALE_IN_4001_OUT_3933_POINTS_68"
+        ]
+    },
+    {
+        "tid": 1552001949075210242,
+        "text": "ALERT: Closed 2nd scale $SPX short\nIN 4001 OUT 3914 +87",
+        "action": [
+            "SPX_CLOSE_SCALE_IN_4001_OUT_3914_POINTS_87"
+        ]
+    },
+    {
+        "tid": 1552365599812194307,
+        "text": "ALERT: Flat stopped remainder $SPX short\nRe-entry short\nIN 4010 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552366393990971392,
+        "text": "ALERT: closed $SPX short -1",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552367395334938632,
+        "text": "ALERT: short $SPX\nIN: 4018 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552368199861248000,
+        "text": "ALERT: $SPX stop adj. to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552370348582227969,
+        "text": "ALERT: Flat stopped $SPX short\nRe-entry short\nIN 4023 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552371937195827203,
+        "text": "ALERT: stop adj to flat $SPX .",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552372964934488066,
+        "text": "ALERT: Flat stopped $SPX short\nRe-entry short\nIN 4024 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552373509501902848,
+        "text": "ALERT: $SPX stop adj. to flat..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552375897755467779,
+        "text": "ALERT: Flat stopped $SPX short\nRe-entry short\nIN 4039 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552377800677548037,
+        "text": "ALERT: $SPX adj stop to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552678114987229184,
+        "text": "ALERT: flat stopped $SPX\nRe-entry short\nIN 4049 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552679770474823681,
+        "text": "ALERT: stop adj. to flat. $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552680833911345153,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry short\nIN 4049 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552681560985460738,
+        "text": "ALERT: Closed $SPX stop -2",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552681974749339650,
+        "text": "ALERT: Short $SPX\nIN 4054 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552685164022620160,
+        "text": "ALERT: $SPX stop adj. to flat",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552694461523759107,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry short\nIN 4053 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552711791402258432,
+        "text": "ALERT:  stopped $SPX\nRe-entry short\nIN 4071 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552714287558414339,
+        "text": "ALERT: Closed 2nd scale $RUT\nIN: 1651 OUT 1867 +216",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552717608801148928,
+        "text": "ALERT: $SPX stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552720443425054722,
+        "text": "ALERT:  flat stopped $SPX\nRe-entry short\nIN 4071 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552724167048527878,
+        "text": "ALERT: stop adj. to flat $SPX.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552725076684029952,
+        "text": "ALERT:  flat stopped $SPX\nRe-entry short\nIN 4071 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552741231595294725,
+        "text": "ALERT: $SPX stop moved to flat..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552747374757482497,
+        "text": "ALERT:  stopped $SPX\nRe-entry short\nIN 4084 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552749240094425094,
+        "text": "ALERT: $SPX stop adj.. to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552753604787945472,
+        "text": "ALERT:  flat stopped $SPX\nRe-entry short\nIN 4095 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552755377418260481,
+        "text": "ALERT: $SPX closed -3",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552757554580783104,
+        "text": "ALERT: Short $SPX\nIN 4104 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552758614128984075,
+        "text": "ALERT: Closed 3rd scale $NDX\nIN 11060 OUT 12890 +1830",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552797865805856770,
+        "text": "ALERT: $SPX stop moved to flat\u2026",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552917983214899200,
+        "text": "ALERT:  flat stopped $SPX\nRe-entry short\nIN 4105 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1552920605787246595,
+        "text": "ALERT: $SPX stop adj. to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1553016883057762305,
+        "text": "ALERT:  flat stopped $SPX\nRe-entry short\nIN 4105 - 10 pt stop..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1553018062672203776,
+        "text": "ALERT: Closed $SPX flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1553019324268531713,
+        "text": "ALERT: short $SPX\nIN: 4114 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1553021298825125889,
+        "text": "ALERT: adj $SPX stop to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1553024856949760000,
+        "text": "ALERT:  flat stopped $SPX\nRe-entry short\nIN 4120 - 10 pt stop..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1553033749239046147,
+        "text": "ALERT: $SPX stop moved to flat..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1553077538544558081,
+        "text": "ALERT:  flat stopped $SPX\nRe-entry short\nIN 4120 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1553090292697407489,
+        "text": "ALERT:  stopped $SPX\nRe-entry short\nIN 4128 - 10 pt stop..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1553103156615192577,
+        "text": "ALERT:  stopped $SPX\nRe-entry short\nIN 4138 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1553105111123116034,
+        "text": "ALERT: closed $SPX short flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1553105752650383361,
+        "text": "ALERT: short $SPX\nIN: 4140 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1553107198531850241,
+        "text": "ALERT: stop adj to flat. $SPX .",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1554877612484399106,
+        "text": "ALERT: Closed final scale $NDX long\nIN: 11060 OUT 13250 +2190",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1554909365114740737,
+        "text": "ALERT: Short $SPX \nIN 4160 - 10pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1554915621011423232,
+        "text": "ALERT: closed $SPX -2",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1554917009250451459,
+        "text": "ALERT: Short $SPX \nIN 4165 - 10pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1554919984534589442,
+        "text": "ALERT: stop moved to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1555133803592548356,
+        "text": "ALERT:  flat stopped $SPX\nRe-entry short\nIN 4165 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1555139990937604096,
+        "text": "ALERT: closed $SPX short -1",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1555141826495086592,
+        "text": "ALERT: Short $SPX \nIN 4170 - 10pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1555143642091851778,
+        "text": "ALERT: stop moved to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1556610287440199680,
+        "text": "ALERT: flat stopped $SPX short\nRe-entry short\nIN 4170 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1556633535389306886,
+        "text": "ALERT: stop moved to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1556634801867833344,
+        "text": "ALERT: flat stopped $SPX short\nRe-entry short\nIN 4174 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1556635729685581827,
+        "text": "ALERT: stop moved to flat $SPX.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1556637736173555714,
+        "text": "ALERT: flat stopped $SPX short\nRe-entry short\nIN 4180 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1556638476233281539,
+        "text": "ALERT: stop adj. to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1556638947970793474,
+        "text": "ALERT: flat stopped $SPX short\nRe-entry short\nIN 4180 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1556641102677041152,
+        "text": "ALERT: Closed 3rd scale $SPX long\n\nIN 3642 OUT 4185 +545",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1556668359193903104,
+        "text": "ALERT: $SPX stop adjusted to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557344689468178438,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry short\nIN 4195 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557345010034659329,
+        "text": "ALERT: Short $NDX\nIN: 13331 -25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557346498475659266,
+        "text": "ALERT: Stop moved to flat $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557346596907524097,
+        "text": "ALERT: Closed $SPX -2",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557347316465651712,
+        "text": "ALERT: Flat stopped $NDX \nRe-entry short $NDX short $SPX\nIN 13340 - 25 pt stop\nIN 4198 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557347784692572162,
+        "text": "ALERT: stop adj to flat $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557348710195101698,
+        "text": "ALERT: $SPX stop adj. to flat",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557358741967831040,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry short\nIN 4198 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557358874654638081,
+        "text": "ALERT: stop adj to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557378472846233602,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry short\nIN 4198 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557383186442846210,
+        "text": "ALERT: Flat stopped $NDX stopped $SPX\nRe-entry short $NDX  $SPX\nIN 13356 - 25 pt stop\nIN 4210 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557385876002553856,
+        "text": "ALERT: stops adj to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557396123974860802,
+        "text": "ALERT: Flat stopped $NDX \nRe-entry short \nIN 13357 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557396970884534275,
+        "text": "ALERT: $NDX stop adj to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557424520566382592,
+        "text": "ALERT: Flat stopped $NDX \nRe-entry short \nIN 13361- 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557428314687643648,
+        "text": "ALERT: $NDX stop moved to flat",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557454040820318213,
+        "text": "ALERT: Flat stopped $NDX  $SPX\nRe-entry short\nIN 13377 - 25 pt stop\nIN 4211 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557455284636876802,
+        "text": "ALERT: stops adj to flat $NDX $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557455689680916480,
+        "text": "ALERT: Flat stopped $NDX  \nRe-entry short\nIN 13382- 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557456500670480386,
+        "text": "ALERT: $NDX stop moved to flat .",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557516667357380608,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry short\nIN 4211 - 10 pt stop.\nAdjusted $NDX stop to -25.\n\nTaking the stop risk overnight",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557622240535011329,
+        "text": "ALERT: stopped $NDX  $SPX\nRe-entry short\nIN 13455 - 25 pt stop\nIN 4228 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557632594031874048,
+        "text": "ALERT: stops moved to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557699266466009090,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry short\nIN 4230- 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557706178116853760,
+        "text": "ALERT: flat stopped $NDX stopped $SPX\nRe-entry short\nIN 13475- 25 pt stop\nIN 4241 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557707104252731394,
+        "text": "ALERT: stops adj to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557710956364533761,
+        "text": "ALERT: Flat stopped $NDX  \nRe-entry short\nIN 13474 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557712955927678978,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry short\nIN 4243- 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557713760491655174,
+        "text": "ALERT: Closed final $SPX long\nIN 3642 OUT 4242 +600",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557718744142852099,
+        "text": "ALERT: stops adj. to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557721407647166464,
+        "text": "ALERT: Flat stopped $NDX  \nRe-entry short\nIN 13476 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557722343534800898,
+        "text": "ALERT: $NDX stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557724796560891904,
+        "text": "ALERT: Flat stopped $NDX  \nRe-entry short\nIN 13480 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557727397771821064,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry short\nIN 4243- 10 pt stop..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557730264888926213,
+        "text": "ALERT: stopped $NDX  \nRe-entry short\nIN 13520 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557733702901190664,
+        "text": "ALERT: stopped $NDX $SPX\nRe-entry short\nIN 13552- 25 pt stop\nIN 4258 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1557734382495879170,
+        "text": "ALERT: stops adj to flat $NDX $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1558149539617509377,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry short\nIN 4258 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1558158636303716355,
+        "text": "ALERT: closed $SPX -1",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1558160566371360768,
+        "text": "ALERT: short $SPX \nIN: 4266 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1558167994106249218,
+        "text": "ALERT: closed $SPX -1.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1558170160766263296,
+        "text": "ALERT: short $SPX \nIN: 4273 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1558173675353931776,
+        "text": "ALERT: moved $SPX stop to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1558177840784412673,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry short\nIN 4274 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1558178526561505280,
+        "text": "ALERT: stop adj. to flat. $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1558179336372592643,
+        "text": "ALERT: Flat stopped $SPX $NDX\nRe-entry short\nIN 4275 - 10 pt stop\nIN 13552- 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1558179644448325632,
+        "text": "ALERT: stops adj. to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1558181565020119041,
+        "text": "ALERT: Flat stopped $SPX $NDX\nRe-entry short\nIN 4279 - 10 pt stop\nIN 13560- 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559073171080466434,
+        "text": "ALERT: adj stops to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559172770898100224,
+        "text": "ALERT: Flat stopped  $NDX\nRe-entry short\n\nIN 13575- 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559173265981116418,
+        "text": "ALERT: $NDX stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559177154176450561,
+        "text": "ALERT: Flat stopped  $NDX\nRe-entry short\n\nIN 13600- 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559178173853868032,
+        "text": "ALERT: Flat stopped $SPX \nRe-entry short\nIN 4280 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559178882388992000,
+        "text": "ALERT: $SPX $NDX stops moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559205020876300295,
+        "text": "ALERT: Flat stopped $SPX $NDX\nRe-entry short\nIN 4284 - 10 pt stop\nIN 13630- 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559205552508620803,
+        "text": "ALERT: closed $SPX -1 $NDX -3",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559207058800611332,
+        "text": "ALERT: Short $SPX $NDX\nIN: 4289 - 10 pt stop\nIN: 13640- 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559210501774647297,
+        "text": "ALERT: stops moved to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559211934624481280,
+        "text": "ALERT: Flat stopped $SPX \nRe-entry short\nIN 4290 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559217609157054464,
+        "text": "ALERT: Flat stopped  $NDX\nRe-entry short\n\nIN 13640- 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559218269382447105,
+        "text": "ALERT: stop moved to flat $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559223925216890883,
+        "text": "ALERT: Flat stopped  $NDX\nRe-entry short\n\nIN 13645- 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559234924393254918,
+        "text": "ALERT: moved $NDX stop to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559249472919584768,
+        "text": "ALERT: Flat stopped  $NDX\nRe-entry short\n\nIN 13652- 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559260332106850315,
+        "text": "ALERT: stopped $SPX $NDX\nRe-entry short\nIN 4300 - 10 pt stop\nIN 13685 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559262411688972291,
+        "text": "ALERT: stop moved to flat $NDX.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559275247710371842,
+        "text": "ALERT: $SPX stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559560977963794434,
+        "text": "ALERT: flat stopped $SPX \nRe-entry short\nIN 4300 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559561963147075584,
+        "text": "ALERT: stop adj. to flat. $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559563251649839104,
+        "text": "ALERT: flat stopped $SPX \nRe-entry short\nIN 4300 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559563453144174593,
+        "text": "ALERT: closed $SPX -1",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559563855566671874,
+        "text": "ALERT: Short $SPX\nIN 4305 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559564124316749825,
+        "text": "ALERT: $SPX stop moved to flat .",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559570245991505921,
+        "text": "ALERT: flat stopped $SPX \nRe-entry short\nIN 4311 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559572664959787008,
+        "text": "ALERT: $SPX stop adj to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559575383426703360,
+        "text": "ALERT: Closed 3rd scale $RUT long\nIN 1651 OUT 2025 +374\n\n+22.6%",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559575893433110528,
+        "text": "ALERT: flat stopped $SPX \nRe-entry short\nIN 4313- 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559577024515260418,
+        "text": "ALERT: stop adj. to flat $SPX...",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559599948555079680,
+        "text": "ALERT: flat stopped $SPX \nRe-entry short\nIN 4318- 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559602014543380480,
+        "text": "ALERT: flat stopped $NDX \nRe-entry short\nIN 13695 - 25 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559603916144365568,
+        "text": "ALERT: stopped $NDX \nRe-entry short\nIN 13720 - 25 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559606272332369920,
+        "text": "ALERT: $NDX stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1559610025810739200,
+        "text": "ALERT: stop adj. to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1560000766043119617,
+        "text": "ALERT: Limit sell $SPX\n\nIN 4318 Stop at 4380.\n\n*see Dashboard for rationale.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1560658262449475586,
+        "text": "ALERT: closed 1 scale $NDX\n\nIN 13720 OUT 13245 +475",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1561611493153587200,
+        "text": "ALERT: closed 1 scale $SPX\n\nIN 4318 OUT 4208 +110\n\n*Mella told me to ;-)",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1561975666845061120,
+        "text": "ALERT: closed 2nd scale $SPX\n\nIN 4318 OUT 4132 +186\n\n*also canceled the limit sell at 4318",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1563233089761202179,
+        "text": "ALERT: Long $RUT\nIN: 1911 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1563233875702456320,
+        "text": "ALERT: Closed final scale original scale $RUT long\n\nIN:1651 OUT 1912 +261\n\n*Per brief this gives much room to deal\u2026 https://t.co/C9eIfX9EZ7",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1563238504678580224,
+        "text": "ALERT: Closed $RUT -2",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1563240252000522240,
+        "text": "ALERT: Long $RUT\nIN 1907 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1563241713899937794,
+        "text": "ALERT: Closed $RUT -1",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1563244630925119489,
+        "text": "ALERT: Long $RUT \nIN 1903 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1563245366950055938,
+        "text": "ALERT: closed $RUT flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1563246946721992704,
+        "text": "ALERT: Long $RUT \nIN 1902 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1563247508163158016,
+        "text": "ALERT: Closed $RUT flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564010447782776832,
+        "text": "ALERT: Closed 2nd scale $NDX\nIN 13720 OUT: 12484 +1236",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564012640862707712,
+        "text": "ALERT: Long $RUT\nIN 1879 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564146912172949504,
+        "text": "ALERT: $RUT stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564153391563030528,
+        "text": "ALERT: Flat stopped $RUT\nRe-entry long \nIN 1879 -10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564154043357863937,
+        "text": "ALERT: $RUT stop adj to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564178171540414465,
+        "text": "ALERT: Flat stopped $RUT\nRe-entry long \nIN 1878 -10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564184764394967040,
+        "text": "ALERT: stop adj to flat. $RUT",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564190141434003456,
+        "text": "ALERT: Flat stopped $RUT\nRe-entry long \nIN 1878 -10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564198313066471426,
+        "text": "ALERT: $RUT stop adj to flat..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564210266883121153,
+        "text": "ALERT: Flat stopped $RUT\nRe-entry long \nIN 1877 -10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564212480007720963,
+        "text": "ALERT: Flat stopped $RUT\nRe-entry long \nIN 1877 -10 pt stop..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564225132415049729,
+        "text": "ALERT: $RUT stop adj to flat .",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564244303924400128,
+        "text": "ALERT: Flat stopped $RUT\nRe-entry long \nIN 1876 -10 pt stop..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564244601967370241,
+        "text": "ALERT: $RUT stop moved to flat",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564611389154627584,
+        "text": "ALERT: Flat stopped $RUT\nRe-entry long \nIN 1875 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564611723969134604,
+        "text": "ALERT: closed $RUt for flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564617374283706380,
+        "text": "ALERT: Long $RUT\n\nIN: 1864 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564618404484599825,
+        "text": "ALERT: $RUT stop adj. to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564623474693398529,
+        "text": "ALERT: Flat stopped $RUT\nRe-entry long \nIN 1858 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564628053996802053,
+        "text": "ALERT: Closed 3rd scale $SPX\nIN 4318 OUT 3978 +340",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564666768949387264,
+        "text": "ALERT: stopped $RUT\nRe-entry long \nIN 1847 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564672700852801537,
+        "text": "ALERT: $RUT stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564994999858728962,
+        "text": "ALERT: flat stopped $RUT\nRe-entry long \nIN 1847 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1564996307391062019,
+        "text": "ALERT: $RUT stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565028690773397508,
+        "text": "ALERT: flat stopped $RUT\nRe-entry long \nIN 1847 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565052609202950144,
+        "text": "ALERT: Closed final $SPX scale short\nIN 4318 OUT 3961 +357",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565052688974467074,
+        "text": "ALERT: Long $SPX\nIN 3962 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565054143647158272,
+        "text": "ALERT: stop moved to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565068438246199296,
+        "text": "ALERT: flat stopped $RUT $SPX\nRe-entry long \nIN 1844 - 10 pt stop\nIN 3955 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565110136997351425,
+        "text": "ALERT: stopped  $SPX\nRe-entry long \nIN 3942 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565120457346539523,
+        "text": "ALERT: stopped $RUT $SPX\nRe-entry long \nIN 1830- 10 pt stop\nIN 3928 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565309457944510464,
+        "text": "ALERT: stops moved to flat $SPX $RUT",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565311603251232768,
+        "text": "ALERT: Moved $RUT stop to -10 again.\nI'm have to step away from the desk for a bit, but generally keep an eye on things via mobile.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565318020137992199,
+        "text": "ALERT: flat stopped  $SPX\nRe-entry long \nIN 3927 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565333678900752385,
+        "text": "ALERT: stopped $RUT \nRe-entry long \nIN 1815 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565341171475697665,
+        "text": "ALERT: stopped $SPX\nRe-entry long \nIN 3916 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565342546129141760,
+        "text": "ALERT: closed $SPX -2",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565343712984514560,
+        "text": "ALERT: Long $SPX \nIN 3908 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565344092229292033,
+        "text": "ALERT: stopped $RUT \nRe-entry long \nIN 1802 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565344743420088326,
+        "text": "ALERT: Closed 3rd scale $NDX\n\nIN: 13720 OUT 12120 +1600",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565345039940603906,
+        "text": "ALERT: $SPX $RUT stops moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565351510128484352,
+        "text": "ALERT: flat stopped $RUT $SPX\nRe-entry long \nIN 1799- 10 pt stop\nIN 3904 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565357284611555329,
+        "text": "ALERT: stops moved to flat $SPX $RUT.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565385216969015296,
+        "text": "ALERT: flat stopped $RUT \nRe-entry long \nIN 1798 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565386684770000897,
+        "text": "ALERT: Stop moved to flat $RUT",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1565691721974956033,
+        "text": "ALERT: Closed 1 scale $SPX\nIN 3904 OUT 4007 +103",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1567150181933617152,
+        "text": "ALERT: Flat stopped $RUT\nRe-entry long\nIN: 1795 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1567150675175284739,
+        "text": "ALERT: $RUT stop adjusted to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1567154291567198209,
+        "text": "ALERT: Flat stopped $RUT $SPX\nRe-entry long\nIN: 1787 - 10 pt stop\nIN: 3988 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1567155232072777728,
+        "text": "ALERT: stops adjusted to flat $SPX $RUT",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1567156888944377859,
+        "text": "ALERT: Flat stopped $RUT\nRe-entry long\nIN: 1784 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1567157179987156993,
+        "text": "ALERT: $RUT stop adj. to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1567397152162299904,
+        "text": "ALERT: Flat stopped $RUT $SPX\nRe-entry long\nIN: 1783 - 10 pt stop\nIN: 3894 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1567411215701364736,
+        "text": "ALERT: stops moved to flat $SPX $RUT",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1567415640973103105,
+        "text": "ALERT: Flat stopped $RUT $SPX\nRe-entry long\nIN: 1783 - 10 pt stop\nIN: 3894 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1567418279840317441,
+        "text": "ALERT: stops moved to flat $SPX $RUT.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1567886503140794368,
+        "text": "ALERT: closed 1 scale $SPX\nIN 3894 OUT 3995 +101",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1568170756227436547,
+        "text": "ALERT: Closed 2nd scale $SPX\nIN: 3894 OUT 3938 +144",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1569255648570871816,
+        "text": "ALERT: Closed 1 scale on $RUT\nIN: 1783 OUT 1896 +113",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1569322162502115329,
+        "text": "ALERT: Closed 3rd scale $SPX\nIN 3894 OUT 4101 +207",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1569643306258153472,
+        "text": "ALERT: Short $NDX (add-on)\nIN: 12826 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1569647141198364672,
+        "text": "ALERT: Closed final $NDX original short scale\n\nIN 13720 OUT 12820 +900\n\n*this will secure these profits and more th\u2026 https://t.co/kdxmSm01Ah",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1569647415782785024,
+        "text": "ALERT: Adj. $NDX stop to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1569650255343280131,
+        "text": "ALERT: Flat stopped $NDX\nRe-entry short\nIN: 12828 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1569661615632441344,
+        "text": "ALERT: $NDX stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1569663174387040258,
+        "text": "ALERT: Flat stopped $NDX\nRe-entry short\nIN: 12830 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1569664267770818560,
+        "text": "ALERT: stopped $NDX\nRe-entry short\nIN: 12850 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1569664417947582465,
+        "text": "ALERT: $NDX stop adj to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1569664785649631232,
+        "text": "ALERT: Flat stopped $NDX\nRe-entry short\nIN: 12890 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1569664899453788160,
+        "text": "ALERT: stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1569701109685428225,
+        "text": "ALERT: Closed 1 scale $NDX\nIN: 12890 OUT 12220 +670",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1569772287452221442,
+        "text": "ALERT: Long $SPX (add-on)\n\nIN 3927 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1569772454314405888,
+        "text": "ALERT: Closed 2nd scale $NDX\nIN: 12890 OUT 12020 +870",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1569773108453871617,
+        "text": "ALERT: $SPX stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1569774127652737032,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry long\n\nIN: 3926 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1569775892720746502,
+        "text": "ALERT: stop adj to flat. $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570019107994574855,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry long\n\nIN: 3925 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570022283028361220,
+        "text": "ALERT: stop moved to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570057564301234176,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry long\n\nIN: 3920 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570058452986118145,
+        "text": "ALERT: $SPX stop adj to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570130136800043008,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry long\n\nIN: 3914 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570131091218141185,
+        "text": "ALERT: stop moved to flat $SPX.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570134088115228673,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry long\n\nIN: 3914 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570134878825455620,
+        "text": "ALERT: stop adj. to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570426881429864448,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry long\nIN: 3911 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570429263735623681,
+        "text": "ALERT: $SPX stop adj to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570430080416993281,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry long\nIN: 3907 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570432041526743040,
+        "text": "ALERT: $SPX stop adj. to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570442014310731777,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry long\nIN: 3904 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570442412509593602,
+        "text": "ALERT: stop adj. to flat $SPX.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570445745463111680,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry long\nIN: 3903 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570454487739019271,
+        "text": "ALERT: stop adj. to flat $SPX..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570491505755947009,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry long\nIN: 3895- 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570502772482797568,
+        "text": "ALERT: $SPX stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570513875275255808,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry long\nIN: 3895- 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570535751267553281,
+        "text": "ALERT: stopped $SPX\nRe-entry long\nIN: 3873 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570698394607439872,
+        "text": "ALERT: stopped $SPX\nRe-entry long\nIN: 3861 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570700984623730691,
+        "text": "ALERT: stop adj. to flat. $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570755341633335299,
+        "text": "ALERT: flat stopped $SPX\nRe-entry long\nIN: 3858 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570755958997131265,
+        "text": "ALERT: Closed $SPX -1",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570761312279625728,
+        "text": "ALERT: Long $SPX\nIN 3846 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570763699245449217,
+        "text": "ALERT: Closed 3rd scale $NDX\nIN: 12890 OUT 11768 +1122",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570764091328974848,
+        "text": "ALERT: $SPX stop adj. to flat..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570771054301442052,
+        "text": "ALERT: flat stopped $SPX\nRe-entry long\nIN: 3846 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570772563877572609,
+        "text": "ALERT: $SPX closed -1",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570772780651806727,
+        "text": "ALERT: Long $SPX\nIN 3843 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570774667346202625,
+        "text": "ALERT: Flat stopped remainder $RUT\n\nRe-entry long \nIN 1782 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570776054364778499,
+        "text": "ALERT: stops adjusted to flat $SPX $RUT",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570811977710309377,
+        "text": "ALERT: Flat stopped $RUT $SPX\n\nRe-entry long \nIN 3837 - 10 pt stop\nIN 1777 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1570817073240211457,
+        "text": "ALERT: stops adj to flat $SPX $RUT",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1571791660220092416,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry long\nIN 3837 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1571796190861074440,
+        "text": "ALERT: closed final $NDX scale short\nIN: 12890 OUT: 11440 +1450",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1571844283988348929,
+        "text": "ALERT: $SPX stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1571854351777533954,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry long\nIN 3837 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1571855106278129664,
+        "text": "ALERT: $SPX stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572252213178925058,
+        "text": "ALERT: Long $NDX\nIN: 11898 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572252818379096066,
+        "text": "ALERT: stop adj. to flat $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572264744106725386,
+        "text": "ALERT: flat stopped $NDX\nRe-entry long\n\nIN: 11870 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572268230319960067,
+        "text": "ALERT: $NDX stop adj. to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572271125463187456,
+        "text": "ALERT: flat stopped $NDX\nRe-entry long\n\nIN: 11860 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572274137342550023,
+        "text": "ALERT: flat stopped $NDX\nRe-entry long\n\nIN: 11834 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572275473648058368,
+        "text": "ALERT: adj stop to flat $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572279213931233283,
+        "text": "ALERT: flat stopped $SPX $NDX\nRe-entry long\n\nIN: 3936 - 10 pt stop\nIN: 11792 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572279744565252096,
+        "text": "ALERT: stops moved to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572282948531126272,
+        "text": "ALERT: flat stopped $SPX $NDX\nRe-entry long\n\nIN: 3931 - 10 pt stop\nIN: 11780 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572283413138386945,
+        "text": "ALERT: closed $SPX flat $NDX -2",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572284531348054016,
+        "text": "ALERT: Long $SPX $NDX\nRe-entry long\n\nIN: 3928- 10 pt stop\nIN: 11765 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572284944885358594,
+        "text": "ALERT: stops adjusted to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572648435836424192,
+        "text": "ALERT: flat stopped $SPX $NDX\nRe-entry long\nIN: 3820 - 10 pt stop\nIN: 11702 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572648736270221312,
+        "text": "ALERT: stops moved to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572651719019974658,
+        "text": "ALERT: Flat stopped $RUT\nRe-entry long\nIN: 1777 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572652464557682690,
+        "text": "ALERT: $RUT stop adj to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572670338277978113,
+        "text": "ALERT: flat stopped $SPX \nRe-entry long\nIN: 3820 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572670619103424513,
+        "text": "ALERT: $SPX stop adj. to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572672420649046018,
+        "text": "ALERT: flat stopped $SPX $NDX $RUT\nRe-entry long\nIN: 3808 - 10 pt stop\nIN: 11702 - 25 pt stop\nIN: 1777 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572672700258320384,
+        "text": "ALERT: stops adj. to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572673720480829440,
+        "text": "ALERT: flat stopped $SPX $NDX \nRe-entry long\nIN: 3800 - 10 pt stop\nIN: 11660 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572674896001470464,
+        "text": "ALERT: $NDX $SPX stops moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572676451274526725,
+        "text": "ALERT: flat stopped $SPX $NDX \nRe-entry long\nIN: 3796 - 10 pt stop\nIN: 11658 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572678489232347142,
+        "text": "ALERT: stopped $SPX $NDX $RUT\nRe-entry long\nIN: 3784 - 10 pt stop\nIN: 11620- 25 pt stop\nIN: 1163 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572684799902613505,
+        "text": "ALERT: stopped $NDX\nReentry long\nIN: 11580 -25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572685775732617216,
+        "text": "ALERT: stop adj to flat $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572722862452244481,
+        "text": "ALERT: stopped $SPX $RUT flat stopped $NDX\nRe-entry long\nIN: 3767- 10 pt stop\nIN: 11550- 25 pt stop\nIN: 1156  - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572845172093853699,
+        "text": "ALERT: stopped $SPX $NDX\nRe-entry long\nIN: 3762 - 10 pt stop\nIN: 11535 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572847983191785474,
+        "text": "ALERT: stops moved to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572850153354035200,
+        "text": "ALERT: stop moved to flat $RUT",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572945667278147585,
+        "text": "ALERT: flat stopped $NDX $RUT \nRe-entry long\n\nIN: 11520- 25 pt stop\nIN: 1146 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572946143595859968,
+        "text": "ALERT: stop adj to flat $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572946888407613442,
+        "text": "ALERT: flat stopped $NDX $SPX\nRe-entry long\nIN: 3762- 10 pt stop\nIN: 11510- 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572947529075163143,
+        "text": "ALERT: stop adj. to flat  $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572948472999063552,
+        "text": "ALERT: $SPX closed -2",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572948712300679169,
+        "text": "ALERT: flat stopped $NDX  \nRe-entry long\n\nIN: 11505- 25 pt stop\n\nlong $SPX\nIN: 3758 -  10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572950706344148993,
+        "text": "ALERT: stops moved to flat $SPX $NDX..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572963969991692292,
+        "text": "ALERT: flat stopped $NDX $SPX stopped $RUT \nRe-entry long\nIN: 3752\nIN: 11475 - 25 pt stop\nIN: 1129 - 10 pt stop",
+        "action": [
+            "NDX_TRADE_LONG_IN_10435_SL_25",
+            "SPX_TRADE_LONG_IN_3492_SL_10"
+        ]
+    },
+    {
+        "tid": 1572966832994230272,
+        "text": "ALERT: stops adjusted to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572968356520534016,
+        "text": "ALERT: flat stopped $NDX $SPX \nRe-entry long\nIN: 3752\nIN: 11465 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572971454941069313,
+        "text": "ALERT: stops adj. to flat $SPX $NDX $RUT",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1572984227611680770,
+        "text": "ALERT: flat stopped  $RUT \nRe-entry long\nIN: 1126 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573016246479618053,
+        "text": "ALERT: flat stopped $NDX $SPX \nRe-entry long\nIN: 3752\nIN: 11460 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573016852275818498,
+        "text": "ALERT: stops moved to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573028385554661376,
+        "text": "ALERT: $RUT stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573040272732291074,
+        "text": "ALERT: flat stopped  $RUT \nRe-entry long\nIN: 1126 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573231000683003904,
+        "text": "ALERT: flat stopped $NDX $SPX stopped $RUT\nRe-entry long\nIN: 3735 - 10 pt stop\nIN: 11420 - 25 pt stop\nIN: 1715 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573234504965259264,
+        "text": "ALERT: Closed $SPX $NDX $RUT flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573237060122865664,
+        "text": "ALERT: long $NDX $SPX  $RUT\n\nIN: 3731 - 10 pt stop\nIN: 11404 - 25 pt stop\nIN: 1713 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573245976839602178,
+        "text": "ALERT:stopped $NDX $SPX $RUT\nRe-entry long\nIN: 3718 - 10 pt stop\nIN: 11355 - 25 pt stop\nIN: 1706 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573249364281397248,
+        "text": "ALERT: stops moved to flat $SPX $NDX $RUT",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573257910443982849,
+        "text": "ALERT: flat stopped: $SPX $RUT\nRe-entry long\nIN: 3717 - 10 pt stop\nIN: 1706 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573259064150220801,
+        "text": "ALERT: $SPX $RUT closed -1 $NDX stopped flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573260368394485761,
+        "text": "ALERT: long $NDX $SPX  $RUT\n\nIN: 3713 - 10 pt stop\nIN: 11348 - 25 pt stop\nIN: 1703 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573261312821497856,
+        "text": "ALERT: stops moved to flat $SPX $NDX $RUT",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573266050543931393,
+        "text": "ALERT: flat stopped $NDX $SPX $RUT\nRe-entry long\nIN: 3704 - 10 pt stop\nIN: 11322 - 25 pt stop\nIN: 1698 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573267545465012225,
+        "text": "ALERT: stops adj. to flat $RUT $NDX $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573269172003504132,
+        "text": "ALERT: flat stopped $NDX $SPX $RUT\nRe-entry long\nIN: 3703 - 10 pt stop\nIN: 11318 - 25 pt stop\nIN: 1698 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573272812957097984,
+        "text": "ALERT: stops adj. to flat $SPX $RUT $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573294520430891010,
+        "text": "ALERT: flat stopped  $SPX \nRe-entry long\nIN: 3702 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573295220426477569,
+        "text": "ALERT: stop adj. to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573306788187099136,
+        "text": "ALERT: flat stopped  $SPX $RUT\nRe-entry long\nIN: 3703 - 10 pt stop\nIN: 1694 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573307079334531073,
+        "text": "ALERT: stops moved to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573307361233625089,
+        "text": "ALERT: flat stopped  $SPX $RUT\nRe-entry long\nIN: 3699- 10 pt stop\nIN: 1693 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573307679912898560,
+        "text": "ALERT: $SPX stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573309891477139457,
+        "text": "ALERT: flat stopped  $SPX $NDX\nRe-entry long\nIN: 3692- 10 pt stop\nIN: 11310 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573310461483036673,
+        "text": "ALERT: stops moved to flat $SPX $NDX.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573312346063532033,
+        "text": "ALERT: flat stopped $NDX $SPX stopped $RUT\nRe-entry long\nIN: 3688 - 10 pt stop\nIN: 11280 - 25 pt stop\nIN: 1681 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573312825048682496,
+        "text": "ALERT: stops moved to flat $SPX $NDX $RUT.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573317940866420738,
+        "text": "ALERT: Flat stopped $RUT\nRe-entry long\nIN: 1676 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573320454386946048,
+        "text": "ALERT: $RUT stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573324848427929603,
+        "text": "ALERT: flat stopped  $SPX \nRe-entry long\nIN: 3688- 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573327571663654912,
+        "text": "ALERT: flat stopped $NDX $SPX $RUT\nRe-entry long\nIN: 3786 - 10 pt stop\nIN: 11300 - 25 pt stop\nIN: 1676 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573328280970821632,
+        "text": "ALERT: $SPX $NDX $RUT stops moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573338897656193029,
+        "text": "ALERT: flat stopped $NDX $SPX $RUT\nRe-entry long\nIN: 3777 - 10 pt stop\nIN: 11280 - 25 pt stop\nIN: 1675 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573340298478260226,
+        "text": "ALERT: stops adj to flat $SPX $NDX.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573342652094992387,
+        "text": "ALERT: flat stopped $NDX $SPX \nRe-entry long\nIN: 3777 - 10 pt stop\nIN: 11280 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573350702499434496,
+        "text": "ALERT: stopped $NDX $SPX $RUT\nRe-entry long\nIN: 3763 - 10 pt stop\nIN: 11245 - 25 pt stop\nIN: 1666 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573351957896613891,
+        "text": "ALERT: $SPX $NDX $RUT stops moved to flat..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573353201151234048,
+        "text": "ALERT: flat stopped  $RUT\nRe-entry long\n\nIN: 1666 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573353409494876162,
+        "text": "ALERT: $RUT stop adj to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573378044471156736,
+        "text": "ALERT: flat stopped $NDX $SPX $RUT\nRe-entry long\nIN: 3656 - 10 pt stop *(corrected)\nIN: 11200 - 25 pt stop\nIN: 1666 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573379162559381505,
+        "text": "ALERT: stops moved to flat $SPX $RUT $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573382711812968449,
+        "text": "ALERT: flat stopped $NDX $SPX $RUT\nRe-entry long\nIN: 3655 - 10 pt stop \nIN: 11190 - 25 pt stop\nIN: 1666 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573384015830478849,
+        "text": "ALERT: stops moved to flat $RUT $NDX $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573386916002922498,
+        "text": "ALERT: flat stopped $NDX $SPX $RUT\nRe-entry long\nIN: 3648- 10 pt stop \nIN: 11175 - 25 pt stop\nIN: 1663- 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1573390173097938945,
+        "text": "ALERT: stops adj to flat $SPX $NDX $RUT..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1574437910383923201,
+        "text": "ALERT: Flat stopped $RUT\nRe-entry long \n\nIN: 1662 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1574441121815601152,
+        "text": "ALERT: $RUT stop adj to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1574448811216363521,
+        "text": "ALERT: Flat stopped $RUT\nRe-entry long \n\nIN: 1659 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1574450564737503240,
+        "text": "ALERT: Flat stopped $SPX\nRe-entry long \n\nIN: 3645  - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1574451972006350848,
+        "text": "ALERT: stops moved to flat $SPX $RUT",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1574459171927461903,
+        "text": "ALERT: Flat stopped $RUT\nRe-entry long \n\nIN: 1659 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1574464755326226456,
+        "text": "ALERT: stop moved to flat $RUT",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1574796281863610368,
+        "text": "ALERT: Flat stopped $SPX $NDX $RUT\nRe-entry long\nIN: 3635 - 10 pt stop\nIN: 11172 - 25 pt stop\nIN: 1658- 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1574797314127953920,
+        "text": "ALERT: stop moved to flat $SPX $NDX $RUT",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1574804573386047490,
+        "text": "ALERT: Flat stopped  $RUT\nRe-entry long\nIN: 1656 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1574807792925515776,
+        "text": "ALERT: Flat stopped  $RUT\nRe-entry long\nIN: 1656 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1574808493432922117,
+        "text": "ALERT: stop adj to flat. $RUT",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1574813160837636097,
+        "text": "ALERT: Flat stopped  $RUT\nRe-entry long\nIN: 1656 - 10 pt stop..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1574813544012472324,
+        "text": "ALERT: $RUT stop moved to flat..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1574817020348174344,
+        "text": "ALERT: Flat stopped $SPX $RUT\nRe-entry long\nIN: 3625- 10 pt stop\nIN: 1654- 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1574817513145307136,
+        "text": "ALERT: stop adj to flat $SPX $RUT",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1574820583078072325,
+        "text": "ALERT: Flat stopped $SPX  \nRe-entry long\nIN: 3623 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1574820837689102346,
+        "text": "ALERT: $SPx stop adj. to flat...",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575004264031977473,
+        "text": "ALERT: Flat stopped $SPX $NDX $RUT\nRe-entry long\nIN: 3625 - 10 pt stop\nIN: 11160 - 25 pt stop\nIN: 1657- 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575005189102505984,
+        "text": "ALERT: stops moved to flat $SPX $NDX $RUT",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575014991337762816,
+        "text": "ALERT: Flat stopped $SPX \nRe-entry long\nIN: 3625 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575015674082394113,
+        "text": "ALERT: stop moved to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575017581253079040,
+        "text": "ALERT: Flat stopped $SPX $NDX $RUT\nRe-entry long\nIN: 3619 - 10 pt stop\nIN: 11145 - 25 pt stop\nIN: 1656- 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575018158175711232,
+        "text": "ALERT: stops adj to flat $SPX $RUT $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575021808851353600,
+        "text": "ALERT: Flat stopped $SPX $NDX $RUT\nRe-entry long\nIN: 3611 - 10 pt stop\nIN: 11115 - 25 pt stop\nIN: 1651- 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575022237463506944,
+        "text": "ALERT: stops adj to flat $NDX $SPX $RUT",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575050975572013057,
+        "text": "ALERT: Flat stopped $SPX $NDX \nRe-entry long\nIN: 3611 - 10 pt stop\nIN: 11115 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575054889679323136,
+        "text": "ALERT: stopped $SPX $NDX $RUT\nRe-entry long\nIN: 3601 - 10 pt stop\nIN: 11090 - 25 pt stop\nIN: 1648- 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575055520469491713,
+        "text": "ALERT: stops adj to flat $SPX $RUT $NDX.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575057330437521408,
+        "text": "ALERT: Flat stopped  $NDX \nRe-entry long\nIN: 11090 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575058044094132225,
+        "text": "ALERT: stop adj. to flat $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575062580489465856,
+        "text": "ALERT: Flat stopped  $NDX \nRe-entry long\nIN: 11090 - 25 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575063387360223232,
+        "text": "ALERT: $NDX stop moved to flat..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575203208053420032,
+        "text": "ALERT: Closed 1 scale $NDX\nIN 11090 OUT 11503 +413",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575547386646364161,
+        "text": "ALERT: Flat stopped remainder $NDX\nRe-entry long\nIN: 11055 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575547976520327169,
+        "text": "ALERT: $NDX stops adj. to flat.\n\n$SPX &amp; $RUT still holding.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575551389270691840,
+        "text": "ALERT: Flat stopped $NDX\nRe-entry long\nIN: 11040 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575551673904541696,
+        "text": "ALERT: stop adj to flat $NDX.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575930952856936449,
+        "text": "ALERT: Flat stopped $NDX\nRe-entry long\nIN: 11036 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575931611417567232,
+        "text": "ALERT: $NDX stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575933416540966912,
+        "text": "ALERT: Flat stopped $NDX\nRe-entry long\nIN: 11034- 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575933869052014592,
+        "text": "ALERT: $NDX stop moved to flat",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575936830200893442,
+        "text": "ALERT: Flat stopped $NDX $SPX\nRe-entry long\nIN 3595 - 10 pt stop\nIN: 11004 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575938688197894144,
+        "text": "ALERT: stopped $NDX $SPX\nRe-entry long\nIN 3585 - 10 pt stop\nIN: 10971 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1575939394388754450,
+        "text": "ALERT: stops adj. to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1576693834515243008,
+        "text": "ALERT: flat stopped $NDX $SPX\nRe-entry long\nIN 3580 - 10 pt stop\nIN: 10940 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1576830759737864192,
+        "text": "ALERT: stopped $NDX $SPX\nRe-entry long\nIN 3588 - 10 pt stop\nIN: 10935 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1576834070725550080,
+        "text": "ALERT: stops moved to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1576839837386088448,
+        "text": "ALERT: flat stopped $NDX $SPX\nRe-entry long\nIN 3585 - 10 pt stop\nIN: 10930 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1576840226114134016,
+        "text": "ALERT: stops adj to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1576843484824145921,
+        "text": "ALERT: flat stopped $NDX \nRe-entry long\nIN: 10925 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1576843736973479936,
+        "text": "ALERT: $NDX stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1576845572144713730,
+        "text": "ALERT: flat stopped $NDX $SPX\nRe-entry long\nIN 3581 - 10 pt stop\nIN: 10910 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1576846139575320576,
+        "text": "ALERT: closed $SPX -1 $NDX -5",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1576847187740266496,
+        "text": "ALERT:\nLong $SPX $NDX\nIN 3580 - 10 pt stop\nIN: 10900 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1576847895772684289,
+        "text": "ALERT: stops moved to flat $SPX $NDX..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1576852877892460544,
+        "text": "ALERT: flat stopped $NDX \nRe-entry long\nIN: 10900 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1576854069150244864,
+        "text": "ALERT: $NDX stop moved to flat..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1576862302607142912,
+        "text": "ALERT: flat stopped $NDX $SPX\nRe-entry long\nIN 3576 - 10 pt stop\nIN: 10895- 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1576866038788272128,
+        "text": "ALERT: stops adj. to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1576997506818355200,
+        "text": "ALERT: Closed 1 scale $SPX\nIN 3576 OUT 3678 +102",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1577217677533229056,
+        "text": "ALERT: Closed 1 scale $NDX\nIN 10895 OUT 11425 +530",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1577295787616264194,
+        "text": "ALERT: Closed 2nd scale $SPX\nIN 3576 OUT 3766 +190",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578367944374878208,
+        "text": "ALERT: Long $SPX (add-on)\nIN: 3690 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578368817452834816,
+        "text": "ALERT: $SPX stop set to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578377946712129536,
+        "text": "ALERT: flat stopped  $SPX (add-on)\nRe-entry long\nIN: 3689 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578378161804435458,
+        "text": "ALERT: stop moved to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578381215027052544,
+        "text": "ALERT: flat stopped  $SPX (add-on)\nRe-entry long\nIN: 3678 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578381933490356224,
+        "text": "ALERT: closed add-on -2",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578382732333301760,
+        "text": "ALERT: Long $SPX (add-on)\nIN: 3670- 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578382939133562880,
+        "text": "ALERT: stop adj to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578384756412129283,
+        "text": "ALERT: flat stopped  $SPX (add-on)\nRe-entry long\nIN: 3665 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578389066009264132,
+        "text": "ALERT: stop moved to flat $SPX.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578405635879800834,
+        "text": "ALERT: flat stopped  $SPX (add-on)\nRe-entry long\nIN: 3663 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578408990328999938,
+        "text": "ALERT: stop adj. to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578410987820314627,
+        "text": "ALERT: flat stopped  $SPX (add-on)\nRe-entry long\nIN: 3662 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578411437264773120,
+        "text": "ALERT: stop moved to flat $SPX..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578412558511267840,
+        "text": "ALERT: flat stopped  $SPX (add-on)\nRe-entry long\nIN: 3660 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578413172737777666,
+        "text": "ALERT: stop moved to flat. $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578421572213145601,
+        "text": "ALERT: flat stopped  $SPX (add-on)\nRe-entry long\nIN: 3654 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578431398666723329,
+        "text": "ALERT: stopped $SPX (add-on)\nRe-entry long\nIN: 3644 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578433249667215362,
+        "text": "ALERT: stop adj to flat $SPX..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578444993421004801,
+        "text": "ALERT: flat stopped $SPX (add-on)\nRe-entry long\nIN: 3644 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578445630435119104,
+        "text": "ALERT: $SPX stop moved to flat .",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578448179577884672,
+        "text": "ALERT: flat stopped $SPX (add-on)\nRe-entry long\nIN: 3643 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578448711654731776,
+        "text": "ALERT: stp adj to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578453782999941120,
+        "text": "ALERT: flat stopped $SPX (add-on)\nRe-entry long\nIN: 3636 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578454808670785536,
+        "text": "ALERT: stop adjusted to flat . $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578457564278243328,
+        "text": "ALERT: flat stopped $SPX (add-on)\nRe-entry long\nIN: 3635 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578458028717658112,
+        "text": "ALERT: $SPX stop moved to flat ;",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578467611620171777,
+        "text": "ALERT: flat stopped $SPX (add-on)\nRe-entry long\nIN: 3625 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578468112432627713,
+        "text": "ALERT: Closed $SPX -1",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578469469927530496,
+        "text": "ALERT: Long $SPX (add-on)\nIN: 3621- 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1578469707249696770,
+        "text": "ALERT: stop moved to flat $SPX...",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579231997117202432,
+        "text": "ALERT: flat stopped $SPX (add-on)\nRe-entry long\nIN: 3620 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579237580310134784,
+        "text": "ALERT: stopped $SPX (add-on)\nRe-entry long\nIN: 3609 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579369731655491584,
+        "text": "ALERT: $SPX stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579483289647476736,
+        "text": "ALERT: Flat stopped remainder $NDX\nRe-entry long\nIN 10897 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579483807337828358,
+        "text": "ALERT: $NDX stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579486112367923201,
+        "text": "ALERT: Flat stopped $NDX $SPX (add-on)\nRe-entry long\nIN 10897 - 25 pt stop\nIN 3609 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579486411631493121,
+        "text": "ALERT: stops moved to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579487713111453697,
+        "text": "ALERT: Flat stopped $NDX $SPX (add-on)\nRe-entry long\nIN 10875 - 25 pt stop\nIN 3606 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579488823968268288,
+        "text": "ALERT: stops moved to flat $SPX $NDX.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579509672813694976,
+        "text": "ALERT: Flat stopped $NDX $SPX (add-on)\nRe-entry long\nIN 10865- 25 pt stop\nIN 3601 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579514055093428226,
+        "text": "ALERT: $SPX $NDX closed flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579516140170407936,
+        "text": "ALERT: Long $NDX $SPX (add-on)\n\nIN 10860- 25 pt stop\nIN 3596 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579517150515318784,
+        "text": "ALERT: closed $SPX -1 $NDX -10",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579518605833932800,
+        "text": "ALERT: Long $NDX $SPX (add-on)\n\nIN 10835- 25 pt stop\nIN 3590 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579519860299956224,
+        "text": "ALERT: closed $SPX -1 $NDX -5",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579520035756077058,
+        "text": "ALERT: Long $NDX $SPX (add-on)\n\nIN 10830- 25 pt stop\nIN 3589 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579520371732410368,
+        "text": "ALERT: stops moved to flat $SPX $NDX .",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579744892032811008,
+        "text": "ALERT: Flat stopped $NDX $SPX\nRe-entry long \nIN 10840- 25 pt stop\nIN 3580 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579746162541989889,
+        "text": "ALERT: stops moved to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579758060486414336,
+        "text": "ALERT: Flat stopped $NDX $SPX\nRe-entry long \nIN 10825- 25 pt stop\nIN 3576 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579758556102131714,
+        "text": "ALERT: stops moved to flat $SPX $NDX.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579760970771365888,
+        "text": "ALERT: Flat stopped $NDX \nRe-entry long \nIN 10825- 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579765459788136448,
+        "text": "ALERT:  $NDX stop adj to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579771609304694790,
+        "text": "ALERT: Flat stopped $NDX $SPX\nRe-entry long \nIN 10815- 25 pt stop\nIN 3576 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579772528431861760,
+        "text": "ALERT: stops adj. to flat. $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579775436103749632,
+        "text": "ALERT: Flat stopped $NDX $SPX\nRe-entry long \nIN 10810- 25 pt stop\nIN 3575 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579777251004276736,
+        "text": "ALERT: stops adj. to flat. $SPX $NDX.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579831024372297728,
+        "text": "ALERT: Flat stopped $NDX \nRe-entry long \nIN 10815 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579835509014421514,
+        "text": "ALERT: Flat stopped $SPX stopped $NDX\nRe-entry long \nIN 10740- 25 pt stop\nIN 3569 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579835976796758019,
+        "text": "ALERT: stops adj. to flat. $SPX $NDX..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579912965322870785,
+        "text": "ALERT: Flat stopped $NDX\nRe-entry long \nIN 10725- 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579913830704242691,
+        "text": "ALERT: Flat stopped $SPX \nRe-entry long \nIN 3569 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1579913988930146306,
+        "text": "ALERT: stops adj to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1580537029875490816,
+        "text": "ALERT: Flat stopped $NDX $SPX\nRe-entry long \nIN 10455- 25 pt stop\nIN 3500 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1580537365164044289,
+        "text": "ALERT: stops moved to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1580541123822465024,
+        "text": "ALERT: Flat stopped $NDX $SPX\nRe-entry long \nIN 10450- 25 pt stop\nIN 3496- 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1580541362562207749,
+        "text": "ALERT: stops moved to flat $SPX $NDX.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1580549017083133952,
+        "text": "ALERT: Flat stopped  $SPX\nRe-entry long \nIN 3493- 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1580549408797564934,
+        "text": "ALERT: stop adj to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1580549875619753984,
+        "text": "ALERT: Flat stopped $NDX $SPX\nRe-entry long \nIN 10450- 25 pt stop\nIN 3493 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1580550420224561153,
+        "text": "ALERT: stops adj to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1580551697989918721,
+        "text": "ALERT: Flat stopped $NDX\nRe-entry long \nIN 10450- 25 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1580552110311366657,
+        "text": "ALERT: $NDX stop adj to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1580552296508715008,
+        "text": "ALERT: Flat stopped $NDX $SPX\nRe-entry long \nIN 10435- 25 pt stop\nIN 3492 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1580552679104778240,
+        "text": "ALERT: stops adj. to flat $SPX $NDX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1580552855119081472,
+        "text": "ALERT: flat stopped $RUT\nRe-entry long \nIN: 1649 -10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1580553063584002048,
+        "text": "ALERT: $RUT stop adj to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1580553469609803776,
+        "text": "ALERT: flat stopped $RUT\nRe-entry long \nIN: 1647 -10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1580554971107405824,
+        "text": "ALERT: $RUT stop moved to flat..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1580583354944323584,
+        "text": "ALERT: Closed 1 scale $SPX\nIN: 3492 OUT 3627 +135",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1580583673375895552,
+        "text": "ALERT: Closed 1 scale $NDX\nIN: 10435 OUT 10930 +495",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1580876949982846976,
+        "text": "ALERT: Closed 2nd scale $SPX\nIN: 3492 OUT 3685 +193",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1581767764293070848,
+        "text": "ALERT: long $SPX (add- on)\nIN :3588 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1581770034208047104,
+        "text": "ALERT: $SPX stop moved to flat",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1582000235249012737,
+        "text": "ALERT: Closed 1 scale $SPX (add-on)\n\nIN 3588 OUT 3648 +60",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1582003141603913731,
+        "text": "ALERT: Closed 2nd scale $SPX (add-on)\n\nIN 3588 OUT 3676 +88",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1582266463036923904,
+        "text": "ALERT: Closed 3rd scale $SPX (add-on)\n\nIN 3588 OUT 3735 +147",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1582365891521433600,
+        "text": "ALERT: Closed 2nd scale $NDX\nIN: 10435 OUT 11320 +885",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1582775748183871489,
+        "text": "ALERT: Closed final add-on scale $SPX\nIN 3588 OUT 3682 +94",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1582776237109305347,
+        "text": "ALERT: Limit order $SPX long\nIN: 3673 - 10 pt stop\n\nThis would get triggered on MA hit at 3673.\nDon't know if it wo\u2026 https://t.co/XlbjZsrDhw",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1582785584569151488,
+        "text": "ALERT: $SPX stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1582789068856864768,
+        "text": "ALERT: flat stopped $SPX (add-on)\nRe-entry long \nIN 3672 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1582789299145428993,
+        "text": "ALERT: stop adjusted to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1582791590640177152,
+        "text": "ALERT: flat stopped $SPX (add-on)\nRe-entry long \nIN 3672 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1582792124625342464,
+        "text": "ALERT: stop adj to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583002766275801088,
+        "text": "ALERT: flat stopped $SPX (add-on)\nRe-entry long \nIN 3672 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583007613700419585,
+        "text": "ALERT: Stop moved to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583009369486110721,
+        "text": "ALERT: flat stopped $SPX (add-on)\nRe-entry long \nIN 3671 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583010053321551872,
+        "text": "ALERT: stop adj to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583155484571611136,
+        "text": "ALERT: flat stopped $SPX (add-on)\nRe-entry long \nIN 3665 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583155882996559873,
+        "text": "ALERT: stop moved to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583160283354173441,
+        "text": "ALERT: flat stopped $SPX (add-on)\nRe-entry long \nIN 3660 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583161063839002624,
+        "text": "ALERT: $SPX stop adj to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583161872853131264,
+        "text": "ALERT: flat stopped $SPX (add-on)\nRe-entry long \nIN 3660 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583164963010404352,
+        "text": "ALERT: $SPX stop moved to flat .",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583168318005186561,
+        "text": "ALERT: flat stopped $SPX (add-on)\nRe-entry long \nIN 3657 - 10 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583168647459409920,
+        "text": "ALERT: $SPX stop adj to flat .",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583179385599033344,
+        "text": "ALERT: flat stopped $SPX (add-on)\nRe-entry long \nIN 3657 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583182400443408384,
+        "text": "ALERT: $SPX stop adj to flat..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583229006647697410,
+        "text": "ALERT: flat stopped $SPX (add-on)\nRe-entry long \nIN 3650 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583384924299857920,
+        "text": "ALERT: stopped $SPX (add-on)\nRe-entry long \nIN 3638 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583385259910975489,
+        "text": "ALERT: stop adj to flat. $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583389364012609543,
+        "text": "ALERT: flat stopped $SPX (add-on)\nRe-entry long \nIN 3638 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583390250742652930,
+        "text": "ALERT: stop adj. to flat $SPX",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583432946328817664,
+        "text": "ALERT: flat stopped $SPX (add-on)\nRe-entry long \nIN 3633 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583443924240121856,
+        "text": "ALERT: stop adj. to flat $SPX.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1583512894280720385,
+        "text": "ALERT: Closed 1 scale $SPX add-on\nIN 3633 OUT 3726 +93",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1584305663286841344,
+        "text": "ALERT: Closed 2nd scale $SPX add-on\nIN 3633 OUT 3798 +165",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1584909844867420162,
+        "text": "ALERT: closed 1 scale $RUT\nIN:1647 OUT 1787 +140",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1584921304842526721,
+        "text": "ALERT: Closed 3rd scale $SPX add-on\nIN 3633 OUT 3840 +207",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585290185532755973,
+        "text": "ALERT: Closed final scale $SPX add-on\nIN 3633 OUT 3881 +248",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585291228358254594,
+        "text": "ALERT: Short $SPX (hedge)\nIN 3879 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585292533986230272,
+        "text": "ALERT: closed $SPX hedge -1",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585292859707531266,
+        "text": "ALERT: Short $SPX (hedge)\nIN 3880 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585293119087644672,
+        "text": "ALERT: closed $SPX hedge -1.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585296047064158213,
+        "text": "ALERT: Short $SPX (hedge)\nIN 3885 - 10 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585297502676217860,
+        "text": "ALERT: Stop moved to flat $SPX (hedge)",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585709691258441728,
+        "text": "ALERT: Closed 1 scale $SPX short \nIN 3885 OUT 3815 +70",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585724212660035589,
+        "text": "ALERT: Closed 2nd scale $SPX short \nIN 3885 OUT 3777 +108",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585726740395356165,
+        "text": "ALERT: Long $NDX (add-on)\n\nIN: 11005 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585728475209822208,
+        "text": "ALERT: stopped $NDX\nRe-entry long \nIN 10981 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585729370622230528,
+        "text": "ALERT: stopped $NDX\nRe-entry long \nIN 10955 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585729625946460161,
+        "text": "ALERT: $NDX stop moved to flat.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585730261303840768,
+        "text": "ALERT: flat stopped $NDX\n\nRe-entry long\nIN: 10950 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585730381134778368,
+        "text": "ALERT: $NDX stop moved to flat",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585730616745594880,
+        "text": "ALERT: flat stopped $NDX\n\nRe-entry long\nIN: 10950 - 25 pt stop.",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585731080790884352,
+        "text": "ALERT: stopped $NDX\nRe-entry long \nIN 10900 - 25 pt stop",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585731303923761152,
+        "text": "ALERT: Closed 3rd scale $SPX short \nIN 3885 OUT 3755 +130",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585731369355079680,
+        "text": "ALERT: $NDX stop moved to flat ..",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1585991292034875392,
+        "text": "ALERT: Closed 1 scale $NDX\nIN 10900 OUT 11305 +405",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    },
+    {
+        "tid": 1586044787916173313,
+        "text": "ALERT: Closed 2nd scale $NDX\nIN 10900 OUT 11490 +590",
+        "action": [
+            "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"
+        ]
+    }
+]
