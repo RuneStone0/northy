@@ -5,3 +5,4 @@ Click
 colorama
 termcolor
 pyprowl
+tvdatafeed
