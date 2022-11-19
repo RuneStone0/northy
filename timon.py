@@ -176,6 +176,37 @@ class Timon:
                 self.prowl(tweet["text"])
             time.sleep(1)
 
+    def datafeed(self):
+        from tvDatafeed import TvDatafeed, Interval
+        #tv = TvDatafeed(config["TW_USER"], config["TW_PASS"])
+        tv = TvDatafeed()
+
+        tickers = [
+            {"symbol": "NDX", "exchange": "NASDAQ"},
+            {"symbol": "SPX", "exchange": "SP"},
+            {"symbol": "US100", "exchange": "CAPITALCOM"},
+            {"symbol": "US500", "exchange": "CAPITALCOM"},
+            {"symbol": "RUT", "exchange": "TVC"},
+        ]
+        for ticker in tickers:
+            _symbol = ticker["symbol"]
+            _exchange = ticker["exchange"]
+            collection = f"twfeed-{_exchange}-{_symbol}"
+            self.db[collection].create_index('dt', unique=True)
+
+            minutes_in_day = 1440
+            minutes_in_day = 100
+            df = tv.get_hist(symbol=_symbol, exchange=_exchange, interval=Interval.in_1_minute, n_bars=minutes_in_day*2, extended_session=True)
+            for date, row in df.T.items():
+                d = { "dt": date, "h": row["high"], "l": row["low"], "o": row["open"], "c": row["close"] }
+                try:
+                    self.db[collection].insert_one(d)
+                    print(f"+ Inserting {_exchange}:{_symbol} {d}")
+                except DuplicateKeyError:
+                    print(f"+ Already exist {_exchange}:{_symbol} {d}")
+                    pass
+
+
 class Signal:
     def __init__(self, db):
         ## MongoDB
@@ -393,7 +424,7 @@ class Signal:
             dbdata.append({
                 "tid": i["tid"],
                 "text": i["text"],
-                "action": ["TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"]
+                "action": ["TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"],
             })
         
         # helper to check if tid already exists in json file
@@ -419,16 +450,16 @@ class Signal:
         for i in dbdata:
             tid = i["tid"]
             if is_in_dict(tid, original):
-                print(f"{tid} already in backtest.json")
+                print(f"{tid} already in {filename}")
             else:
-                print(f"{tid} adding to backtest.json")
+                print(f"{tid} adding to {filename}")
                 out = {
                     "tid": i["tid"],
                     "text": i["text"],
                     "action": i["action"],
                 }
                 write_json(out)
-
+        
 
 if __name__ == '__main__':
     @click.group()
@@ -465,17 +496,18 @@ if __name__ == '__main__':
                 print(f"Going to sleep for 1 min.")
                 time.sleep(60)
 
-
     @click.command()
     def pushalert():
+        """ Send push notifications when new Tweets are added to DB  """
         t = Timon()
         t.pushalert()
 
     @click.command()
-    @click.option('--generate', default=False, flag_value='generate', help='Update backtest.json file with latest signals (without overriding existing')
+    @click.option('--generate', default=False, flag_value='generate', help='Update backtest.json file with latest signals (without overriding manual checks)')
     @click.option('--backtest', default=True, flag_value='backtest', help='Compare dynamicly parsed Tweets from DB against manually validated Tweets from backtest file')
     @click.option('--lookup', type=int, help='Parse Tweet text and return signal')
     def signal(generate, lookup, backtest):
+        """ Update backtesting file """
         s = Signal(db)
 
         if generate:
@@ -488,10 +520,25 @@ if __name__ == '__main__':
         if backtest:
             s.backtest()
 
+    @click.command()
+    def datafeed():
+        """ Fetch data from TradingView """
+        t = Timon()
+        while True:
+            try:
+                t.datafeed()
+                print(f"Going to sleep for 12 hour")
+                time.sleep(60*60*12)  # 12 hours
+            except Exception as e:
+                print(f"Exception {e}")
+                print(f"Going to sleep for 1 hour")
+                time.sleep(60*60)
+
 
     cli.add_command(readdb)
     cli.add_command(fetch)
     cli.add_command(watch)
     cli.add_command(pushalert)
     cli.add_command(signal)
+    cli.add_command(datafeed)
     cli()
