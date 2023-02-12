@@ -171,8 +171,8 @@ class Timon:
                 latest_id = tweet["tid"]
 
                 # Send push notification if Alert
-                #if "ALERT" in tweet["text"]:
-                self.prowl(tweet["text"])
+                if "ALERT" in tweet["text"]:
+                    self.prowl(tweet["text"])
             time.sleep(1)
 
     def datafeed(self):
