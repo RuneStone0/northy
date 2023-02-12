@@ -14,10 +14,8 @@ from colorama import init, Fore, Back, Style
 from termcolor import colored
 
 config = dotenv_values(".env")
-
-# MongoDB
-client = MongoClient(config["mongodb_conn"])
-db = client["northy"]
+database_name = "northy"
+tweets_collection_name = "tweets"
 
 # SIGNAL CODE
 """
@@ -52,7 +50,8 @@ class Timon:
         
         # MongoDB
         client = MongoClient(config["mongodb_conn"])
-        self.db = client["northy"]
+        self.db = client[database_name]
+        self.tweets_collection = self.db[tweets_collection_name]
 
     def __print_nice(self, tweet):
         """ 
@@ -76,7 +75,7 @@ class Timon:
             }
         """
         try:
-            self.db["data"].insert_one(data)
+            self.tweets_collection.insert_one(data)
             tid =  data["tid"]
             #print(f"Addeing {tid}")
         except DuplicateKeyError:
@@ -99,7 +98,7 @@ class Timon:
         # Reverse output order so oldest -> latest
         pipeline.append({"$sort": { "created_at": 1 }})
 
-        for i in self.db["data"].aggregate(pipeline):
+        for i in self.tweets_collection.aggregate(pipeline):
             self.__print_nice(i)
 
     def fetch_latest(self, username="NTLiveStream", limit=200):
@@ -125,7 +124,7 @@ class Timon:
         #print(f"+ Dabase is up-to-date")
 
         # Get latest tweet ID
-        latest = [i for i in self.db["data"].find({}).sort("created_at", -1).limit(1)]
+        latest = [i for i in self.tweets_collection.find({}).sort("created_at", -1).limit(1)]
         latest_id = latest[0]["tid"]
 
         # fetch tweets
@@ -163,7 +162,7 @@ class Timon:
         latest_id = None
         while True:
             # Get latest tweet ID
-            tweet = [i for i in self.db["data"].find({}).sort("created_at", -1).limit(1)][0]
+            tweet = [i for i in self.tweets_collection.find({}).sort("created_at", -1).limit(1)][0]
             self.__print_nice(tweet)
 
             # New Tweet detected
@@ -208,11 +207,12 @@ class Timon:
 
 
 class Signal:
-    def __init__(self, db):
-        ## MongoDB
-        #client = MongoClient(config["mongodb_conn"])
-        #self.db = client["northy"]
-        self.db = db
+    def __init__(self):
+        # MongoDB
+        client = MongoClient(config["mongodb_conn"])
+        self.db = client[database_name]
+        self.tweets_collection = self.db[tweets_collection_name]
+
 
     def __unique(self, sequence):
         """
@@ -234,7 +234,7 @@ class Signal:
         return text
 
     def lookup(self, tid):
-        res = [i for i in self.db["data"].find({"tid": tid}).limit(1)]
+        res = [i for i in self.tweets_collection.find({"tid": tid}).limit(1)]
         tweet = res[0]
         signal = self.parse(tweet)
         text = self.__normalize_text(tweet)
@@ -330,7 +330,7 @@ class Signal:
             This method will take tweets from the DB and parse the trading signals.
             Each signal parsed (programatically) is compared against a manually created known-good list.
         """
-        result = self.db["data"].aggregate([
+        result = self.tweets_collection.aggregate([
             {
                 '$match': {
                     'username': username,
@@ -396,7 +396,7 @@ class Signal:
         original = json.load(f)
 
         # get alert tweets from DB
-        result = self.db["data"].aggregate([
+        result = self.tweets_collection.aggregate([
             {
                 '$match': {
                     'username': username,
@@ -508,7 +508,7 @@ if __name__ == '__main__':
     @click.option('--lookup', type=int, help='Parse Tweet text and return signal')
     def signal(generate, lookup, backtest):
         """ Update backtesting file """
-        s = Signal(db)
+        s = Signal()
 
         if generate:
             print(f"Updating backtest.json")
