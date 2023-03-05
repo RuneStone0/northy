@@ -1,0 +1,15 @@
+[Unit]
+Description=Northy Watch Service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=rune
+ExecStart=/home/rune/RuneStone0/northy/scripts/watch.sh
+ExecStartPre=/bin/sleep 30
+
+[Install]
+WantedBy=multi-user.target
