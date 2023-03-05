@@ -53,6 +53,9 @@ class Timon:
         self.db = client[database_name]
         self.tweets_collection = self.db[tweets_collection_name]
 
+        # Prepare DB
+        self.db[tweets_collection_name].create_index('tid', unique=True)
+
     def __print_nice(self, tweet):
         """ 
             Takes Tweets from DB and prints them nicely
