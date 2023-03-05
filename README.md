@@ -11,5 +11,28 @@ notification when a tweet that contains "ALERT" is found. This service is NOT
 required for the system to function. Its nice to have only.
 > timon.py pushalert
 
+# Configure Background Services
+Let's setup the background services. We will create a service to run on boot:
+* timon.py fetch --limit 200 (to fetch everything we missed during down time)
+* timon.py watch (watch for new tweets)
+* timon.py pushalert (service to send push notifications)
+The services will start automatically whenever the system is booted.
 
+```
+# Add services to system
+sudo cp scripts/watch.service /etc/systemd/system/
+sudo cp scripts/pushalert.service /etc/systemd/system/
+
+# Set exec permissions
+chmod 775 timon.py
+chmod 775 scripts/pushalert.sh
+chmod 775 scripts/watch.sh
+
+# Start services
+sudo systemctl start watch
+sudo systemctl start pushalert
+
+# Verify they are running
+ps aux|grep pyton
+```
 
