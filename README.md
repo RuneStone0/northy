@@ -11,7 +11,15 @@ notification when a tweet that contains "ALERT" is found. This service is NOT
 required for the system to function. Its nice to have only.
 > timon.py pushalert
 
-# Configure Background Services
+
+# Configure Startup Scripts
+## Run fetch on startup
+Open crontab using `sudo crontab -e`. Add the following to the end of the file:
+```
+@reboot cd $HOME/RuneStone0/northy && venv/bin/python timon.py fetch --limit 200
+```
+
+## Configure Background Services
 Let's setup the background services. We will create a service to run on boot:
 * timon.py fetch --limit 200 (to fetch everything we missed during down time)
 * timon.py watch (watch for new tweets)
@@ -28,6 +36,10 @@ chmod 775 timon.py
 chmod 775 scripts/pushalert.sh
 chmod 775 scripts/watch.sh
 
+# Register (enable) service
+sudo systemctl enable watch
+sudo systemctl enable pushalert
+
 # Start services
 sudo systemctl start watch
 sudo systemctl start pushalert
@@ -35,4 +47,3 @@ sudo systemctl start pushalert
 # Verify they are running
 ps aux|grep pyton
 ```
-
