@@ -113,7 +113,7 @@ class Timon:
         response = self.api.user_timeline(screen_name=username, count=limit)
         for tweet in response:
             data = {
-                "tid": tweet.id,
+                "tid": str(tweet.id),
                 "username": tweet.user.screen_name,
                 "created_at": tweet.created_at,
                 "text": tweet.text
