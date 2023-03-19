@@ -56,6 +56,14 @@ class Signal:
     def __normalize_text(self, text):
         """
             Takes twitter text and cleans it up and normalize the format.
+
+            Input:
+                ALERT: stopped $SPX (add-on) Re-entry long IN: 3609 - 10 pt stop
+                Weekly 200MA still holding. https://t.co/5rFaGhZuo8
+            
+            Output:
+                ["SPX_TRADE_LONG_IN_3609_SL_10"]
+                [""]
         """
         # Clean up string
         text = text["text"].replace("\n", " | ")
@@ -69,7 +77,7 @@ class Signal:
         """ Parse Tweet data and return trading signal. """
         query = {"tid": tid}
         tweet = self.db["tweets"].find_one(query)
-        signals = self.parse_alert_tweet(tweet)
+        signals = self.text_to_signal(tweet)
         text = self.__normalize_text(tweet)
         print(colored(f"Input:\t\t{text}", "yellow"))
         print(colored(f"Signals:", "green"))
@@ -101,7 +109,20 @@ class Signal:
             tid = tweet["tid"]
             self.parse(tid)
         
-    def parse_alert_tweet(self, tweet):
+    def text_to_signal(self, tweet):
+        """
+            Parse raw tweet text to an array of trading signal.
+
+            Input:
+                `ALERT: stopped $SPX (add-on) Re-entry long IN: 3609 - 10 pt stop`
+
+            Output:
+                `["SPX_TRADE_LONG_IN_3609_SL_10"]`
+        """
+        # Filter out non-alerts
+        if not self.is_trading_signal:
+            return []
+        
         text = self.__normalize_text(tweet)
 
         # Get all symbols in signal
@@ -179,6 +200,17 @@ class Signal:
         """
             
         return ACTIONS
+
+    def is_trading_signal(self, text):
+        """
+            Returns true if the text is a trading signal.
+        """
+        # if string beings with ALERT
+        if text.upper().startswith("ALERT"):
+            is_trading_signal = True
+        else:
+            is_trading_signal = False
+        return is_trading_signal
 
     def backtest(self, username="NTLiveStream"):
         """
