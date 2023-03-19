@@ -1,7 +1,7 @@
 import click
 import time
 from northy.timon import Timon
-from northy.signal import Signal
+from northy.TradeSignal import Signal
 
 if __name__ == '__main__':
     @click.group()
@@ -17,12 +17,15 @@ if __name__ == '__main__':
         t.readdb(username=username, limit=limit)
     
     @click.command()
-    @click.option('--limit', default=10, help='Number of tweets to return')
+    @click.option('--limit', default=200, help='Number of tweets to return')
     @click.option('--username', default="NTLiveStream", help='Filter by username')
     def fetch(username, limit):
-        """ Fetch Tweets from user and store them in DB """
+        """
+            Fetching the lastest 200 tweets from user and adds them into the DB.
+            This is mainly used when DB is out of sync.
+        """
         t = Timon()
-        t.fetch_latest(username=username, limit=limit)
+        t.watch(username=username, limit=limit)
 
     @click.command()
     @click.option('--username', default="NTLiveStream", help='Filter by username')
