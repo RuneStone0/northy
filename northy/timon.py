@@ -8,6 +8,7 @@ from pymongo.errors import DuplicateKeyError
 from dotenv import dotenv_values
 from colorama import init, Fore, Back, Style
 from termcolor import colored
+from . import TradeSignal
 
 config = dotenv_values(".env")
 database_name = "northy"
@@ -29,6 +30,8 @@ class Timon:
         # Prepare DB
         self.db[tweets_collection_name].create_index('tid', unique=True)
 
+        
+
     def __print_nice(self, tweet):
         """ 
             Takes Tweets from DB and prints them nicely
@@ -41,15 +44,6 @@ class Timon:
         print(now, tid, created_at, username, text)
 
     def __add_tweet_to_db(self, data):
-        """
-            DB Schema
-            {
-                tid,
-                username,
-                created_at,
-                text
-            }
-        """
         try:
             self.tweets_collection.insert_one(data)
             tid =  data["tid"]
@@ -77,33 +71,24 @@ class Timon:
         for i in self.tweets_collection.aggregate(pipeline):
             self.__print_nice(i)
 
-    def fetch_latest(self, username="NTLiveStream", limit=200):
+    def watch(self, username="NTLiveStream", limit=1):
         """
-            Fetching the lastest 200 tweets from user and adds them into the DB.
-            This is mainly used when DB is out of sync.
+            This will watch for new Tweets in User Timeline and add them into the DB.
+            Change limit to fetch older Tweets.
         """
-
+        print("Getting", limit, "latest tweets from", username)
         response = self.api.user_timeline(screen_name=username, count=limit)
-        for tweet in response:
-            data = {
-                "tid": str(tweet.id),
-                "username": tweet.user.screen_name,
-                "created_at": tweet.created_at,
-                "text": tweet.text
-            }
-            self.__print_nice(data)
-            self.__add_tweet_to_db(data)
 
-    def watch(self, username="NTLiveStream"):
-        response = self.api.user_timeline(screen_name=username, count=1)
+        signal = TradeSignal.Signal()
         for tweet in response:
             data = {
                 "tid": str(tweet.id),
                 "username": tweet.user.screen_name,
                 "created_at": tweet.created_at,
-                "text": tweet.text
+                "text": tweet.text,
+                "alert": signal.is_trading_signal(tweet.text)
             }
-            
+
             self.__print_nice(data)
             self.__add_tweet_to_db(data)
 
