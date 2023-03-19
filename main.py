@@ -9,6 +9,23 @@ if __name__ == '__main__':
         pass
 
     @click.command()
+    def backup():
+        """ Backup DB """
+        import os
+        from datetime import datetime
+        from dotenv import dotenv_values
+        config = dotenv_values(".env")
+        database_name = "northy"
+        tweets_collection_name = "tweets"
+
+        print("Backing up DB..")
+        mongodump = os.getcwd() + "\\backups\\mongodump"
+        folder_name = f"{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}"
+        mongodb_conn = "mongodb+srv://northy:***SECRET***@cluster0.dmmzz.mongodb.net/?retryWrites=true&w=majority"
+        cmd = f'{mongodump} --uri="{mongodb_conn}" --collection="{tweets_collection_name}" --db="{database_name}" --out="backups/{folder_name}"'
+        os.system(cmd)
+
+    @click.command()
     @click.option('--limit', default=10, help='Number of tweets to return')
     @click.option('--username', default=None, help='Filter by username')
     def readdb(username, limit):
@@ -95,6 +112,7 @@ if __name__ == '__main__':
                 time.sleep(60*60)
 
 
+    cli.add_command(backup)
     cli.add_command(readdb)
     cli.add_command(fetch)
     cli.add_command(watch)
