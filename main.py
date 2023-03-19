@@ -84,6 +84,9 @@ if __name__ == '__main__':
         elif getall:
             s.getall()
 
+        elif update:
+            s.update(update)
+
         elif updateall:
             s.updateall()
 
