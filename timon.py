@@ -17,29 +17,6 @@ config = dotenv_values(".env")
 database_name = "northy"
 tweets_collection_name = "tweets"
 
-# SIGNAL CODE
-"""
-    Example:
-        NDX_TRADE_LONG_IN_10450_SL_25
-    
-    Schema:
-        {TICKER}_{ACTION}_{DIRECTION}_IN_{PRICE}_SL_{POINTS}
-        TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS
-
-    Breakdown
-        TICKER - the ticker code e.g. SPX
-        ACTION - the action to take on a signal
-            TRADE       - enter new trade, based on direction we either go long / short
-            FLATADJ     - adjust stop loss to break even
-            FLATSTOP    - stop loss was triggered, this is just an observation, no action needed
-            CLOSE       - close open position by buying/selling depending on the trade direction
-        DIRECTION - define the position direction
-            LONG        - go long a trade (buy)
-            SHORT       - go short a trade (sell)
-        PRICE - the price at which the signal was entered
-        SL - the number of points from which to set the stop loss
-"""
-
 class Timon:
     def __init__(self):
         # APIv1 - Authenticate as a user
@@ -210,12 +187,32 @@ class Timon:
 
 
 class Signal:
+    """
+        Example:
+            NDX_TRADE_LONG_IN_10450_SL_25
+        
+        Schema:
+            {TICKER}_{ACTION}_{DIRECTION}_IN_{PRICE}_SL_{POINTS}
+            TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS
+
+        Breakdown
+            TICKER - the ticker code e.g. SPX
+            ACTION - the action to take on a signal
+                TRADE       - enter new trade, based on direction we either go long / short
+                FLATADJ     - adjust stop loss to break even
+                FLATSTOP    - stop loss was triggered, this is just an observation, no action needed
+                CLOSE       - close open position by buying/selling depending on the trade direction
+            DIRECTION - define the position direction
+                LONG        - go long a trade (buy)
+                SHORT       - go short a trade (sell)
+            PRICE - the price at which the signal was entered
+            SL - the number of points from which to set the stop loss
+    """
     def __init__(self):
         # MongoDB
         client = MongoClient(config["mongodb_conn"])
         self.db = client[database_name]
         self.tweets_collection = self.db[tweets_collection_name]
-
 
     def __unique(self, sequence):
         """
@@ -236,18 +233,44 @@ class Signal:
         text = text.replace(" IN: ", "IN ")
         return text
 
-    def lookup(self, tid):
-        res = [i for i in self.tweets_collection.find({"tid": tid}).limit(1)]
-        tweet = res[0]
-        signal = self.parse(tweet)
+    def parse(self, tid, update_db=True):
+        """ Parse Tweet data and return trading signal. """
+        query = {"tid": tid}
+        tweet = self.tweets_collection.find_one(query)
+        signals = self.parse_alert_tweet(tweet)
         text = self.__normalize_text(tweet)
-        print(colored(f"Input:\n        {text}\n", "yellow"))
+        print(colored(f"Input:\t\t{text}", "yellow"))
         print(colored(f"Signals:", "green"))
-        for i in signal:
-            print(colored(f"        {i}", "green"))
+        for s in signals: print(colored(f"\t\t{s}", "green"))
+
+        if update_db:
+            newvalues = { "$set": { "action": signals } }
+            self.tweets_collection.update_one(query, newvalues)
+
         return signal
 
-    def parse(self, tweet):
+    def parseall(self):
+        results = self.tweets_collection.aggregate([
+            {
+                '$match': {
+                    'text': { '$regex': re.compile(r"alert:", re.IGNORECASE) }
+                }
+            },
+            {
+                # Sort, oldest first
+                '$sort': {
+                    'created_at': 1
+                }
+            },
+            #{ '$limit' : 100 }
+        ])
+        for tweet in results:
+            tid = tweet["tid"]
+            print(f"Tweet ID: {tid}")
+            self.parse(tid)
+        
+
+    def parse_alert_tweet(self, tweet):
         text = self.__normalize_text(tweet)
 
         # Get all symbols in signal
@@ -346,7 +369,7 @@ class Signal:
                     'created_at': 1
                 }
             },
-            #{ '$limit' : 25 }
+            { '$limit' : 10 }
         ])
 
         # Get signals backtesting file
@@ -366,13 +389,16 @@ class Signal:
             # FLAT STOPPED $NDX $SPX STOPPED $RUT  | RE-ENTRY LONG |IN 3752 |IN 11475 - 25 PT STOP |IN 1129 - 10 PT STOP
             if tweet["tid"] in [1557516667357380608, 1572963969991692292]:
                 continue
+            
+            #print(tweet)
             dynSignal = self.parse(tweet)
             text = self.__normalize_text(tweet)
             tid = tweet["tid"]
+            #print(manSignals)
             manSignal = __get_tweet_from_dict(tweet["tid"], manSignals)["action"]
             
             if manSignal[0] == "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS":
-                #print(f"{tid} not in backtest file")
+                print(f"{tid} not in backtest file")
                 missing_backtests.append(tid)
             else:
                 # Compare Manual Backtest Signal against Dynamic Signal
@@ -506,22 +532,30 @@ if __name__ == '__main__':
         t.pushalert()
 
     @click.command()
-    @click.option('--generate', default=False, flag_value='generate', help='Update backtest.json file with latest signals (without overriding manual checks)')
-    @click.option('--backtest', default=True, flag_value='backtest', help='Compare dynamicly parsed Tweets from DB against manually validated Tweets from backtest file')
-    @click.option('--lookup', type=int, help='Parse Tweet text and return signal')
-    def signal(generate, lookup, backtest):
+    @click.option('--generate', default=False, is_flag=True, help='Update backtest.json file with latest signals (without overriding manual checks)')
+    @click.option('--backtest', default=False, is_flag=True, help='Compare dynamicly parsed Tweets from DB against manually validated Tweets from backtest file')
+    @click.option('--parse', default="", type=str, help='Dynamically parse raw Tweet text and update DB with signal')
+    @click.option('--parseall', default=False, is_flag=True, help='Run --parse on entire DB')
+    @click.pass_context
+    def signal(ctx, generate, parse, parseall, backtest):
         """ Update backtesting file """
         s = Signal()
-
         if generate:
             print(f"Updating backtest.json")
             s.generate_signals_file()
 
-        if lookup:
-            s.lookup(lookup)
+        elif parse != "":
+            signal = s.parse(parse)
 
-        if backtest:
+        elif parseall:
+            s.parseall()
+
+        elif backtest:
             s.backtest()
+
+        else:
+            click.echo(ctx.get_help())
+
 
     @click.command()
     def datafeed():
