@@ -21,7 +21,7 @@ if __name__ == '__main__':
         print("Backing up DB..")
         mongodump = os.getcwd() + "\\backups\\mongodump"
         folder_name = f"{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}"
-        mongodb_conn = "mongodb+srv://northy:ZTeW8BO90eVvzK7U@cluster0.dmmzz.mongodb.net/?retryWrites=true&w=majority"
+        mongodb_conn = config["mongodb_conn"]
         cmd = f'{mongodump} --uri="{mongodb_conn}" --collection="{tweets_collection_name}" --db="{database_name}" --out="backups/{folder_name}"'
         os.system(cmd)
 
