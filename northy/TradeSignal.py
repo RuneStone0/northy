@@ -119,7 +119,6 @@ class Signal:
         """
             Update trading signal for tweet by ID.
         """
-        self.delete_action()
         query = {"tid": tid, "alert": True}
         signals = self.get(tid)
         newvalues = { "$set": { "signals": signals } }
@@ -424,16 +423,3 @@ class Signal:
                     "action": i["action"],
                 }
                 write_json(out)
-        
-    def delete_action(self):
-        # Delete action field from DB
-        self.tweets_collection.update_many(
-            {
-                'alert': True
-            },
-            {
-                '$unset': {
-                    'action': ""
-                }
-            }
-        )
