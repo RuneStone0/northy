@@ -73,6 +73,81 @@ class Signal:
         text = text.replace(" IN: ", "IN ")
         return text
 
+    def __pretty_print_signal(self, tweet):
+        """
+            Print signal in color.
+        """
+        text = self.__normalize_text(tweet)
+        signals = self.text_to_signal(tweet)
+        signal_text = ", ".join(signals)
+
+        print(colored(f"Input:\t\t{text}", "yellow"))
+        print(colored(f"Signals:\t{signal_text}", "green"))
+
+    def get(self, tid):
+        """
+            Get alert tweet by ID and return trading signal.
+        """
+        tweet = self.db["tweets"].find_one({"tid": tid, "alert": True})
+        signals = self.text_to_signal(tweet)
+        self.__pretty_print_signal(tweet)
+        return signals
+
+    def getall(self):
+        """
+            Get all tweets and return trading signal.
+        """
+        print("Getting all tweets from DB...")
+        results = self.tweets_collection.aggregate([
+            {
+                # Filter out alerts
+                '$match': {
+                    'alert': True
+                }
+            },
+            {
+                # Sort, oldest first
+                '$sort': {
+                    'created_at': 1
+                }
+            }
+        ])
+        for tweet in results:
+            signal = self.get(tweet["tid"])
+
+    def update(self, tid):
+        """
+            Update trading signal for tweet by ID.
+        """
+        self.delete_action()
+        query = {"tid": tid, "alert": True}
+        signals = self.get(tid)
+        newvalues = { "$set": { "signals": signals } }
+        self.tweets_collection.update_one(query, newvalues)
+
+    def updateall(self):
+        """
+            Update trading signal for all tweets.
+        """
+        print("Updating all tweets...")
+        results = self.tweets_collection.aggregate([
+            {
+                # Filter out alerts
+                '$match': {
+                    'alert': True
+                }
+            },
+            {
+                # Sort, oldest first
+                '$sort': {
+                    'created_at': 1
+                }
+            }
+        ])
+        for tweet in results:
+            print("Updating tweet:", tweet["tid"])
+            self.update(tweet["tid"])
+
     def parse(self, tid, update_db=True):
         """ Parse Tweet data and return trading signal. """
         query = {"tid": tid}
@@ -84,7 +159,7 @@ class Signal:
         for s in signals: print(colored(f"\t\t{s}", "green"))
 
         if update_db:
-            newvalues = { "$set": { "action": signals } }
+            newvalues = { "$set": { "signal": signals } }
             self.tweets_collection.update_one(query, newvalues)
 
         return signals
@@ -350,3 +425,15 @@ class Signal:
                 }
                 write_json(out)
         
+    def delete_action(self):
+        # Delete action field from DB
+        self.tweets_collection.update_many(
+            {
+                'alert': True
+            },
+            {
+                '$unset': {
+                    'action': ""
+                }
+            }
+        )
