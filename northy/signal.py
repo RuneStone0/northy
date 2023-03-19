@@ -1,198 +1,19 @@
+from termcolor import colored
 import re
+from pymongo import MongoClient
+from termcolor import colored
 import sys
-import time
 import json
-import click
-import tweepy
-import pyprowl
+from dotenv import dotenv_values
 from tweepy import OAuthHandler, StreamingClient
-from datetime import datetime
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
-from dotenv import dotenv_values
-from colorama import init, Fore, Back, Style
 from termcolor import colored
+from dotenv import dotenv_values
 
 config = dotenv_values(".env")
 database_name = "northy"
 tweets_collection_name = "tweets"
-
-class Timon:
-    def __init__(self):
-        # APIv1 - Authenticate as a user
-        auth = tweepy.OAuthHandler(config["consumer_key"],config["consumer_secret"])
-        auth.set_access_token(config["access_key"],config["access_secret"])
-
-        self.api = tweepy.API(auth, wait_on_rate_limit=True)
-        
-        # MongoDB
-        client = MongoClient(config["mongodb_conn"])
-        self.db = client[database_name]
-        self.tweets_collection = self.db[tweets_collection_name]
-
-        # Prepare DB
-        self.db[tweets_collection_name].create_index('tid', unique=True)
-
-    def __print_nice(self, tweet):
-        """ 
-            Takes Tweets from DB and prints them nicely
-        """
-        now = colored(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "yellow")
-        tid = colored(tweet["tid"], "green")
-        username = colored(tweet["username"], "cyan")
-        created_at = colored(tweet["created_at"], "red")
-        text = tweet["text"].replace('\n', '')
-        print(now, tid, created_at, username, text)
-
-    def __add_tweet_to_db(self, data):
-        """
-            DB Schema
-            {
-                tid,
-                username,
-                created_at,
-                text
-            }
-        """
-        try:
-            self.tweets_collection.insert_one(data)
-            tid =  data["tid"]
-            #print(f"Addeing {tid}")
-        except DuplicateKeyError:
-            #print("Duplicated Key")
-            pass
-
-    def readdb(self, username=None, limit=10):
-        pipeline = []
-
-        # Get latest tweets
-        pipeline.append({"$sort": { "created_at": -1 }})  
-        
-        # Filter by username
-        if username != None:
-            pipeline.append({"$match": { "username": username }})
-        
-        # Limit output
-        pipeline.append({"$limit": limit})
-        
-        # Reverse output order so oldest -> latest
-        pipeline.append({"$sort": { "created_at": 1 }})
-
-        for i in self.tweets_collection.aggregate(pipeline):
-            self.__print_nice(i)
-
-    def fetch_latest(self, username="NTLiveStream", limit=200):
-        """
-            Fetching the lastest 200 tweets from user and adds them into the DB.
-            This is mainly used when DB is out of sync.
-        """
-
-        response = self.api.user_timeline(screen_name=username, count=limit)
-        for tweet in response:
-            data = {
-                "tid": str(tweet.id),
-                "username": tweet.user.screen_name,
-                "created_at": tweet.created_at,
-                "text": tweet.text
-            }
-            self.__print_nice(data)
-            self.__add_tweet_to_db(data)
-
-    def watch(self, username="NTLiveStream"):
-        #print(f"+ Updating database. Fetching the latest 200 tweets..")
-        #self.fetch_latest(username=username)
-        #print(f"+ Dabase is up-to-date")
-
-        # Get latest tweet ID
-        latest = [i for i in self.tweets_collection.find({}).sort("created_at", -1).limit(1)]
-        latest_id = latest[0]["tid"]
-
-        # fetch tweets
-        response = self.api.user_timeline(screen_name=username, count=1)
-        for tweet in response:
-            data = {
-                "tid": str(tweet.id),
-                "username": tweet.user.screen_name,
-                "created_at": tweet.created_at,
-                "text": tweet.text
-            }
-            self.__print_nice(data)
-            self.__add_tweet_to_db(data)
-
-    def prowl(self, message):
-        p = pyprowl.Prowl(config["prowl_api_key"])
-
-        try:
-            p.verify_key()
-            #print("Prowl API key successfully verified!")
-        except Exception as e:
-            #print("Error verifying Prowl API key: {}".format(e))
-            exit()
-
-        try:
-            p.notify(event="Alert", description=message, priority=0, url='http://www.example.com', appName='Northy')
-            print("Notification successfully sent to Prowl!")
-        except Exception as e:
-            print("Error sending notification to Prowl: {}".format(e))
-
-    def pushalert(self):
-        """
-            This will watch for new ALERT Tweets and..
-              > Send Prowl notification
-              > Add 'alert' bool flag to document
-        """
-        latest_id = None
-        while True:
-            # Get latest tweet ID
-            tweet = [i for i in self.tweets_collection.find({}).sort("created_at", -1).limit(1)][0]
-            self.__print_nice(tweet)
-
-            # New Tweet detected
-            if latest_id != tweet["tid"]:
-                # Update last seen Tweet ID
-                latest_id = tweet["tid"]
-
-                # If alert is detected
-                if "ALERT" in tweet["text"]:
-                    # Send prowl notification
-                    self.prowl(tweet["text"])
-
-                    # Add 'alert' bool flag to document
-                    tweet["alert"] = True
-                    self.tweets_collection.update_one({"tid": tweet["tid"]}, {"$set": tweet}, upsert=True)
-
-            time.sleep(1)
-
-    def datafeed(self):
-        from tvDatafeed import TvDatafeed, Interval
-        #tv = TvDatafeed(config["TW_USER"], config["TW_PASS"])
-        tv = TvDatafeed()
-
-        tickers = [
-            {"symbol": "NDX", "exchange": "NASDAQ"},
-            {"symbol": "SPX", "exchange": "SP"},
-            {"symbol": "US100", "exchange": "CAPITALCOM"},
-            {"symbol": "US500", "exchange": "CAPITALCOM"},
-            {"symbol": "RUT", "exchange": "TVC"},
-        ]
-        for ticker in tickers:
-            _symbol = ticker["symbol"]
-            _exchange = ticker["exchange"]
-            collection = f"twfeed-{_exchange}-{_symbol}"
-            self.db[collection].create_index('dt', unique=True)
-
-            minutes_in_day = 1440
-            minutes_in_day = 100
-            df = tv.get_hist(symbol=_symbol, exchange=_exchange, interval=Interval.in_1_minute, n_bars=minutes_in_day*2, extended_session=True)
-            for date, row in df.T.items():
-                d = { "dt": date, "h": row["high"], "l": row["low"], "o": row["open"], "c": row["close"] }
-                try:
-                    self.db[collection].insert_one(d)
-                    print(f"+ Inserting {_exchange}:{_symbol} {d}")
-                except DuplicateKeyError:
-                    print(f"+ Already exist {_exchange}:{_symbol} {d}")
-                    pass
-
 
 class Signal:
     """
@@ -217,8 +38,11 @@ class Signal:
             SL - the number of points from which to set the stop loss
     """
     def __init__(self):
+        # Environment Variables
+        self.config = dotenv_values(".env")
+
         # MongoDB
-        client = MongoClient(config["mongodb_conn"])
+        client = MongoClient(self.config["mongodb_conn"])
         self.db = client[database_name]
         self.tweets_collection = self.db[tweets_collection_name]
 
@@ -244,7 +68,7 @@ class Signal:
     def parse(self, tid, update_db=True):
         """ Parse Tweet data and return trading signal. """
         query = {"tid": tid}
-        tweet = self.tweets_collection.find_one(query)
+        tweet = self.db["tweets"].find_one(query)
         signals = self.parse_alert_tweet(tweet)
         text = self.__normalize_text(tweet)
         print(colored(f"Input:\t\t{text}", "yellow"))
@@ -255,9 +79,10 @@ class Signal:
             newvalues = { "$set": { "action": signals } }
             self.tweets_collection.update_one(query, newvalues)
 
-        return signal
+        return signals
 
     def parseall(self):
+        print("Parsing all tweets...")
         results = self.tweets_collection.aggregate([
             {
                 # Filter out alerts
@@ -274,10 +99,8 @@ class Signal:
         ])
         for tweet in results:
             tid = tweet["tid"]
-            print(f"Tweet ID: {tid}")
             self.parse(tid)
         
-
     def parse_alert_tweet(self, tweet):
         text = self.__normalize_text(tweet)
 
@@ -495,93 +318,3 @@ class Signal:
                 }
                 write_json(out)
         
-
-if __name__ == '__main__':
-    @click.group()
-    def cli():
-        pass
-
-    @click.command()
-    @click.option('--limit', default=10, help='Number of tweets to return')
-    @click.option('--username', default=None, help='Filter by username')
-    def readdb(username, limit):
-        """ Read Tweets from DB """
-        t = Timon()
-        t.readdb(username=username, limit=limit)
-    
-    @click.command()
-    @click.option('--limit', default=10, help='Number of tweets to return')
-    @click.option('--username', default="NTLiveStream", help='Filter by username')
-    def fetch(username, limit):
-        """ Fetch Tweets from user and store them in DB """
-        t = Timon()
-        t.fetch_latest(username=username, limit=limit)
-
-    @click.command()
-    @click.option('--username', default="NTLiveStream", help='Filter by username')
-    def watch(username):
-        """ Watch for new Tweets by user """
-        t = Timon()
-        while True:
-            try:
-                t.watch(username=username)
-                time.sleep(5)
-            except Exception as e:
-                print(f"Exception {e}")
-                print(f"Going to sleep for 1 min.")
-                time.sleep(60)
-
-    @click.command()
-    def pushalert():
-        """ Send push notifications when new Tweets are added to DB  """
-        t = Timon()
-        t.pushalert()
-
-    @click.command()
-    @click.option('--generate', default=False, is_flag=True, help='Update backtest.json file with latest signals (without overriding manual checks)')
-    @click.option('--backtest', default=False, is_flag=True, help='Compare dynamicly parsed Tweets from DB against manually validated Tweets from backtest file')
-    @click.option('--parse', default="", type=str, help='Dynamically parse raw Tweet text and update DB with signal')
-    @click.option('--parseall', default=False, is_flag=True, help='Run --parse on entire DB')
-    @click.pass_context
-    def signal(ctx, generate, parse, parseall, backtest):
-        """ Update backtesting file """
-        s = Signal()
-        if generate:
-            print(f"Updating backtest.json")
-            s.generate_signals_file()
-
-        elif parse != "":
-            signal = s.parse(parse)
-
-        elif parseall:
-            s.parseall()
-
-        elif backtest:
-            s.backtest()
-
-        else:
-            click.echo(ctx.get_help())
-
-
-    @click.command()
-    def datafeed():
-        """ Fetch data from TradingView """
-        t = Timon()
-        while True:
-            try:
-                t.datafeed()
-                print(f"Going to sleep for 12 hour")
-                time.sleep(60*60*12)  # 12 hours
-            except Exception as e:
-                print(f"Exception {e}")
-                print(f"Going to sleep for 1 hour")
-                time.sleep(60*60)
-
-
-    cli.add_command(readdb)
-    cli.add_command(fetch)
-    cli.add_command(watch)
-    cli.add_command(pushalert)
-    cli.add_command(signal)
-    cli.add_command(datafeed)
-    cli()
