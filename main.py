@@ -42,12 +42,6 @@ if __name__ == '__main__':
                 time.sleep(60)
 
     @click.command()
-    def pushalert():
-        """ Send push notifications when new Tweets are added to DB  """
-        t = Timon()
-        t.pushalert()
-
-    @click.command()
     @click.option('--generate', default=False, is_flag=True, help='Update backtest.json file with latest signals (without overriding manual checks)')
     @click.option('--backtest', default=False, is_flag=True, help='Compare dynamicly parsed Tweets from DB against manually validated Tweets from backtest file')
     @click.option('--parse', default="", type=str, help='Dynamically parse raw Tweet text and update DB with signal')
@@ -91,7 +85,6 @@ if __name__ == '__main__':
     cli.add_command(readdb)
     cli.add_command(fetch)
     cli.add_command(watch)
-    cli.add_command(pushalert)
     cli.add_command(signal)
     cli.add_command(datafeed)
     cli()
