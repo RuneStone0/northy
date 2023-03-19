@@ -7,7 +7,7 @@ import tweepy
 import pyprowl
 from tweepy import OAuthHandler, StreamingClient
 from datetime import datetime
-from pymongo import MongoClient, DESCENDING, ASCENDING
+from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 from dotenv import dotenv_values
 from colorama import init, Fore, Back, Style
@@ -137,7 +137,9 @@ class Timon:
 
     def pushalert(self):
         """
-            This will watch for new ALERT Tweets and notify through Prowl
+            This will watch for new ALERT Tweets and..
+              > Send Prowl notification
+              > Add 'alert' bool flag to document
         """
         latest_id = None
         while True:
@@ -150,9 +152,15 @@ class Timon:
                 # Update last seen Tweet ID
                 latest_id = tweet["tid"]
 
-                # Send push notification if Alert
+                # If alert is detected
                 if "ALERT" in tweet["text"]:
+                    # Send prowl notification
                     self.prowl(tweet["text"])
+
+                    # Add 'alert' bool flag to document
+                    tweet["alert"] = True
+                    self.tweets_collection.update_one({"tid": tweet["tid"]}, {"$set": tweet}, upsert=True)
+
             time.sleep(1)
 
     def datafeed(self):
@@ -252,8 +260,9 @@ class Signal:
     def parseall(self):
         results = self.tweets_collection.aggregate([
             {
+                # Filter out alerts
                 '$match': {
-                    'text': { '$regex': re.compile(r"alert:", re.IGNORECASE) }
+                    'alert': True
                 }
             },
             {
@@ -261,8 +270,7 @@ class Signal:
                 '$sort': {
                     'created_at': 1
                 }
-            },
-            #{ '$limit' : 100 }
+            }
         ])
         for tweet in results:
             tid = tweet["tid"]
@@ -360,7 +368,7 @@ class Signal:
             {
                 '$match': {
                     'username': username,
-                    'text': { '$regex': re.compile(r"alert:", re.IGNORECASE) }
+                    'alert': True
                 }
             },
             {
@@ -429,9 +437,7 @@ class Signal:
             {
                 '$match': {
                     'username': username,
-                    'text': {
-                        '$regex': re.compile(r"alert:", re.IGNORECASE)
-                    }
+                    'alert': True
                 }
             },
             {
