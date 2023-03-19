@@ -46,11 +46,11 @@ class Timon:
     def __add_tweet_to_db(self, data):
         try:
             self.tweets_collection.insert_one(data)
-            tid =  data["tid"]
-            #print(f"Addeing {tid}")
+            # Indicate that new Tweet was added
+            return True
         except DuplicateKeyError:
-            #print("Duplicated Key")
-            pass
+            # Indicate that Tweet already exists
+            return False
 
     def readdb(self, username=None, limit=10):
         pipeline = []
@@ -76,21 +76,28 @@ class Timon:
             This will watch for new Tweets in User Timeline and add them into the DB.
             Change limit to fetch older Tweets.
         """
-        print("Getting", limit, "latest tweets from", username)
+        #print(f"Getting ({limit}) tweets from {username} timeline..")
         response = self.api.user_timeline(screen_name=username, count=limit)
 
         signal = TradeSignal.Signal()
         for tweet in response:
+            is_alert = signal.is_trading_signal(tweet.text)
             data = {
                 "tid": str(tweet.id),
                 "username": tweet.user.screen_name,
                 "created_at": tweet.created_at,
                 "text": tweet.text,
-                "alert": signal.is_trading_signal(tweet.text)
+                "alert": is_alert
             }
 
             self.__print_nice(data)
-            self.__add_tweet_to_db(data)
+
+            # Add Tweet to DB. Return True if new Tweet was added, False if Tweet already exists
+            new_tweet = self.__add_tweet_to_db(data)
+
+            # If new Tweet was added and its an alert, send prowl notification
+            if new_tweet and is_alert:
+                self.prowl(tweet.text)
 
     def prowl(self, message):
         p = pyprowl.Prowl(config["prowl_api_key"])
@@ -107,34 +114,6 @@ class Timon:
             print("Notification successfully sent to Prowl!")
         except Exception as e:
             print("Error sending notification to Prowl: {}".format(e))
-
-    def pushalert(self):
-        """
-            This will watch for new ALERT Tweets and..
-              > Send Prowl notification
-              > Add 'alert' bool flag to document
-        """
-        latest_id = None
-        while True:
-            # Get latest tweet ID
-            tweet = [i for i in self.tweets_collection.find({}).sort("created_at", -1).limit(1)][0]
-            self.__print_nice(tweet)
-
-            # New Tweet detected
-            if latest_id != tweet["tid"]:
-                # Update last seen Tweet ID
-                latest_id = tweet["tid"]
-
-                # If alert is detected
-                if "ALERT" in tweet["text"]:
-                    # Send prowl notification
-                    self.prowl(tweet["text"])
-
-                    # Add 'alert' bool flag to document
-                    tweet["alert"] = True
-                    self.tweets_collection.update_one({"tid": tweet["tid"]}, {"$set": tweet}, upsert=True)
-
-            time.sleep(1)
 
     def datafeed(self):
         from tvDatafeed import TvDatafeed, Interval
