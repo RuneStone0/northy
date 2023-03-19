@@ -45,17 +45,30 @@ if __name__ == '__main__':
     @click.option('--generate', default=False, is_flag=True, help='Update backtest.json file with latest signals (without overriding manual checks)')
     @click.option('--backtest', default=False, is_flag=True, help='Compare dynamicly parsed Tweets from DB against manually validated Tweets from backtest file')
     @click.option('--parse', default="", type=str, help='Dynamically parse raw Tweet text and update DB with signal')
+    @click.option('--get', default="", type=str, help='Lookup signal by Tweet ID')
+    @click.option('--getall', default=False, is_flag=True, help='Get all signals from DB')
+    @click.option('--update', default="", type=str, help='Update signal in DB by Tweet ID')
+    @click.option('--updateall', default=False, is_flag=True, help='Update all signals in DB')
     @click.option('--parseall', default=False, is_flag=True, help='Run --parse on entire DB')
     @click.pass_context
-    def signal(ctx, generate, parse, parseall, backtest):
-        """ Update backtesting file """
+    def signal(ctx, generate, parse, parseall, backtest, get, getall, update, updateall):
+        """ Manage Trading Signals """
         s = Signal()
         if generate:
             print(f"Updating backtest.json")
             s.generate_signals_file()
 
         elif parse != "":
-            signal = s.parse(parse)
+            s.parse(parse)
+
+        elif get:
+            s.get(get)
+
+        elif getall:
+            s.getall()
+
+        elif updateall:
+            s.updateall()
 
         elif parseall:
             s.parseall()
