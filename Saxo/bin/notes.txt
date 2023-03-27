@@ -1,6 +1,0 @@
-https://chromedriver.storage.googleapis.com/index.html?path=110.0.5481.77/
-
-
-curl https://chromedriver.storage.googleapis.com/110.0.5481.77/chromedriver_win32.zip
-curl https://chromedriver.storage.googleapis.com/110.0.5481.77/chromedriver_linux64.
-
