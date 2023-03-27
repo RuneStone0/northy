@@ -9,7 +9,6 @@ from tweepy import OAuthHandler, StreamingClient
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 from termcolor import colored
-from dotenv import dotenv_values
 
 config = dotenv_values(".env")
 database_name = "northy"
@@ -123,6 +122,7 @@ class Signal:
         signals = self.get(tid)
         newvalues = { "$set": { "signals": signals } }
         self.tweets_collection.update_one(query, newvalues)
+        return signals
 
     def updateall(self):
         """

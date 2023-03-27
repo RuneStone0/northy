@@ -80,22 +80,29 @@ class Timon:
         signal = TradeSignal.Signal()
         for tweet in response:
             is_alert = signal.is_trading_signal(tweet.text)
+            tid = str(tweet.id)
             data = {
-                "tid": str(tweet.id),
+                "tid": tid,
                 "username": tweet.user.screen_name,
                 "created_at": tweet.created_at,
                 "text": tweet.text,
                 "alert": is_alert
             }
 
-            self.__print_nice(data)
-
             # Add Tweet to DB. Return True if new Tweet was added, False if Tweet already exists
             new_tweet = self.__add_tweet_to_db(data)
 
-            # If new Tweet was added and its an alert, send prowl notification
+            if new_tweet or limit > 1:
+                self.__print_nice(data)
+
+            # If new Tweet was added and its an alert
             if new_tweet and is_alert:
+                # send prowl notification
                 self.prowl(tweet.text)
+
+                # add TradeSignal
+                signal = TradeSignal.Signal()
+                signals = signal.update(tid)
 
     def prowl(self, message):
         p = pyprowl.Prowl(config["prowl_api_key"])

@@ -5,6 +5,12 @@ Click
 colorama
 termcolor
 pyprowl
+colorlog
+jwt
 
 # TradingView
 git+https://github.com/StreamAlpha/tvdatafeed.git
+
+# SaxoBank SDK
+#git+https://github.com/hootnot/saxo_openapi.git
+saxo_openapi
