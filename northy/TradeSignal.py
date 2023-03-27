@@ -211,7 +211,7 @@ class Signal:
 
             # Move to flat
             if "TO FLAT" in text:
-                ACTION_CODE += "_FLAT"
+                ACTION_CODE += "_FLATADJ"
 
             # Closing trades
             if "CLOSED" in text:
