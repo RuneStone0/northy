@@ -1,5 +1,4 @@
 # Project Northy
-
 ## Monitor for new Northy Tweets
 Watch for new Tweets by Northy every 5 seconds. Tweets are stored in MongoDB.
 Higher detection frequency is not possible because of Twitter API throttling.
@@ -47,3 +46,8 @@ sudo systemctl start pushalert
 # Verify they are running
 ps aux|grep pyton
 ```
+
+# Saxo Bank
+## Configure Account Timeout
+Login to the Saxo Account.
+Go to Profile > Settings > Login & Security > Automatic Logout > Max
