@@ -9,6 +9,7 @@ from dotenv import dotenv_values
 from colorama import init, Fore, Back, Style
 from termcolor import colored
 from . import TradeSignal
+import click
 
 config = dotenv_values(".env")
 database_name = "northy"
@@ -19,7 +20,6 @@ class Timon:
         # APIv1 - Authenticate as a user
         auth = tweepy.OAuthHandler(config["consumer_key"],config["consumer_secret"])
         auth.set_access_token(config["access_key"],config["access_secret"])
-
         self.api = tweepy.API(auth, wait_on_rate_limit=True)
         
         # MongoDB
@@ -69,12 +69,10 @@ class Timon:
         for i in self.tweets_collection.aggregate(pipeline):
             self.__print_nice(i)
 
-    def watch(self, username="NTLiveStream", limit=1):
+    def fetch(self, username="NTLiveStream", limit=1):
         """
-            This will watch for new Tweets in User Timeline and add them into the DB.
-            Change limit to fetch older Tweets.
+            Fetch tweet(s) from User Timeline and add them into the DB.
         """
-        #print(f"Getting ({limit}) tweets from {username} timeline..")
         response = self.api.user_timeline(screen_name=username, count=limit)
 
         signal = TradeSignal.Signal()
@@ -89,20 +87,50 @@ class Timon:
                 "alert": is_alert
             }
 
-            # Add Tweet to DB. Return True if new Tweet was added, False if Tweet already exists
+            # Add Tweet to DB
             new_tweet = self.__add_tweet_to_db(data)
 
-            if new_tweet or limit > 1:
+            if limit > 1:
                 self.__print_nice(data)
+            else:
+                return data
 
-            # If new Tweet was added and its an alert
-            if new_tweet and is_alert:
-                # send prowl notification
-                self.prowl(tweet.text)
+    def watch(self):
+        last_tid = None
+        while True:
+            try:
+                # Sleep to avoid rate limit
+                time.sleep(5)
 
-                # add TradeSignal
-                signal = TradeSignal.Signal()
-                signals = signal.update(tid)
+                # Fetch latest tweet
+                tweet = self.fetch()
+
+                # If not a new tweet, print dot
+                if last_tid == tweet["tid"]:
+                    click.echo(".", nl=False)
+                    continue
+                
+                # Process new tweet
+                self.__print_nice(tweet)
+                last_tid = tweet["tid"]
+
+                if tweet["alert"]:
+                    # send prowl notification
+                    self.prowl(tweet["text"])
+
+                    # Add TradeSignal
+                    signal = TradeSignal.Signal()
+                    signals = signal.update(tweet["tid"])
+
+                    # Execute TradeSignal
+                    for signal in signals:
+                        #signal.execute()
+                        pass
+
+            except Exception as e:
+                print(f"Exception {e}")
+                print(f"Going to sleep for 1 min.")
+                time.sleep(60)
 
     def prowl(self, message):
         p = pyprowl.Prowl(config["prowl_api_key"])
