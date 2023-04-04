@@ -396,7 +396,12 @@ if __name__ == "__main__":
     # tid: 1621139482593615872
     # FLATADJ
     # FLATSTOP
+    # Support multiple orders in one signal
+        # 1559260332106850315
+        # 1559207058800611332
 
+    # 1635259329120182274
+        # ^ contains wrong signal
 
     
 
