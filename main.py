@@ -42,21 +42,14 @@ if __name__ == '__main__':
             This is mainly used when DB is out of sync.
         """
         t = Timon()
-        t.watch(username=username, limit=limit)
+        t.fetch(username=username, limit=limit)
 
     @click.command()
     @click.option('--username', default="NTLiveStream", help='Filter by username')
     def watch(username):
         """ Watch for new Tweets by user """
         t = Timon()
-        while True:
-            try:
-                t.watch(username=username)
-                time.sleep(5)
-            except Exception as e:
-                print(f"Exception {e}")
-                print(f"Going to sleep for 1 min.")
-                time.sleep(60)
+        t.watch()
 
     @click.command()
     @click.option('--generate', default=False, is_flag=True, help='Update backtest.json file with latest signals (without overriding manual checks)')
@@ -67,8 +60,9 @@ if __name__ == '__main__':
     @click.option('--update', default="", type=str, help='Update signal in DB by Tweet ID')
     @click.option('--updateall', default=False, is_flag=True, help='Update all signals in DB')
     @click.option('--parseall', default=False, is_flag=True, help='Run --parse on entire DB')
+    @click.option('--manual', default=False, is_flag=True, help='Manually review all signals in DB')
     @click.pass_context
-    def signal(ctx, generate, parse, parseall, backtest, get, getall, update, updateall):
+    def signal(ctx, generate, parse, parseall, backtest, get, getall, update, updateall, manual):
         """ Manage Trading Signals """
         s = Signal()
         if generate:
@@ -95,6 +89,9 @@ if __name__ == '__main__':
 
         elif backtest:
             s.backtest()
+
+        elif manual:
+            s.manual()
 
         else:
             click.echo(ctx.get_help())
