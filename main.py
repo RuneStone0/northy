@@ -61,8 +61,9 @@ if __name__ == '__main__':
     @click.option('--updateall', default=False, is_flag=True, help='Update all signals in DB')
     @click.option('--parseall', default=False, is_flag=True, help='Run --parse on entire DB')
     @click.option('--manual', default=False, is_flag=True, help='Manually review all signals in DB')
+    @click.option('--export', default=False, is_flag=True, help='Export all signals from DB to CSV file (signals.csv)')
     @click.pass_context
-    def signal(ctx, generate, parse, parseall, backtest, get, getall, update, updateall, manual):
+    def signal(ctx, generate, parse, parseall, backtest, get, getall, update, updateall, manual, export):
         """ Manage Trading Signals """
         s = Signal()
         if generate:
@@ -92,6 +93,9 @@ if __name__ == '__main__':
 
         elif manual:
             s.manual()
+
+        elif export:
+            s.export()
 
         else:
             click.echo(ctx.get_help())
