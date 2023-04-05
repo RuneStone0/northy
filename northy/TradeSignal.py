@@ -219,7 +219,7 @@ class Signal:
                     `15`
                     `10`
             """
-            POINTS = re.findall(r'(\d*)(?:PT|\sPT|\sPOINT)', text)[-1]
+            POINTS = re.findall(r'(\d*)(?:PT|\sPT|\sPOINT)', text)[0]
             return POINTS
 
         def find_SCALE_POINTS(text):
@@ -329,7 +329,7 @@ class Signal:
                 POINTS = find_SL_POINTS(text)
                 OUT = int(IN) - int(POINTS)
 
-                ACTION_CODE += f"_{IN}_OUT_{OUT}_SL_{POINTS}"
+                ACTION_CODE += f"_IN_{IN}_OUT_{OUT}_SL_{POINTS}"
                 ACTIONS.append(ACTION_CODE)
 
             # Closing position
@@ -354,7 +354,8 @@ class Signal:
             elif text.startswith("SHORT") or text.startswith("LONG"):
                 """
                     Examples:
-                        1550479656805081088 - ALERT: Short $SPX\nIN 4000 - 10 pt stop
+                        1550479656805081088 - `ALERT: Short $SPX\nIN 4000 - 10 pt stop`
+                        1557347316465651712 - `FLAT STOPPED $NDX  | RE-ENTRY SHORT $NDX SHORT $SPX | IN 13340 - 25 PT STOP | IN 4198 - 10 PT STOP`
                 """
                 trade = find_trade(text)
                 ACTIONS.append(f"{symbol}{trade}")
@@ -383,13 +384,11 @@ class Signal:
             is_trading_signal = False
         return is_trading_signal
 
-    def backtest(self, username="NTLiveStream"):
+    def export(self, filename="signals.json"):
         """
-            FOR VALIDATION PURPOSES ONLY
-
-            This method will take tweets from the DB and parse the trading signals.
-            Each signal parsed (programatically) is compared against a manually created known-good list.
+            This method will export all the signals to a JSON file.
         """
+        # Get all signals
         result = self.tweets_collection.aggregate([
             {
                 '$match': {
@@ -402,51 +401,90 @@ class Signal:
                     'created_at': 1
                 }
             },
-            { '$limit' : 10 }
+            {
+                "$project": {
+                    "_id": 0,
+                    "tid": 1,
+                    "created_at": 1,
+                    "text": 1,
+                    "signals": 1,
+                    "signals_manual": 1
+                }
+            },
+            #{ '$limit' : 10 }
         ])
 
-        # Get signals backtesting file
-        filename = "signals-backtest.json"
-        f = open(filename)
-        manSignals = json.load(f)
-        def __get_tweet_from_dict(tid, dict):
-            for i in dict:
-                if tid == i["tid"]:
-                    return i
-        print(f"Backtesting {len(manSignals)} tweets..")
 
-        missing_backtests = []
+        # Export to CSV
+        filename = "signals.csv"
+
+        with open(filename, 'w') as outfile:
+            header = "tid;created_at;raw_signal;signals_manual\n"
+            outfile.write(header)
+
+            for t in result:
+                raw_sig = self.__normalize_text(t)
+                tid = t["tid"]
+                dt = t["created_at"]
+                answer = ','.join(t["signals_manual"])
+                line = f"{tid};{dt};{raw_sig};{answer}\n"
+                outfile.writelines(line)
+            
+
+            print(line)
+
+        # Export to JSON
+        #with open(filename, 'w') as outfile:
+        #    json.dump(list(result), outfile)
+
+    def backtest(self, username="NTLiveStream"):
+        """
+            FOR VALIDATION PURPOSES ONLY
+
+            This method will take tweets from the DB and parse the trading signals.
+            Each signal parsed (programatically) is compared against a manually created known-good list.
+        """
+        result = self.tweets_collection.aggregate([
+            {
+                "$match": {
+                    "alert": True,
+                }
+            },
+            {
+                # Sort, oldest first
+                "$sort": {
+                    "created_at": 1
+                }
+            }
+        ])
+
+        count_success = 0
+        count_failed = 0
         for tweet in result:
-            # The following tweet ID is causing parsing errors. Its a one-off, so we just ignore it. No need to solve for the 1% error rates.
-            # FLAT STOPPED $SPX | RE-ENTRY SHORT | IN 4211 - 10 PT STOP. | ADJUSTED $NDX STOP TO -25. |  | TAKING THE STOP RISK OVERNIGHT
-            # FLAT STOPPED $NDX $SPX STOPPED $RUT  | RE-ENTRY LONG |IN 3752 |IN 11475 - 25 PT STOP |IN 1129 - 10 PT STOP
-            if tweet["tid"] in [1557516667357380608, 1572963969991692292]:
-                continue
-            
-            dynSignal = self.parse(tweet)
-            text = self.__normalize_text(tweet)
             tid = tweet["tid"]
-            manSignal = __get_tweet_from_dict(tweet["tid"], manSignals)["action"]
-            
-            if manSignal[0] == "TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS":
-                print(f"{tid} not in backtest file")
-                missing_backtests.append(tid)
-            else:
-                # Compare Manual Backtest Signal against Dynamic Signal
-                match = True if set(dynSignal) == set(manSignal) else False
-                color_tid = colored(tweet["tid"], "blue")
-                if match:
-                    print(color_tid + colored(f" {dynSignal}", "green"))
-                else:
-                    print(color_tid + colored(f" MATCH ERROR", "red"))
-                    print(colored(f"   ManSignal  {manSignal}", "green"))
-                    print(colored(f"   DynSignal  {dynSignal}", "red"))
-                    sys.exit()
+            text = self.__normalize_text(tweet)
+            signals = tweet["signals"]
 
-        print(f"{len(missing_backtests)} missing backtests:")
-        #print(missing_backtests)
-        for i in missing_backtests[:5]:
-            print(colored(i, "red"))
+            try:
+                signals_manual = tweet["signals_manual"]
+            except KeyError:
+                print(colored(f"{tid} missing signals_manual", "red"))
+                continue
+
+            # compare two lists
+            if signals != signals_manual:
+                diff = list(set(signals) - set(signals_manual))
+                print(colored(f"{tid} FAILED", "red"), text, colored(diff, "yellow"))
+                count_success += 1
+                print("Signal\t\t", signals)
+                print("Expected\t", signals_manual)
+            else:
+                print(colored(f"{tid} OK", "green"))
+                count_failed += 1
+        
+        print(f"Success: {count_success}")
+        print(f"Failed: {count_failed}")
+
 
     def generate_signals_file(self, username="NTLiveStream"):
         # Load backtest.json
