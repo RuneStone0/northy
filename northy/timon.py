@@ -1,12 +1,10 @@
 import time
 import tweepy
 import pyprowl
-from tweepy import OAuthHandler, StreamingClient
 from datetime import datetime
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 from dotenv import dotenv_values
-from colorama import init, Fore, Back, Style
 from termcolor import colored
 from . import TradeSignal
 import click
