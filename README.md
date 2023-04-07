@@ -51,3 +51,16 @@ ps aux|grep pyton
 ## Configure Account Timeout
 Login to the Saxo Account.
 Go to Profile > Settings > Login & Security > Automatic Logout > Max
+
+
+# TODO
+## Short-term
+* use logger instead of print
+* instead of running python main.py watch, create a service that runs in the background (logging must be fixed first, so that it doesn't print to stdout)
+* add unit testing
+
+## Long-term
+* Look into using ML to parse alert tweets
+* Support multiple "customers" within my own SaxoBank account
+* Support TD365
+
