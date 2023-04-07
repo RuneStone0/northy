@@ -60,10 +60,11 @@ if __name__ == '__main__':
     @click.option('--update', default="", type=str, help='Update signal in DB by Tweet ID')
     @click.option('--updateall', default=False, is_flag=True, help='Update all signals in DB')
     @click.option('--parseall', default=False, is_flag=True, help='Run --parse on entire DB')
-    @click.option('--manual', default=False, is_flag=True, help='Manually review all signals in DB')
+    @click.option('--manual', default="", type=str, help='Manually review by ID')
+    @click.option('--manualall', default=False, is_flag=True, help='Manually review all signals in DB')
     @click.option('--export', default=False, is_flag=True, help='Export all signals from DB to CSV file (signals.csv)')
     @click.pass_context
-    def signal(ctx, generate, parse, parseall, backtest, get, getall, update, updateall, manual, export):
+    def signal(ctx, generate, parse, parseall, backtest, get, getall, update, updateall, manual, manualall, export):
         """ Manage Trading Signals """
         s = Signal()
         if generate:
@@ -91,8 +92,11 @@ if __name__ == '__main__':
         elif backtest:
             s.backtest()
 
+        elif manualall:
+            s.manualall()
+
         elif manual:
-            s.manual()
+            s.manual(manual)
 
         elif export:
             s.export()

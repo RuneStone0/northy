@@ -11,6 +11,21 @@ config = dotenv_values(".env")
 database_name = "northy"
 tweets_collection_name = "tweets"
 
+
+"""
+Convert the following trading signal to json "CLOSED 3RD SCALE $SPX | IN 4318 OUT 3978 +340" using this schema. If the schema is not compatible, make an educated guess.
+{"$schema":"http://json-schema.org/draft-07/schema#","type":"object","properties":{"TICKER":{"type":"string","description":"The ticker code e.g. SPX"},"ACTION":{"type":"string","enum":["TRADE","FLAT","FLATSTOP","CLOSE","SCALEOUT","LIMIT","STOPLOSS"],"description":"The action to take on a signal. TRADE is a new trade. FLAT means change stop loss to break even. FLATSTOP means the position was trigged by stop loss. CLOSE means position should be closed. SCALEOUT means a part of the position should be sold. LIMIT means set a limit order. STOPLOSS means set a stop loss order."},"DIRECTION":{"type":"string","enum":["LONG","SHORT"],"description":"Define the position direction"},"IN":{"type":"number","description":"The entry price of the trade"},"OUT":{"type":"number","description":"The exit price of the trade"},"SL":{"type":"number","description":"The number of points from which to set the stop loss"}},"required":["TICKER","ACTION","PRICE","SL"]}
+
+"""
+
+ignore_tweets = [
+    "1557516667357380608", # FLAT STOPPED $SPX | RE-ENTRY SHORT | IN 4211 - 10 PT STOP. | ADJUSTED $NDX STOP TO -25. |  | TAKING THE STOP RISK OVERNIGHT
+    "1565311603251232768", # Moved $RUT stop to -10 again.\nI'm have to step away from the desk for a bit, but generally keep an eye on things via mobile.
+    "1611317586708561920", # FLAT STOPPED $NDX (ADD-ON) | RE-ENTRY LONG |IN 1070 - 25 PT STOP  <-- type in entry price
+    "1633926383146618880", # stopped add-on $SPX &amp; flat stopped remainder original $SPX | Long $SPX | IN: 3908 - 10 pt stop
+    "1641890973302116358", 
+]
+
 class Signal:
     """
         Example:
@@ -35,6 +50,16 @@ class Signal:
                 SHORT       - go short a trade (sell)
             PRICE - the price at which the signal was entered
             SL - the number of points from which to set the stop loss
+        
+        Examples:
+[{
+    "symbol": "SPX",  # SPX / NDX / RUT
+    "action": "TRADE",  # TRADE / FLAT / FLATSTOP / CLOSE / SCALEOUT / LIMIT / STOPLOSS
+    "direction": "LONG",  # LONG / SHORT
+    "price_in": 3609,
+    "price_out": 3619,
+    "stop_loss": 10,
+}]
     """
     def __init__(self):
         # Environment Variables
@@ -204,23 +229,96 @@ class Signal:
         if not self.is_trading_signal:
             return []
         
+        if tweet["tid"] in ignore_tweets:
+            print(tweet["tid"], colored(f"IGNORED", "yellow"), self.__normalize_text(tweet))
+            return []
+
         text = self.__normalize_text(tweet)
 
-        def find_SL_POINTS(text):
+        def find_SL_POINTS(symbol):
             """
-                Find stop loss in points.
+                Set SL points.
 
                 Input:
                     `LIMIT ORDER $SPX LONG |IN 3673 - 10 PT STOP`
                     `LIMIT BUY $SPX |IN 4000 - 15 POINT STOP`
                     `SHORT $SPX  | IN 4160 - 10PT STOP`
+                    1635261970990661632 - `STOPPED $SPX  $NDX | RE-ENTRY LONG | IN 3809 - 10 PT STOP | IN 11680 - 25 PT STOP`
                 Output:
-                    `10`
-                    `15`
-                    `10`
+                    `[10]`
+                    `[15]`
+                    `[10]`
+                    `[10,25]` 
             """
-            POINTS = re.findall(r'(\d*)(?:PT|\sPT|\sPOINT)', text)[0]
-            return POINTS
+            if symbol == "SPX" or symbol == "RUT":
+                return 10
+            elif symbol == "NDX":
+                return 25
+            else:
+                return "UNKNOWN"
+
+        def find_INOUT(text, inout="IN"):
+            """
+                Find entry in points.
+
+                Input:
+                    `CLOSED FINAL SCALE $NDX LONG |IN 11060 OUT 13250 +2190`
+                    `CLOSED 1 SCALE $SPX SHORT |  |IN 4193 OUT 4045 +148`
+                    `CLOSED 3RD SCALE $NDX ADD-ON | IN 11818 OUT 12760 + 942`
+                    `LONG $NDX $SPX  $RUT |  |IN 3713 - 10 PT STOP |IN 11348 - 25 PT STOP |IN 1703 - 10 PT STOP`
+                    `Closed 1 scale $SPX add-on\n\nIN 3722 OUT OUT 3824 +102`
+                    `CLOSED 2ND SCALE $NDX | IN 13720 OUT: 12484 +1236 NDX`
+            """
+            # get all IN numbers from text
+            # Normalize
+            text = text.replace(":", " ") # replace : with space
+            text = text.replace("  ", " ") #remove double spaces
+
+            out = re.findall(f'({inout}[\s|:])(\d+)', text) # --> IN:1234
+            out = [int(i[1]) for i in out] # --> [1234]
+            return out
+        
+        def get_closest_symbols(numbers):
+            """
+                Given a list of numbers, return a dictionary of the closest symbols to the average price.
+                If there is a tie, return the symbols in alphabetical order.
+
+                Example:
+                    numbers = [3713, 11348, 1703]
+                    get_closest_symbols(numbers) -> {"NDX": 11348, "SPX": 3713, "RUT": 1703}
+
+                    numbers = [3713]
+                    get_closest_symbols(numbers) -> {"SPX": 3713}
+
+            """
+            # 200ma for each symbol
+            ndx, spx, rut = 11946, 3946, 2015  # TODO: Fetch numbers from DB / API
+            avg_price = (ndx + spx + rut) / 3
+            symbols = ["NDX", "SPX", "RUT"]
+
+            # Handle a list of multiple numbers
+            if len(numbers) > 1:
+                closest_numbers = {symbol: 0 for symbol in symbols}  # initialize with default value
+                for num in numbers:
+                    if abs(num - ndx) <= abs(num - spx) and abs(num - ndx) <= abs(num - rut):
+                        closest_numbers["NDX"] = num
+                    elif abs(num - spx) <= abs(num - ndx) and abs(num - spx) <= abs(num - rut):
+                        closest_numbers["SPX"] = num
+                    else:
+                        closest_numbers["RUT"] = num
+                
+                sorted_symbols = sorted(symbols, key=lambda x: abs(closest_numbers[x] - avg_price))
+                return {symbol: closest_numbers[symbol] for symbol in sorted_symbols}
+            
+            # Handle a single number
+            else:
+                num = numbers[0]
+                if abs(num - ndx) <= abs(num - spx) and abs(num - ndx) <= abs(num - rut):
+                    return {"NDX": num}
+                elif abs(num - spx) <= abs(num - ndx) and abs(num - spx) <= abs(num - rut):
+                    return {"SPX": num}
+                else:
+                    return {"RUT": num}
 
         def find_SCALE_POINTS(text):
             """
@@ -234,11 +332,12 @@ class Signal:
                     `2190`
                     `148`
             """
-            POINTS = re.findall(r'(\+\d*)', text)[0]
+            POINTS = re.findall(r'\+\s?(\d+)', text)[0]
             POINTS = POINTS.replace("+", "")
+            POINTS = POINTS.replace("", "")
             return POINTS
         
-        def find_trade(text):
+        def find_trade(text, symbol):
             __ACTION_CODE = ""
             # Find trade direction
             direction = "LONG" if "LONG" in text else "SHORT"
@@ -246,17 +345,19 @@ class Signal:
 
             # Find entry
             try:
-                entries = re.findall(r'(?:IN\s)(\d*)', text)
-                __ACTION_CODE += f"_IN_{entries[element]}"
+                __IN = get_closest_symbols(find_INOUT(text, "IN"))[symbol]
+                __ACTION_CODE += f"_IN_{__IN}"
             except Exception as e:
                 # Sometimes parsing fail. We fall back to "UNKNOWN". We can later on decide, 
                 # if we want to ignore this and put a market order in or skip the trade.
+                print(e)
                 __ACTION_CODE += f"_IN_UNKNOWN"
+                raise Exception("Failed to parse IN")
         
             # Find stop loss
             # We don't care to parse the SL from the text. Its always the same anyway
             # TODO: Above is not true. 1641890973302116358 is an example where we have different SL
-            POINTS = find_SL_POINTS(text)
+            POINTS = find_SL_POINTS(symbol)
 
             __ACTION_CODE += f"_SL_{POINTS}"
             return __ACTION_CODE
@@ -267,10 +368,12 @@ class Signal:
 
         ACTIONS = []
         element = 0
+        # sort symbols alphabetically
+        symbols.sort()
         for symbol in symbols:
             symbol = symbol[1:]  # $SPX --> SPX
             ACTION_CODE = f"{symbol}"
-
+            
             # Move to flat
             if "TO FLAT" in text or "TO FLT" in text:
                 """
@@ -290,7 +393,7 @@ class Signal:
                 # If we want to add it, we need to add a new action code.
                 ACTIONS.append(f"{symbol}_FLATSTOP")
                 if "RE-ENTRY" in text:
-                    trade = find_trade(text)
+                    trade = find_trade(text, symbol)
                     ACTIONS.append(f"{symbol}{trade}")
 
             # Limit order
@@ -307,11 +410,6 @@ class Signal:
                         `SPX_LIMIT_BUY_IN_3609_SL_10`
                         `SPX_LIMIT_BUY_IN_4000_SL_15`
                 """
-                # Ignore tweets
-                if tweet["tid"] in ["1560000766043119617"]:
-                    # TODO: 1560000766043119617  `LIMIT SELL $SPX |  | IN 4318 STOP AT 4380. |  | *SEE DASHBOARD FOR RATIONALE.`
-                    continue
-
                 ACTION_CODE += f"_LIMIT"
                 
                 # Set order direction
@@ -323,26 +421,32 @@ class Signal:
                     raise Exception("Unknown action")
 
                 # Set entry price
-                IN = re.findall(r'(?:IN[\:|\s])(\d*)', text)[-1]
+                IN = get_closest_symbols(find_INOUT(text, "IN"))[symbol]
 
                 # Set stop loss
-                POINTS = find_SL_POINTS(text)
-                OUT = int(IN) - int(POINTS)
+                POINTS = find_SL_POINTS(symbol)
+                CALC_OUT = int(IN) - int(POINTS)
 
-                ACTION_CODE += f"_IN_{IN}_OUT_{OUT}_SL_{POINTS}"
+                ACTION_CODE += f"_IN_{IN}_OUT_{CALC_OUT}_SL_{POINTS}"
                 ACTIONS.append(ACTION_CODE)
 
             # Closing position
             elif "CLOSED" in text:
-                # There are two types of CLOSE events
-                #   *  CLOSED by Stop Loss
-                #   *  CLOSED by Profit taking (scale out)
-                #   *  CLOSED by taking loss (example: 1634265187472531457)
+                """
+                    There are two types of CLOSE events: CLOSE and SCALEOUT.
 
-                # profit taking
-                if "SCALE" in text:
-                    IN = re.findall(r'(?:IN[\:|\s])(\d*)', text)[-1]
-                    OUT = re.findall(r'(?:OUT[\:|\s])(\d*)', text)[-1]
+                    1. CLOSE: Closing a position (usually because its not working out). Example:
+                        `CLOSED $SPX SHORT -1`
+                    
+                    2. SCALEOUT: Closing a position because we reached our profit target. Example:
+                        `CLOSED FINAL $SPX SHORT (GOD HELP ME) |  | IN 4193 OUT 3955 +238`
+                        `CLOSED FINAL SCALE $SPX ADD-ON | IN 3722 OUT 3983 +261`
+                """
+
+                # SCALEOUT
+                if "OUT" in text:
+                    IN = get_closest_symbols(find_INOUT(text, "IN"))[symbol]
+                    OUT = get_closest_symbols(find_INOUT(text, "OUT"))[symbol]
                     POINTS = find_SCALE_POINTS(text)
                     ACTION_CODE += f"_SCALEOUT_IN_{IN}_OUT_{OUT}_POINTS_{POINTS}"
                     ACTIONS.append(ACTION_CODE)
@@ -357,11 +461,11 @@ class Signal:
                         1550479656805081088 - `ALERT: Short $SPX\nIN 4000 - 10 pt stop`
                         1557347316465651712 - `FLAT STOPPED $NDX  | RE-ENTRY SHORT $NDX SHORT $SPX | IN 13340 - 25 PT STOP | IN 4198 - 10 PT STOP`
                 """
-                trade = find_trade(text)
+                trade = find_trade(text, symbol)
                 ACTIONS.append(f"{symbol}{trade}")
 
             # Ignore tweets
-            elif tweet["tid"] in ["1565311603251232768", "1565311603251232768"]:
+            elif tweet["tid"] in ["1565311603251232768", "1565311603251232768", "1557516667357380608"]:
                 # TODO: 1565311603251232768  `MOVED $RUT STOP TO -10 AGAIN. | I'M HAVE TO STEP AWAY FROM THE DESK FOR A BIT, BUT GENERALLY KEEP AN EYE ON THINGS VIA MOBILE.`
                 continue
 
@@ -437,7 +541,7 @@ class Signal:
         #with open(filename, 'w') as outfile:
         #    json.dump(list(result), outfile)
 
-    def backtest(self, username="NTLiveStream"):
+    def backtest(self):
         """
             FOR VALIDATION PURPOSES ONLY
 
@@ -458,12 +562,16 @@ class Signal:
             }
         ])
 
-        count_success = 0
-        count_failed = 0
+        count_success = list()
+        count_failed = list()
         for tweet in result:
             tid = tweet["tid"]
             text = self.__normalize_text(tweet)
             signals = tweet["signals"]
+
+            if tid in ignore_tweets:
+                print(tid, "Backtest", colored(f"IGNORED", "yellow"), self.__normalize_text(tweet))
+                continue
 
             try:
                 signals_manual = tweet["signals_manual"]
@@ -472,19 +580,23 @@ class Signal:
                 continue
 
             # compare two lists
-            if signals != signals_manual:
-                diff = list(set(signals) - set(signals_manual))
-                print(colored(f"{tid} FAILED", "red"), text, colored(diff, "yellow"))
-                count_success += 1
+            signals_match = self.compare_lists(tweet["signals"], tweet["signals_manual"])
+            if not signals_match:
+                diff = list(set(sorted(signals)) - set(sorted(signals_manual)))
+                print(colored(f"{tid} FAILED", "red"), text, "difference:", colored(diff, "yellow"))
+                count_failed.append(tid)
                 print("Signal\t\t", signals)
                 print("Expected\t", signals_manual)
             else:
-                print(colored(f"{tid} OK", "green"))
-                count_failed += 1
+                #print(colored(f"{tid} OK", "green"))
+                count_success.append(tid)
         
-        print(f"Success: {count_success}")
-        print(f"Failed: {count_failed}")
-
+        print("-------")
+        print(colored(f"Success: {len(count_success)}", "green"))
+        print(colored(f"Ignored: {len(ignore_tweets)}", "yellow"))
+        print(colored(f"Failed: {len(count_failed)}", "red"))
+        for i in count_failed:
+            self.manual(i)
 
     def generate_signals_file(self, username="NTLiveStream"):
         # Load backtest.json
@@ -556,7 +668,71 @@ class Signal:
                 }
                 write_json(out)
 
-    def manual(self):
+    def compare_lists(self, list1, list2):
+        if len(list1) != len(list2):
+            return False
+        sorted_list1 = sorted(list1)
+        sorted_list2 = sorted(list2)
+        for i in range(len(sorted_list1)):
+            if sorted_list1[i] != sorted_list2[i]:
+                return False
+        return True
+
+    def manual(self, tid):
+        """
+            This method will prompt the user to manually review the signals and confirm them.
+        """
+        tweet = self.db.tweets.find_one({"tid": tid})
+        tid = tweet["tid"]
+        if tid in ignore_tweets:
+            print(tid, "Backtest", colored(f"IGNORED", "yellow"), self.__normalize_text(tweet))
+            return
+        signals = tweet["signals"]
+
+        # Check if signals and signals_manual exists
+        try:
+            if tweet["signals"] and tweet["signals_manual"]:
+                pass
+        except KeyError:
+            print(tid, "Backtest", colored(f"FAILED", "red"), "signals or signals_manual doesn't exist")
+            return
+        
+        # Check if signals and signals_manual are the same
+        signals_match = self.compare_lists(tweet["signals"], tweet["signals_manual"])
+
+        # If signals don't match, prompt user to confirm or manually enter signals
+        if not signals_match:
+            # signals_manual doesn't exist yet
+            # generate signals from text and suggest to use it
+            generated_signal = self.text_to_signal(tweet)
+            print(tid, "Backtest", colored(f"FAILED", "red"), self.__normalize_text(tweet), colored("new suggested value:", "green"), colored(generated_signal, "yellow"))
+
+            # add prompt asking to confirm signals (c) or manually enter signals (m)
+            print("Confirm generated signals (c) or manually enter signals (m) or skip (s)?")                
+            user_input = input()
+            if user_input == "c":
+                print("Confirmed signals:" + colored(f" {generated_signal}", "green"))
+                newvalues = { "$set": { "signals_manual": generated_signal } }
+                self.tweets_collection.update_one({"tid": tid}, newvalues)
+            elif user_input == "m":
+                print("Enter signal(s) using a comma separated list (e.g. SPX_TRADE_LONG_IN_3848_SL_25,NDX_TRADE_LONG_IN_11795_SL_25)")
+                manual_signal = input()
+                signals = None
+                try:
+                    signals = manual_signal.split(",")
+                except:
+                    signals = [manual_signal]
+                print("Inserting manual signals:" + colored(f" {signals}", "green"))
+                newvalues = { "$set": { "signals_manual": signals } }
+                self.tweets_collection.update_one({"tid": tid}, newvalues)
+            elif user_input == "s":
+                print("Skipping..")
+                return
+            else:
+                print("Invalid input. Exiting..")
+                sys.exit()
+
+    def manualall(self):
         results = self.tweets_collection.aggregate([
             {
                 # Filter out alerts
@@ -572,42 +748,4 @@ class Signal:
             }
         ])
         for tweet in results:
-            tid = tweet["tid"]
-            if tid in ["1565311603251232768"]:
-                continue
-            signals = tweet["signals"]
-
-            # compare two lists
-            try:
-                if set(tweet["signals"]) == set(tweet["signals_manual"]):
-                    print(tid, "Backtest", colored(f"OK", "green"))
-                    continue
-            except KeyError:
-                # signals_manual doesn't exist yet
-                print(tid, "Backtest", colored(f"FAILED", "red"), self.__normalize_text(tweet), "-->", colored(signals, "yellow"))
-
-                # add prompt asking to confirm signals (c) or manually enter signals (m)
-                print("Confirm generated signals (c) or manually enter signals (m) or skip (s)?")                
-                user_input = input()
-                if user_input == "c":
-                    print("Confirmed signals:" + colored(f" {signals}", "green"))
-                    newvalues = { "$set": { "signals_manual": signals } }
-                    self.tweets_collection.update_one({"tid": tid}, newvalues)
-                elif user_input == "m":
-                    print("Enter signal(s) using a comma separated list (e.g. SPX_TRADE_LONG_IN_3848_SL_25,NDX_TRADE_LONG_IN_11795_SL_25)")
-                    manual_signal = input()
-                    signals = None
-                    try:
-                        signals = manual_signal.split(",")
-                    except:
-                        signals = [manual_signal]
-                    print("Inserting manual signals:" + colored(f" {signals}", "green"))
-                    newvalues = { "$set": { "signals_manual": signals } }
-                    self.tweets_collection.update_one({"tid": tid}, newvalues)
-                elif user_input == "s":
-                    print("Skipping..")
-                    continue
-                else:
-                    print("Invalid input. Exiting..")
-                    sys.exit()
-
+            self.manual(tweet["tid"])
