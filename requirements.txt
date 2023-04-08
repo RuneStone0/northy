@@ -6,7 +6,7 @@ colorama
 termcolor
 pyprowl
 colorlog
-jwt
+PyJWT
 
 # TradingView
 git+https://github.com/StreamAlpha/tvdatafeed.git
