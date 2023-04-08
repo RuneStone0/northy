@@ -7,6 +7,7 @@ from pymongo.errors import DuplicateKeyError
 from dotenv import dotenv_values
 from termcolor import colored
 from . import TradeSignal
+from . import SaxoTrader
 import click
 
 config = dotenv_values(".env")
@@ -94,6 +95,8 @@ class Timon:
                 return data
 
     def watch(self):
+        saxo = SaxoTrader.Saxo()
+
         last_tid = None
         while True:
             try:
@@ -122,8 +125,7 @@ class Timon:
 
                     # Execute TradeSignal
                     for signal in signals:
-                        #signal.execute()
-                        pass
+                        saxo.trade(signal)
 
             except Exception as e:
                 print(f"Exception {e}")

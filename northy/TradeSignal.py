@@ -11,13 +11,6 @@ config = dotenv_values(".env")
 database_name = "northy"
 tweets_collection_name = "tweets"
 
-
-"""
-Convert the following trading signal to json "CLOSED 3RD SCALE $SPX | IN 4318 OUT 3978 +340" using this schema. If the schema is not compatible, make an educated guess.
-{"$schema":"http://json-schema.org/draft-07/schema#","type":"object","properties":{"TICKER":{"type":"string","description":"The ticker code e.g. SPX"},"ACTION":{"type":"string","enum":["TRADE","FLAT","FLATSTOP","CLOSE","SCALEOUT","LIMIT","STOPLOSS"],"description":"The action to take on a signal. TRADE is a new trade. FLAT means change stop loss to break even. FLATSTOP means the position was trigged by stop loss. CLOSE means position should be closed. SCALEOUT means a part of the position should be sold. LIMIT means set a limit order. STOPLOSS means set a stop loss order."},"DIRECTION":{"type":"string","enum":["LONG","SHORT"],"description":"Define the position direction"},"IN":{"type":"number","description":"The entry price of the trade"},"OUT":{"type":"number","description":"The exit price of the trade"},"SL":{"type":"number","description":"The number of points from which to set the stop loss"}},"required":["TICKER","ACTION","PRICE","SL"]}
-
-"""
-
 ignore_tweets = [
     "1557516667357380608", # FLAT STOPPED $SPX | RE-ENTRY SHORT | IN 4211 - 10 PT STOP. | ADJUSTED $NDX STOP TO -25. |  | TAKING THE STOP RISK OVERNIGHT
     "1565311603251232768", # Moved $RUT stop to -10 again.\nI'm have to step away from the desk for a bit, but generally keep an eye on things via mobile.
@@ -28,38 +21,9 @@ ignore_tweets = [
 
 class Signal:
     """
-        Example:
-            NDX_TRADE_LONG_IN_10450_SL_25
-        
-        Schema:
-            {TICKER}_{ACTION}_{DIRECTION}_IN_{PRICE}_SL_{POINTS}
-            TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS
+        Trading signal class.
 
-        Breakdown
-            TICKER - the ticker code e.g. SPX
-            ACTION - the action to take on a signal
-                TRADE       - enter new trade, based on direction we either go long / short
-                FLAT        - adjust stop loss to break even
-                FLATSTOP    - stop loss was triggered, this is just an observation, no action needed
-                CLOSE       - close recently opened position (100% of position)
-                SCALEOUT    - scale out of position (25% of position)
-                LIMIT       - set a limit order
-                STOPLOSS    - set a stop loss order
-            DIRECTION - define the position direction
-                LONG        - go long a trade (buy)
-                SHORT       - go short a trade (sell)
-            PRICE - the price at which the signal was entered
-            SL - the number of points from which to set the stop loss
-        
-        Examples:
-[{
-    "symbol": "SPX",  # SPX / NDX / RUT
-    "action": "TRADE",  # TRADE / FLAT / FLATSTOP / CLOSE / SCALEOUT / LIMIT / STOPLOSS
-    "direction": "LONG",  # LONG / SHORT
-    "price_in": 3609,
-    "price_out": 3619,
-    "stop_loss": 10,
-}]
+        See documentation for more info: [signal.md](docs/signal.md)
     """
     def __init__(self):
         # Environment Variables
