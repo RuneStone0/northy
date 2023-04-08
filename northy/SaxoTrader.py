@@ -223,6 +223,14 @@ class Saxo:
         
         return access_token
 
+    def __get_sl_price(self, entry_price, sl_points, BuySell):
+        """ Calculate stop loss price """
+        if BuySell == "Buy":
+            exit_price = entry_price - sl_points
+        else:
+            exit_price = entry_price + sl_points
+        return exit_price
+
     def authenticate(self):
         """
             Authenticate using OAuth 2.0 Authorization Code Grant
@@ -279,6 +287,7 @@ class Saxo:
         if self.has_token_expired(self.token):
             logger.warning("Token has expired. Attempting to use refresh token..")
             self.refresh_token()
+            return
 
         # Test if token is valid
         try:
@@ -288,91 +297,130 @@ class Saxo:
             logger.debug("Connected. Storing valid headers in session..")
         except:
             logger.warning("Connection failed. Re-authenticating..")
-            sys.exit()
+            sys.exit()  # TODO: Fix this
             self.authenticate()
 
     def signal_to_order(self, signal):
-        """ Convert signal to order """
-        """
-            TICKER - the ticker code e.g. SPX
-            ACTION - the action to take on a signal
-                TRADE       - enter new trade, based on direction we either go long / short
-                FLATADJ     - adjust stop loss to break even
-                FLATSTOP    - stop loss was triggered, this is just an observation, no action needed
-                CLOSE       - close open position by buying/selling depending on the trade direction
-            DIRECTION - define the position direction
-                LONG        - go long a trade (buy)
-                SHORT       - go short a trade (sell)
-            PRICE - the price at which the signal was entered
-            SL - the number of points from which to set the stop loss
-        """
+        """ Convert signal to Saxo order """
+        logger.debug(f"Input Signal: {signal}")
         s = signal.split("_")
         _symbol = s[0]
+        _action = s[1]
 
         # Fixed order parameters
-        order = {}
+        order = dict()
         order["Uic"] = TraderConfig["SAXO_TICKER_LOOKUP"][_symbol]["Uic"]
         order["AssetType"] = TraderConfig["SAXO_TICKER_LOOKUP"][_symbol]["AssetType"]
         order["OrderType"] = self.config["OrderType"]
         order["ManualOrder"] = "false"
-
-        if s[1] == "TRADE":
-            """
-                Handle Trade Orders
-
-                Examples:
-                    NDX_TRADE_LONG_11815_SL_385
-            """
-            logger.info(f"Handling Trade signal: {signal}")
-
-            # Set BuySell value
-            order["BuySell"] = "Buy" if s[2] == "LONG" else "Sell"
-
-            # Set amount
-            order["Amount"] = self.config["TradeSize"][_symbol]
-            return order
         
-        elif s[2] == "SCALE":
+        if _action == "TRADE":
+            """ Handle Trade Orders """
+            # Market order
+            order["BuySell"] = "Buy" if s[2] == "LONG" else "Sell"  # Set BuySell value
+            order["Amount"] = self.config["TradeSize"][_symbol]  # Set order quantity
+
+            # Stop Loss order
+            _IN = float(s[4])
+            _SL = float(s[6])
+            _SL_price = self.__get_sl_price(_IN, _SL, order["BuySell"]) # Get stop loss price
+            _SL_BuySell_Direction = "Sell" if order["BuySell"] == "Buy" else "Buy"
+            order["Orders"] =  [{
+                "BuySell": _SL_BuySell_Direction,
+                "ManualOrder": "false",
+                "OrderDuration": { "DurationType": "GoodTillCancel" },
+                "OrderPrice": _SL_price,
+                "OrderType": "StopIfTraded"
+            }]
+            logger.info("{} was converted to market order at ~{} with stop loss at {}".format(signal, _IN, _SL_price))
+            
+        elif _action == "SCALEOUT":
+            """ 
+                Create scale out order.
+
+                In Saxobank we cannot close a partial trade. Instead we create a new order in the opposite direction.
+                SaxoBank will eventually handle real-time netting of the two orders.
             """
-                Handle Scale In/Out Orders
+            logger.info(f"Handling scale out signal: {signal}")
 
-                Examples:
-                    NDX_CLOSE_SCALE_IN_11815_OUT_12200_POINTS_385 (Long Scale)
-                    SPX_CLOSE_SCALE_IN_4039_OUT_3965_POINTS_74 (Short Scale)
-            """
-            logger.info(f"Handling Scale signal: {signal}")
+            _IN = float(s[3])
+            _OUT = float(s[5])
+            order["BuySell"] = "Buy" if _IN > _OUT else "Sell"              # Set BuySell value
+            order["Amount"] = self.config["TradeSize"][_symbol] * 0.25      # Set amount (25% of trade size)
+            order["OrderType"] = self.config["OrderType"]                   # Set OrderType
 
-            # Set BuySell value
-            _in = s[4]
-            _out = s[6]
-            order["BuySell"] = "Buy" if _in > _out else "Sell"
-            _posType = "SHORT" if _in > _out else "LONG"
-            logger.info(f"Scaling out of {_posType} position")
+            logger.info("Scaling out by placing a {BuySell}ing {amount}".format(
+                amount=order["Amount"], 
+                BuySell=order["BuySell"])
+            )
 
-            # Set amount (25% of trade size)
-            order["Amount"] = self.config["TradeSize"][_symbol] * 0.25
+        elif _action == "FLAT":
+            """ Set position to break even """
+            logger.info(f"Handling FLATSTOP signal: {signal}")
+            for _p in self.positions():
+                # Only handle CFDs
+                if _p["AssetType"] != "CfdOnIndex":
+                    continue
 
-            # Set OrderType
-            order["OrderType"] = self.config["OrderType"]
+                # Show positions without stop loss
+                print(_p)
+                #if _p["StopLoss"] is None:
 
-            logger.info(order)
-            return order
+        elif _action == "CLOSED":
+            """ Close position """
+            # TODO: Close open positions where 
+            #   profit/loss < or > than 25 points
+            #   opened less than 1h ago
+            logger.debug(f"CLOSE signal NOT SUPPORTED. We rely on stop loss to close positions.")
+            return "CLOSE"
+        
+        elif _action == "FLATSTOP":
+            logger.debug("FLATSTOP. No action needed.")
+            return "FLATSTOP"
 
+        elif _action == "LIMIT":
+            """ Handle Trade Orders """
+            _IN = float(s[4])
+            _SL = float(s[8])
+
+            # Market order
+            order["BuySell"] = "Buy" if s[2] == "LONG" else "Sell"  # Set BuySell value
+            order["Amount"] = self.config["TradeSize"][_symbol]  # Set order quantity
+            order["OrderPrice"] = _IN
+            order["OrderType"] = "Limit"
+            
+            # Stop Loss order
+            _SL_price = self.__get_sl_price(_IN, _SL, order["BuySell"]) # Get stop loss price
+            _SL_BuySell_Direction = "Sell" if order["BuySell"] == "Buy" else "Buy"
+            order["Orders"] =  [{
+                "BuySell": _SL_BuySell_Direction,
+                "ManualOrder": "false",
+                "OrderDuration": { "DurationType": "GoodTillCancel" },
+                "OrderPrice": _SL_price,
+                "OrderType": "StopIfTraded"
+            }]
+            logger.info("{} was converted to a limit order at ~{} with stop loss at {}".format(signal, _IN, _SL_price))
+
+        return order
 
     def trade(self, signal):
-        # Convert signal to order format
-        client = API(access_token=self.token)
+        """ Execute Trade based on signal """
 
-        # Create Order requests
-        if order is not None:
+        order = self.signal_to_order(signal)
+
+        if isinstance(order, dict):
+            logger.debug("Order: {}".format(json.dumps(order)))
             r = tr.orders.Order(data=order)
-            rv = client.request(r)
-        else:
-            logger.error(f"Unable to convert signal {signal} to order")
+            rv = self.client.request(r)
+            logger.debug("Response: {}".format(json.dumps(rv)))
+            time.sleep(1)  # Max 1 request per second (https://www.developer.saxo/openapi/learn/rate-limiting?phrase=Rate+Limit)
+            return rv
+        elif isinstance(order, str):
+            logger.warning(f"Ignoring Order: {order}")
             return None
-        
-        print(json.dumps(rv, indent=2))
-        return rv
+        else:
+            logger.error(f"Unable to execute order {order}")
+            return None
   
     def positions(self):
         r = pf.positions.PositionsMe()
@@ -380,28 +428,45 @@ class Saxo:
         self.__write_json(rv, filename='.saxo-positions')
         return rv
 
+    def test_orders(self, ACTION="TRADE"):
+        # TRADE LONG
+        if ACTION == "TRADE":
+            # 1564611389154627584, 1587398208833159174
+            for s in ["SPX_TRADE_LONG_IN_3703_SL_10", "SPX_TRADE_SHORT_IN_3911_SL_10"]:
+                saxo.trade(s)
+
+        # FLAT - adjust existing order
+        if ACTION == "FLAT":
+            saxo.trade("NDX_FLAT")  # 1572950706344148993
+
+        # FLATSTOP - ignore :)
+        if ACTION == "FLATSTOP":
+            saxo.trade("NDX_FLATSTOP")  # 1579486112367923201
+
+        # CLOSED
+        if ACTION == "CLOSED":
+            saxo.trade("SPX_CLOSED")  # 1552366393990971392
+
+        # SCALEOUT
+        if ACTION == "SCALEOUT":
+            orders = [
+                "SPX_SCALEOUT_IN_3492_OUT_3685_POINTS_193",  # 1580876949982846976
+                "NDX_SCALEOUT_IN_13720_OUT_12484_POINTS_1236",  # 1564010447782776832
+            ]
+            for s in orders:
+                saxo.trade(s)
+
+        # LIMIT
+        if ACTION == "LIMIT":
+            orders = [
+                "SPX_LIMIT_LONG_IN_4000_OUT_3985_SL_15",  # 1641890973302116358
+                "SPX_LIMIT_SHORT_IN_4318_OUT_4308_SL_10",  # 1560000766043119617
+            ]
+            for s in orders:
+                saxo.trade(s)
+
 if __name__ == "__main__":
     saxo = Saxo()
+    #saxo.test_orders(ACTION="LIMIT")
+
     #saxo.positions()
-
-    # Long SPX
-    #saxo.trade("SPX_TRADE_LONG_IN_3609_SL_10")
-    
-    # Close Long Scale
-    order = saxo.signal_to_order("NDX_CLOSE_SCALE_IN_11680_OUT_12510_POINTS_830")
-    order = saxo.signal_to_order("SPX_CLOSE_SCALE_IN_4039_OUT_3965_POINTS_74")
-    #saxo.trade(order)
-    
-    # TODO 
-    # tid: 1621139482593615872
-    # FLATADJ
-    # FLATSTOP
-    # Support multiple orders in one signal
-        # 1559260332106850315
-        # 1559207058800611332
-
-    # 1635259329120182274
-        # ^ contains wrong signal
-
-    
-
