@@ -9,6 +9,7 @@ import json
 import sys
 import os
 import jwt
+from jwt.exceptions import ExpiredSignatureError
 from datetime import datetime, timezone
 
 from saxo_openapi import API
@@ -16,6 +17,7 @@ import saxo_openapi.endpoints.rootservices as rs
 import saxo_openapi.endpoints.trading as tr
 import saxo_openapi.endpoints.portfolio as pf
 from saxo_openapi.contrib.session import account_info
+from dotenv import dotenv_values
 
 try:
     import colorlog
@@ -23,8 +25,10 @@ except ImportError:
     pass
 
 def setup_logging():
+    config = dotenv_values(".env")
+    log_level = config["LOG_LEVEL"]
     root = logging.getLogger()
-    root.setLevel(logging.INFO)
+    logging.basicConfig(level=log_level)
     format = '%(asctime)s|%(levelname)8s|%(funcName)16s():%(lineno)3s|%(message)s'
     date_format = '%Y-%m-%d %H:%M:%S'
     consoleFormat = logging.Formatter(format, date_format)
@@ -85,6 +89,7 @@ state = str(uuid.uuid4())
 user = "17470793"
 pwd = "4ueax1y3"
 basic = HTTPBasicAuth(conf["AppKey"], conf["AppSecret"])
+session_filename = ".saxo-session"
 
 # https://www.developer.saxo/openapi/learn/oauth-authorization-code-grant
 
@@ -266,13 +271,16 @@ class Saxo:
             return self.token
 
     def has_token_expired(self, token):
-        j = jwt.decode(token, options={"verify_signature": False})
-        exp = float(j["exp"])
-        now = time.time()
-        if exp < time.time():
-            return True
-        else:
+        try:
+            jwt.decode(token, options={"verify_signature": False})
             return False
+        except ExpiredSignatureError:
+            # Token has expired
+            return True
+        except Exception as e:
+            # Something else went wrong
+            logger.error(e)
+            return True
 
     def get_balance(self):
         url = f"{base_url}/port/v1/balances/me"
@@ -368,10 +376,103 @@ class Saxo:
 
         elif _action == "CLOSED":
             """ Close position """
-            # TODO: Close open positions where 
-            #   profit/loss < or > than 25 points
-            #   opened less than 1h ago
-            logger.debug(f"CLOSE signal NOT SUPPORTED. We rely on stop loss to close positions.")
+            # TODO: Fix this
+
+            #positions = saxo.positions()
+
+            # Mock positions
+            positions = dict()
+            positions["Data"] = [
+                {
+                "NetPositionId": "GBPUSD_FxSpot",
+                "PositionBase": {
+                    "AccountId": "192134INET",
+                    "Amount": 80.0,
+                    "AssetType": "CfdOnIndex",
+                    "CanBeClosed": True,
+                    "ClientId": "654321",
+                    "CloseConversionRateSettled": False,
+                    "ExecutionTimeOpen": "2023-04-08T15:00:00Z",
+                    "IsForceOpen": False,
+                    "IsMarketOpen": False,
+                    "LockedByBackOffice": False,
+                    "OpenPrice": 3990,
+                    "SpotDate": "2016-09-06",
+                    "Status": "Open",
+                    "Uic": 31,
+                    "ValueDate": "2017-05-04T00:00:00Z"
+                },
+                "PositionId": "1019942425",
+                "PositionView": {
+                    "Ask": 1.2917,
+                    "Bid": 1.29162,
+                    "CalculationReliability": "Ok",
+                    "CurrentPrice": 4000,
+                    "CurrentPriceDelayMinutes": 0,
+                    "CurrentPriceType": "Bid",
+                    "Exposure": 80.0,
+                    "ExposureCurrency": "GBP",
+                    "ExposureInBaseCurrency": 129192.0,
+                    "InstrumentPriceDayPercentChange": 0.26,
+                    "ProfitLossOnTrade": -2998.0,
+                    "ProfitLossOnTradeInBaseCurrency": -2998.0,
+                    "SettlementInstruction": {
+                    "ActualRolloverAmount": 0.0,
+                    "ActualSettlementAmount": 80.0,
+                    "Amount": 80.0,
+                    "IsSettlementInstructionsAllowed": False,
+                    "Month": 7,
+                    "SettlementType": "FullSettlement",
+                    "Year": 2020
+                    },
+                    "TradeCostsTotal": 0.0,
+                    "TradeCostsTotalInBaseCurrency": 0.0
+                }
+                }
+            ]
+            for _p in positions["Data"]:
+                # Only process CFDs
+                if _p["PositionBase"]["AssetType"] != "CfdOnIndex":
+                    continue
+
+                # Only deal with positions opened within the last 1 hour
+                _open_time = datetime.strptime(_p["PositionBase"]["ExecutionTimeOpen"], "%Y-%m-%dT%H:%M:%SZ")
+                if (datetime.now() - _open_time).total_seconds() > 3600:
+                    logger.info("Position was opened more than 1 hour. Skipping.")
+                    continue
+                else:
+                    logger.info("Position was opened less than 1 hour.")
+
+                # Only deal with positions within 25 points of profit/loss
+                _points = (_p["PositionView"]["CurrentPrice"] - _p["PositionBase"]["OpenPrice"])
+                if _points >= 25 or _points <= -25:
+                    logger.info("Position is not within 25 points of profit/loss. Skipping.")  
+                    continue
+                else:
+                    logger.info("Position is within 25 points of profit/loss. Closing.")
+
+                # Closing position
+                logger.info("Closing position.")
+                _position_size = _p["PositionBase"]["Amount"]
+                order["Amount"] = -int(_position_size)
+                order["PositionId"] = _p["PositionId"]
+                order["AccountKey"] = TraderConfig["SAXO_DEMO"]["AccountKey"]
+                print(order)
+                
+                # Close position using saxo_openapi
+                r = tr.positions.ExercisePosition(order["PositionId"], data=order)
+                print(r)
+                rv = self.client.request(r)
+
+                # Close order using requests
+                """
+                self.authenticate()
+                r = self.s.put(f"{base_url}/trade/v1/positions/stringValue/exercise", data=order)
+                print(r.content)
+                """
+
+                return None
+
             return "CLOSE"
         
         elif _action == "FLATSTOP":
@@ -425,7 +526,6 @@ class Saxo:
     def positions(self):
         r = pf.positions.PositionsMe()
         rv = self.client.request(r)
-        self.__write_json(rv, filename='.saxo-positions')
         return rv
 
     def test_orders(self, ACTION="TRADE"):
@@ -467,6 +567,5 @@ class Saxo:
 
 if __name__ == "__main__":
     saxo = Saxo()
-    #saxo.test_orders(ACTION="LIMIT")
-
+    #saxo.test_orders(ACTION="CLOSED")
     #saxo.positions()
