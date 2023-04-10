@@ -108,7 +108,7 @@ class Timon:
 
                 # If not a new tweet, print dot
                 if last_tid == tweet["tid"]:
-                    click.echo(".", nl=False)
+                    #click.echo(".", nl=False)
                     continue
                 
                 # Process new tweet
