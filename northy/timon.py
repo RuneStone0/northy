@@ -95,8 +95,6 @@ class Timon:
                 return data
 
     def watch(self):
-        saxo = SaxoTrader.Saxo()
-
         last_tid = None
         while True:
             try:
@@ -125,9 +123,13 @@ class Timon:
 
                     # Execute TradeSignal
                     for signal in signals:
+                        # Must be initialized every time, otherwise trade() might fail
+                        # TODO: handle re-authentication within the trade() method
+                        saxo = SaxoTrader.Saxo()
                         saxo.trade(signal)
 
             except Exception as e:
+                # TODO: use logger
                 print(f"Exception {e}")
                 print(f"Going to sleep for 1 min.")
                 time.sleep(60)
