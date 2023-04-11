@@ -305,7 +305,6 @@ class Saxo:
             logger.debug("Connected. Storing valid headers in session..")
         except:
             logger.warning("Connection failed. Re-authenticating..")
-            sys.exit()  # TODO: Fix this
             self.authenticate()
 
     def signal_to_order(self, signal):
