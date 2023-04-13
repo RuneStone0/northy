@@ -1,72 +1,18 @@
 import random, string
-import time
-import uuid
-import logging
-from logging.handlers import RotatingFileHandler
+import time, uuid, json, os, sys
 import requests
 from requests.auth import HTTPBasicAuth
-import json
-import sys
-import os
 import jwt
 from jwt.exceptions import ExpiredSignatureError
-from datetime import datetime, timezone
-
+from datetime import datetime
 from saxo_openapi import API
 import saxo_openapi.endpoints.rootservices as rs
 import saxo_openapi.endpoints.trading as tr
 import saxo_openapi.endpoints.portfolio as pf
-from saxo_openapi.contrib.session import account_info
-from dotenv import dotenv_values
+from .utils import Utils
 
-try:
-    import colorlog
-except ImportError:
-    pass
-
-def setup_logging():
-    config = dotenv_values(".env")
-    log_level = config["LOG_LEVEL"]
-    root = logging.getLogger()
-    logging.basicConfig(level=log_level)
-    format = '%(asctime)s|%(levelname)8s|%(funcName)16s():%(lineno)3s|%(message)s'
-    date_format = '%Y-%m-%d %H:%M:%S'
-    consoleFormat = logging.Formatter(format, date_format)
-    
-    # Log to console
-    if 'colorlog' in sys.modules and os.isatty(2):
-        cformat = '%(log_color)s' + format
-        # The available color names are black, red, green, yellow, blue, purple, cyan and white.
-        colorFormat = colorlog.ColoredFormatter(
-            cformat,
-            date_format,
-            log_colors = {
-                'DEBUG': 'white',
-                'INFO' : 'green',
-                'WARNING': 'yellow',
-                'ERROR': 'red',
-                'CRITICAL': 'purple' 
-            })
-        consoleHandler = logging.StreamHandler()
-        consoleHandler.setFormatter(colorFormat)
-        root.addHandler(consoleHandler)
-    else:
-        consoleHandler = logging.StreamHandler()
-        consoleHandler.setFormatter(consoleFormat)
-        root.addHandler(consoleHandler)
-
-    # Log to file
-    log_dir = os.path.join(os.path.normpath(os.getcwd() + os.sep + os.pardir), 'logs')
-    os.makedirs(log_dir, exist_ok=True)
-    log_fname = os.path.join(log_dir, 'main.log')
-
-    fileHandler = RotatingFileHandler(log_fname, maxBytes=1000000, backupCount=10) #10 files of 1MB each
-    fileHandler.setFormatter(consoleFormat)
-    root.addHandler(fileHandler)
-
-setup_logging()
-logger = logging.getLogger(__name__)
-
+u = Utils()
+logger = u.setup_logging("SaxoTrader", "SaxoTrader.log")
 
 conf = {
     "AppName": "Sim Timon",
@@ -507,6 +453,7 @@ class Saxo:
         """ Execute Trade based on signal """
 
         order = self.signal_to_order(signal)
+        logger.debug("Order: {}".format(json.dumps(order)))
 
         if isinstance(order, dict):
             logger.debug("Order: {}".format(json.dumps(order)))
