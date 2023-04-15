@@ -1,5 +1,5 @@
 import random, string
-import time, uuid, json, os, sys
+import time, uuid, json
 import requests
 from requests.auth import HTTPBasicAuth
 import jwt
@@ -9,10 +9,9 @@ from saxo_openapi import API
 import saxo_openapi.endpoints.rootservices as rs
 import saxo_openapi.endpoints.trading as tr
 import saxo_openapi.endpoints.portfolio as pf
-from .utils import Utils
+from .logger import get_logger
 
-u = Utils()
-logger = u.setup_logging("SaxoTrader", "SaxoTrader.log")
+logger = get_logger("SaxoTrader", "SaxoTrader.log")
 
 conf = {
     "AppName": "Sim Timon",
@@ -221,11 +220,10 @@ class Saxo:
             jwt.decode(token, options={"verify_signature": False})
             return False
         except ExpiredSignatureError:
-            # Token has expired
+            logger.error("Token has expired")
             return True
         except Exception as e:
-            # Something else went wrong
-            logger.error(e)
+            logger.error("Something else went wrong", e)
             return True
 
     def get_balance(self):
