@@ -6,6 +6,7 @@ colorama
 termcolor
 pyprowl
 colorlog
+coloredlogs
 PyJWT
 
 # TradingView
@@ -14,3 +15,8 @@ git+https://github.com/StreamAlpha/tvdatafeed.git
 # SaxoBank SDK
 #git+https://github.com/hootnot/saxo_openapi.git
 saxo_openapi
+
+# Unit testing
+pytest
+tox
+pytest-cov
