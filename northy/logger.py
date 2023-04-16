@@ -2,9 +2,12 @@ import os
 import logging
 from logging.handlers import RotatingFileHandler
 import coloredlogs
+from .utils import Utils
+
+u = Utils()
 
 def get_logger(self, loggername="main", filename="logs.log"):
-    config = self.get_config()
+    config = u.get_config()
     log_level = config["LOG_LEVEL"]
     root = logging.getLogger(loggername)
 
@@ -15,11 +18,12 @@ def get_logger(self, loggername="main", filename="logs.log"):
         fmt='%(asctime)s %(name)s %(funcName)s():%(lineno)s %(levelname)s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
         level_styles={
+            # Colors: 'black', 'blue', 'cyan', 'green', 'magenta', 'red', 'white' and 'yellow'
             'debug': {'color': 'white'},
             'info': {'color': 'green'},
             'warning': {'color': 'yellow'},
             'error': {'color': 'red'},
-            'critical': {'color': 'purple'},
+            'critical': {'color': 'magenta'},
         },
         field_styles={
             'asctime': {'color': 'white'},

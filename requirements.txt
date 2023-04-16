@@ -1,13 +1,18 @@
 tweepy
-pymongo[srv]
 python-dotenv
 Click
 colorama
 termcolor
 pyprowl
+PyJWT
+
+# Logging
 colorlog
 coloredlogs
-PyJWT
+
+# MongoDB
+mongomock
+pymongo[srv]
 
 # TradingView
 git+https://github.com/StreamAlpha/tvdatafeed.git

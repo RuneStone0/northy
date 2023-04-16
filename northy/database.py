@@ -2,16 +2,40 @@ from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 from .utils import Utils
 from .logger import get_logger
+import bson
+import mongomock
 
 logger = get_logger("db", "db.log")
+config = Utils().get_config()
+
+testing = True
 
 class Database:
     def __init__(self):
-        u = Utils()
-        config = u.get_config()
-        client = MongoClient(config["mongodb_conn"])
-        self.db = client.get_default_database()
-        self.tweets = self.db[config["tweets_collection_name"]]
+        self.init_db(testing=config["PRODUCTION"])
+
+    def init_db(self, testing=True):
+        if testing == "True":
+            logger.critical("Using MongoDB Atlas (PRODUCTION MODE)")
+            client = MongoClient(config["mongodb_conn"])
+            self.db = client["tweets"]
+            self.tweets = self.db[config["tweets_collection_name"]]
+            return client
+        else:
+            logger.warning("Using mongomock (testing mode)")
+            client = mongomock.MongoClient()
+
+            # create a database and collection
+            self.db = client['northy']
+            self.tweets = self.db['tweets']
+
+            # load BSON data from file
+            with open('backups/tweets.bson', 'rb') as f:
+                data = bson.decode_all(f.read())
+            
+            # insert data into collection
+            self.tweets.insert_many(data)
+            return client
 
     def prepare_db(self):
         """
@@ -44,3 +68,4 @@ class Tweets:
             logger.debug("Added Tweet to DB")
         except DuplicateKeyError:
             logger.debug("Tweet already exists")
+
