@@ -1,10 +1,8 @@
+import ast
 import json
-import logging
-import os
+import pyprowl
 from dotenv import dotenv_values
-from logging.handlers import RotatingFileHandler
-import coloredlogs
-
+from datetime import datetime
 class Utils:
     def __init__(self):
         self.config = None
@@ -26,8 +24,37 @@ class Utils:
         """
             Get config from .env file. If already fetched, return cached version.
         """
-        if self.config is not None:
-            return self.config
-        else:
+        if self.config is None:
             self.config = dotenv_values(".env")
-            return self.config
+            
+            # convert string to bool
+            self.config["PRODUCTION"] = ast.literal_eval(self.config["PRODUCTION"])
+
+        return self.config
+
+    def serialize_datetime(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+
+    def prowl(self, message, priority=0, url=None, app_name='Northy'):
+        """
+            Send push notification using Prowl.
+        """
+        p = pyprowl.Prowl(self.config["prowl_api_key"])
+
+        try:
+            p.verify_key()
+            #print("Prowl API key successfully verified!")
+        except Exception as e:
+            #print("Error verifying Prowl API key: {}".format(e))
+            exit()
+
+        try:
+            p.notify(event="Alert", 
+                     description=message, 
+                     priority=priority, 
+                     url=url, 
+                     appName=app_name)
+            print("Notification successfully sent to Prowl!")
+        except Exception as e:
+            print("Error sending notification to Prowl: {}".format(e))
