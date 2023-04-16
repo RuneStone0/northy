@@ -1,9 +1,22 @@
+import os
 import click
 import time
 from northy.timon import Timon
 from northy.TradeSignal import Signal
+from northy.logger import get_logger
+from northy.utils import Utils
+import os
+from datetime import datetime
+from dotenv import dotenv_values
+
+u = Utils()
+logger = get_logger("main", "main.log")
 
 if __name__ == '__main__':
+    # set env var to PYTHONDONTWRITEBYTECODE=1
+    # to prevent .pyc files from being created
+    os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
+
     @click.group()
     def cli():
         pass
@@ -11,23 +24,22 @@ if __name__ == '__main__':
     @click.command()
     def backup():
         """ Backup DB """
-        import os
-        from datetime import datetime
-        from dotenv import dotenv_values
-        config = dotenv_values(".env")
+        logger.info("Backing up DB..")
+
+        config = u.get_config()
         database_name = "northy"
         tweets_collection_name = "tweets"
 
-        print("Backing up DB..")
         mongodump = os.getcwd() + "\\backups\\mongodump"
         folder_name = f"{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}"
         mongodb_conn = config["mongodb_conn"]
         cmd = f'{mongodump} --uri="{mongodb_conn}" --collection="{tweets_collection_name}" --db="{database_name}" --out="backups/{folder_name}"'
         os.system(cmd)
+        logger.info("Backup complete!")
 
     @click.command()
     @click.option('--limit', default=10, help='Number of tweets to return')
-    @click.option('--username', default=None, help='Filter by username')
+    @click.option('--username', default="NTLiveStream", help='Filter by username')
     def readdb(username, limit):
         """ Read Tweets from DB """
         t = Timon()
@@ -48,8 +60,15 @@ if __name__ == '__main__':
     @click.option('--username', default="NTLiveStream", help='Filter by username')
     def watch(username):
         """ Watch for new Tweets by user """
+        logger.info("Watching for new Tweets..")
         t = Timon()
         t.watch()
+
+    @click.command()
+    def watch2():
+        """ Watch2 """
+        t = Timon()
+        t.watch2()
 
     @click.command()
     @click.option('--generate', default=False, is_flag=True, help='Update backtest.json file with latest signals (without overriding manual checks)')
@@ -104,7 +123,6 @@ if __name__ == '__main__':
         else:
             click.echo(ctx.get_help())
 
-
     @click.command()
     def datafeed():
         """ Fetch data from TradingView """
@@ -112,18 +130,34 @@ if __name__ == '__main__':
         while True:
             try:
                 t.datafeed()
-                print(f"Going to sleep for 12 hour")
+                logger.info(f"Going to sleep for 12 hour")
                 time.sleep(60*60*12)  # 12 hours
             except Exception as e:
-                print(f"Exception {e}")
-                print(f"Going to sleep for 1 hour")
+                logger.error(f"Exception {e}")
+                logger.info(f"Going to sleep for 1 hour")
                 time.sleep(60*60)
 
+    @click.command()
+    @click.option('--tid', default="", type=str, help='Execute trades by Twitter ID')
+    def trade(tid):
+        """ SaxoTrader """
+        print("Trade")
+        s = Signal()
+        signals = s.get(tid)
+        print("Twitter ID: ", tid)
+        print("Signals: ", signals)
+        for signal in signals:
+            from northy import SaxoTrader
+            trader = SaxoTrader.Saxo()
+            trader.trade(signal)
+            print("Signal: ", signal)
 
     cli.add_command(backup)
     cli.add_command(readdb)
     cli.add_command(fetch)
     cli.add_command(watch)
+    cli.add_command(watch2)
     cli.add_command(signal)
+    cli.add_command(trade)
     cli.add_command(datafeed)
     cli()

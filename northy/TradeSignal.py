@@ -1,15 +1,10 @@
 import re
 import sys
 import json
-from dotenv import dotenv_values
-from pymongo import MongoClient
-from pymongo.errors import DuplicateKeyError
 from termcolor import colored
-from datetime import datetime
-
-config = dotenv_values(".env")
-database_name = "northy"
-tweets_collection_name = "tweets"
+from .logger import get_logger
+from .utils import Utils
+from .database import Database
 
 ignore_tweets = [
     "1557516667357380608", # FLAT STOPPED $SPX | RE-ENTRY SHORT | IN 4211 - 10 PT STOP. | ADJUSTED $NDX STOP TO -25. |  | TAKING THE STOP RISK OVERNIGHT
@@ -19,6 +14,8 @@ ignore_tweets = [
     "1641890973302116358", 
 ]
 
+logger = get_logger("TradeSignal", "TradeSignal.log")
+
 class Signal:
     """
         Trading signal class.
@@ -27,12 +24,12 @@ class Signal:
     """
     def __init__(self):
         # Environment Variables
-        self.config = dotenv_values(".env")
+        self.config = Utils().get_config()
 
         # MongoDB
-        client = MongoClient(self.config["mongodb_conn"], connect=False)
-        self.db = client[database_name]
-        self.tweets_collection = self.db[tweets_collection_name]
+        db = Database()
+        self.db_tweets = db.tweets
+
 
     def __unique(self, sequence):
         """
@@ -84,7 +81,7 @@ class Signal:
         """
             Get alert tweet by ID and return trading signal.
         """
-        tweet = self.db["tweets"].find_one({"tid": tid, "alert": True})
+        tweet = self.db_tweets.find_one({"tid": tid, "alert": True})
         signals = self.text_to_signal(tweet)
         self.__pretty_print_signal(tweet)
         return signals
@@ -94,7 +91,7 @@ class Signal:
             Get all tweets and return trading signal.
         """
         print("Getting all tweets from DB...")
-        results = self.tweets_collection.aggregate([
+        results = self.db_tweets.aggregate([
             {
                 # Filter out alerts
                 '$match': {
@@ -118,7 +115,7 @@ class Signal:
         query = {"tid": tid, "alert": True}
         signals = self.get(tid)
         newvalues = { "$set": { "signals": signals } }
-        self.tweets_collection.update_one(query, newvalues)
+        self.db_tweets.update_one(query, newvalues)
         return signals
 
     def updateall(self):
@@ -126,7 +123,7 @@ class Signal:
             Update trading signal for all tweets.
         """
         print("Updating all tweets...")
-        results = self.tweets_collection.aggregate([
+        results = self.db_tweets.aggregate([
             {
                 # Filter out alerts
                 '$match': {
@@ -146,7 +143,7 @@ class Signal:
     def parse(self, tid, update_db=True):
         """ Parse Tweet data and return trading signal. """
         query = {"tid": tid}
-        tweet = self.db["tweets"].find_one(query)
+        tweet = self.db_tweets.find_one(query)
         signals = self.text_to_signal(tweet)
         text = self.__normalize_text(tweet)
         print(colored(f"Input:\t\t{text}", "yellow"))
@@ -155,13 +152,13 @@ class Signal:
 
         if update_db:
             newvalues = { "$set": { "signals": signals } }
-            self.tweets_collection.update_one(query, newvalues)
+            self.db_tweets.update_one(query, newvalues)
 
         return signals
 
     def parseall(self):
         print("Parsing all tweets...")
-        results = self.tweets_collection.aggregate([
+        results = self.db_tweets.aggregate([
             {
                 # Filter out alerts
                 '$match': {
@@ -314,7 +311,7 @@ class Signal:
             except Exception as e:
                 # Sometimes parsing fail. We fall back to "UNKNOWN". We can later on decide, 
                 # if we want to ignore this and put a market order in or skip the trade.
-                print(e)
+                logger.warning("Failed to parse IN", e)
                 __ACTION_CODE += f"_IN_UNKNOWN"
                 raise Exception("Failed to parse IN")
         
@@ -457,7 +454,7 @@ class Signal:
             This method will export all the signals to a JSON file.
         """
         # Get all signals
-        result = self.tweets_collection.aggregate([
+        result = self.db_tweets.aggregate([
             {
                 '$match': {
                     'alert': True
@@ -512,7 +509,7 @@ class Signal:
             This method will take tweets from the DB and parse the trading signals.
             Each signal parsed (programatically) is compared against a manually created known-good list.
         """
-        result = self.tweets_collection.aggregate([
+        result = self.db_tweets.aggregate([
             {
                 "$match": {
                     "alert": True,
@@ -540,7 +537,7 @@ class Signal:
             try:
                 signals_manual = tweet["signals_manual"]
             except KeyError:
-                print(colored(f"{tid} missing signals_manual", "red"))
+                logger.info(colored(f"{tid} missing signals_manual", "red"))
                 continue
 
             # compare two lists
@@ -570,7 +567,7 @@ class Signal:
         original = json.load(f)
 
         # get alert tweets from DB
-        result = self.tweets_collection.aggregate([
+        result = self.db_tweets.aggregate([
             {
                 '$match': {
                     'username': username,
@@ -677,27 +674,31 @@ class Signal:
             if user_input == "c":
                 print("Confirmed signals:" + colored(f" {generated_signal}", "green"))
                 newvalues = { "$set": { "signals_manual": generated_signal } }
-                self.tweets_collection.update_one({"tid": tid}, newvalues)
+                self.db_tweets.update_one({"tid": tid}, newvalues)
             elif user_input == "m":
                 print("Enter signal(s) using a comma separated list (e.g. SPX_TRADE_LONG_IN_3848_SL_25,NDX_TRADE_LONG_IN_11795_SL_25)")
                 manual_signal = input()
                 signals = None
+
                 try:
                     signals = manual_signal.split(",")
-                except:
+                except Exception as e:
+                    logger.debug("Failed splitting manual_signal:", manual_signal)
                     signals = [manual_signal]
+                    logger.debug("Setting signal to:", signals)
+
                 print("Inserting manual signals:" + colored(f" {signals}", "green"))
                 newvalues = { "$set": { "signals_manual": signals } }
-                self.tweets_collection.update_one({"tid": tid}, newvalues)
+                self.db_tweets.update_one({"tid": tid}, newvalues)
             elif user_input == "s":
                 print("Skipping..")
                 return
             else:
-                print("Invalid input. Exiting..")
+                logger.debug("Invalid input. Exiting..")
                 sys.exit()
 
     def manualall(self):
-        results = self.tweets_collection.aggregate([
+        results = self.db_tweets.aggregate([
             {
                 # Filter out alerts
                 '$match': {
