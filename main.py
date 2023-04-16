@@ -7,7 +7,6 @@ from northy.logger import get_logger
 from northy.utils import Utils
 import os
 from datetime import datetime
-from dotenv import dotenv_values
 
 u = Utils()
 logger = get_logger("main", "main.log")
@@ -71,7 +70,6 @@ if __name__ == '__main__':
         t.watch2()
 
     @click.command()
-    @click.option('--generate', default=False, is_flag=True, help='Update backtest.json file with latest signals (without overriding manual checks)')
     @click.option('--backtest', default=False, is_flag=True, help='Compare dynamicly parsed Tweets from DB against manually validated Tweets from backtest file')
     @click.option('--parse', default="", type=str, help='Dynamically parse raw Tweet text and update DB with signal')
     @click.option('--get', default="", type=str, help='Lookup signal by Tweet ID')
@@ -83,14 +81,10 @@ if __name__ == '__main__':
     @click.option('--manualall', default=False, is_flag=True, help='Manually review all signals in DB')
     @click.option('--export', default=False, is_flag=True, help='Export all signals from DB to CSV file (signals.csv)')
     @click.pass_context
-    def signal(ctx, generate, parse, parseall, backtest, get, getall, update, updateall, manual, manualall, export):
+    def signal(ctx, parse, parseall, backtest, get, getall, update, updateall, manual, manualall, export):
         """ Manage Trading Signals """
         s = Signal()
-        if generate:
-            print(f"Updating backtest.json")
-            s.generate_signals_file()
-
-        elif parse != "":
+        if parse != "":
             s.parse(parse)
 
         elif get:

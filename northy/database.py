@@ -7,26 +7,26 @@ import mongomock
 
 logger = get_logger("db", "db.log")
 config = Utils().get_config()
-
 testing = True
 
 class Database:
     def __init__(self):
         self.init_db(testing=config["PRODUCTION"])
-
+            
     def init_db(self, testing=True):
+        logger.info("Connecting to DB..")
         if testing == "True":
             logger.critical("Using MongoDB Atlas (PRODUCTION MODE)")
-            client = MongoClient(config["mongodb_conn"])
-            self.db = client["tweets"]
+            self.client = MongoClient(config["mongodb_conn"])
+            self.db = self.client["tweets"]
             self.tweets = self.db[config["tweets_collection_name"]]
-            return client
+            return self.client
         else:
             logger.warning("Using mongomock (testing mode)")
-            client = mongomock.MongoClient()
+            self.client = mongomock.MongoClient()
 
             # create a database and collection
-            self.db = client['northy']
+            self.db = self.client['northy']
             self.tweets = self.db['tweets']
 
             # load BSON data from file
@@ -35,7 +35,7 @@ class Database:
             
             # insert data into collection
             self.tweets.insert_many(data)
-            return client
+            return self.client
 
     def prepare_db(self):
         """

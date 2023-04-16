@@ -1,6 +1,5 @@
 import time
 import tweepy
-import pyprowl
 from datetime import datetime
 from termcolor import colored
 from . import TradeSignal
@@ -11,13 +10,10 @@ from .logger import get_logger
 
 u = Utils()
 logger = get_logger("timon", "timon.log")
+config = u.get_config()
 
 class Timon:
     def __init__(self):
-        # Get config
-        u = Utils()
-        self.config = u.get_config()
-
         # MongoDB
         db = Database()
         self.db_tweets = db.tweets
@@ -33,19 +29,16 @@ class Timon:
         text = tweet["text"].replace('\n', '')
         print(now, tid, created_at, username, text)
 
-    def twitter_api(self):
+    def __twitter_api(self):
         """ 
             Authenticate to Twitter and return API object
         """
-        if self.twitter_api is not None:
-            return self.twitter_api
-        else:
-            # APIv1 - Authenticate as a user
-            logger.info("Authenticating to Twitter...")
-            auth = tweepy.OAuthHandler(self.config["consumer_key"], self.config["consumer_secret"])
-            auth.set_access_token(self.config["access_key"], self.config["access_secret"])
-            self.twitter_api = tweepy.API(auth, wait_on_rate_limit=True)
-            return self.twitter_api
+        # APIv1 - Authenticate as a user
+        logger.info("Authenticating to Twitter...")
+        auth = tweepy.OAuthHandler(config["consumer_key"], config["consumer_secret"])
+        auth.set_access_token(config["access_key"], config["access_secret"])
+        api = tweepy.API(auth, wait_on_rate_limit=True)
+        return api
 
     def readdb(self, username, limit=10):
         pipeline = [
@@ -63,7 +56,8 @@ class Timon:
         """
         signal = TradeSignal.Signal()
         tweets = Tweets()
-        for tweet in self.twitter_api.user_timeline(screen_name=username, count=limit):
+        api = self.__twitter_api()
+        for tweet in api.user_timeline(screen_name=username, count=limit):
             # Prepare Tweet data
             is_alert = signal.is_trading_signal(tweet.text)
             tid = str(tweet.id)
@@ -105,7 +99,7 @@ class Timon:
 
                 if tweet["alert"]:
                     # send prowl notification
-                    self.prowl(tweet["text"])
+                    u.prowl(tweet["text"])
 
                     # Add TradeSignal
                     signal = TradeSignal.Signal()
@@ -158,7 +152,7 @@ class Timon:
             else:
                 print(tweet["tid"], "Alert detected, sending notification and executing trade(s)...")
                 # send prowl notification
-                self.prowl(tweet["text"])
+                u.prowl(tweet["text"])
 
                 # Add TradeSignal
                 signal = TradeSignal.Signal()
@@ -171,20 +165,3 @@ class Timon:
                     saxo = SaxoTrader.Saxo()
                     orders = saxo.trade(signal)
                     print("Successfully executed trade(s):", u.json_to_string(orders))
-
-    def prowl(self, message):
-        # TODO: Move Prowl to its own file or utils.py
-        p = pyprowl.Prowl(self.config["prowl_api_key"])
-
-        try:
-            p.verify_key()
-            #print("Prowl API key successfully verified!")
-        except Exception as e:
-            #print("Error verifying Prowl API key: {}".format(e))
-            exit()
-
-        try:
-            p.notify(event="Alert", description=message, priority=0, url='http://www.example.com', appName='Northy')
-            print("Notification successfully sent to Prowl!")
-        except Exception as e:
-            print("Error sending notification to Prowl: {}".format(e))

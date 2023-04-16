@@ -6,12 +6,15 @@ from .logger import get_logger
 from .utils import Utils
 from .database import Database
 
+u = Utils()
+config = u.get_config()
 ignore_tweets = [
     "1557516667357380608", # FLAT STOPPED $SPX | RE-ENTRY SHORT | IN 4211 - 10 PT STOP. | ADJUSTED $NDX STOP TO -25. |  | TAKING THE STOP RISK OVERNIGHT
     "1565311603251232768", # Moved $RUT stop to -10 again.\nI'm have to step away from the desk for a bit, but generally keep an eye on things via mobile.
     "1611317586708561920", # FLAT STOPPED $NDX (ADD-ON) | RE-ENTRY LONG |IN 1070 - 25 PT STOP  <-- type in entry price
     "1633926383146618880", # stopped add-on $SPX &amp; flat stopped remainder original $SPX | Long $SPX | IN: 3908 - 10 pt stop
-    "1641890973302116358", 
+    "1641890973302116358", # ALERT: Limit buy $SPX | IN: 4000 - 15 point stop
+    "1645367498823352320", # REMOVED $SPX 4000 LIMIT BUY ORDER. |  | #HOUSEKEEPING |  | NARRATOR: HA HA HTTPS://T.CO/ZR5COSFEX9
 ]
 
 logger = get_logger("TradeSignal", "TradeSignal.log")
@@ -29,7 +32,6 @@ class Signal:
         # MongoDB
         db = Database()
         self.db_tweets = db.tweets
-
 
     def __unique(self, sequence):
         """
@@ -68,7 +70,7 @@ class Signal:
             Print signal in color.
         """
         text = self.__normalize_text(tweet)
-        signals = self.text_to_signal(tweet)
+        signals = self.__text_to_signal(tweet)
         signal_text = ", ".join(signals)
 
         tid = tweet["tid"]
@@ -82,7 +84,11 @@ class Signal:
             Get alert tweet by ID and return trading signal.
         """
         tweet = self.db_tweets.find_one({"tid": tid, "alert": True})
-        signals = self.text_to_signal(tweet)
+        if tweet is None:
+            logger.error(f"Failed getting Tweet by ID '{tid}'.")
+            return None
+        
+        signals = self.__text_to_signal(tweet)
         self.__pretty_print_signal(tweet)
         return signals
 
@@ -90,27 +96,17 @@ class Signal:
         """
             Get all tweets and return trading signal.
         """
-        print("Getting all tweets from DB...")
+        logger.info("Getting all tweets from DB...")
         results = self.db_tweets.aggregate([
-            {
-                # Filter out alerts
-                '$match': {
-                    'alert': True
-                }
-            },
-            {
-                # Sort, oldest first
-                '$sort': {
-                    'created_at': 1
-                }
-            }
+            { '$match': { 'alert': True } }, # Filter out alerts
+            { '$sort': { 'created_at': 1 } } # Sort, oldest first
         ])
         for tweet in results:
-            signal = self.get(tweet["tid"])
+            self.get(tweet["tid"])
 
     def update(self, tid):
         """
-            Update trading signal for tweet by ID.
+            Updates auto-generated trading signal by tweet ID.
         """
         query = {"tid": tid, "alert": True}
         signals = self.get(tid)
@@ -124,18 +120,8 @@ class Signal:
         """
         print("Updating all tweets...")
         results = self.db_tweets.aggregate([
-            {
-                # Filter out alerts
-                '$match': {
-                    'alert': True
-                }
-            },
-            {
-                # Sort, oldest first
-                '$sort': {
-                    'created_at': 1
-                }
-            }
+            { '$match': { 'alert': True } },  # Filter out alerts
+            { '$sort': { 'created_at': 1 } }  # Sort, oldest first
         ])
         for tweet in results:
             self.update(tweet["tid"])
@@ -144,7 +130,12 @@ class Signal:
         """ Parse Tweet data and return trading signal. """
         query = {"tid": tid}
         tweet = self.db_tweets.find_one(query)
-        signals = self.text_to_signal(tweet)
+        
+        if tweet is None:
+            logger.error(f"Failed getting Tweet by ID '{tid}'.")
+            return None
+        
+        signals = self.__text_to_signal(tweet)
         text = self.__normalize_text(tweet)
         print(colored(f"Input:\t\t{text}", "yellow"))
         print(colored(f"Signals:", "green"))
@@ -157,42 +148,46 @@ class Signal:
         return signals
 
     def parseall(self):
-        print("Parsing all tweets...")
+        """
+            Parse all tweets and update DB.
+        """
         results = self.db_tweets.aggregate([
-            {
-                # Filter out alerts
-                '$match': {
-                    'alert': True
-                }
-            },
-            {
-                # Sort, oldest first
-                '$sort': {
-                    'created_at': 1
-                }
-            }
+            { '$match': { 'alert': True } },   # Filter out alerts
+            { '$sort': { 'created_at': 1 } },  # Sort, oldest first
         ])
         for tweet in results:
             tid = tweet["tid"]
             self.parse(tid)
         
-    def text_to_signal(self, tweet):
+    def __text_to_signal(self, tweet:dict) -> list:
         """
-            Parse raw tweet text to an array of trading signal.
+            Parse raw tweet to an array of trading signal.
 
             Input:
-                `ALERT: stopped $SPX (add-on) Re-entry long IN: 3609 - 10 pt stop`
+                Tweet JSON object
 
             Output:
                 `["SPX_TRADE_LONG_IN_3609_SL_10"]`
         """
-        # Filter out non-alerts
-        if not self.is_trading_signal:
+        #### INPUT VALIDATION ####
+        if not isinstance(tweet, dict):
+            logger.error("Tweet input is not dict")
             return []
         
-        if tweet["tid"] in ignore_tweets:
-            print(tweet["tid"], colored(f"IGNORED", "yellow"), self.__normalize_text(tweet))
+        if "tid" not in tweet:
+            logger.error("Tweet input is missing 'tid'")
             return []
+        
+        # Filter out non-alerts
+        if not self.is_trading_signal(tweet["text"]):
+            logger.warning("No trading signal found")
+            return []
+        
+        # Filter out ignored tweets
+        if tweet["tid"] in ignore_tweets:
+            logger.debug(f"Skipping. Tweet '{tweet['tid']}' is on ignore list.")
+            return []
+        #############################
 
         text = self.__normalize_text(tweet)
 
@@ -432,40 +427,37 @@ class Signal:
 
             # Unknown Action
             else:
-                raise Exception("Unknown action")
+                tid = tweet["tid"]
+                msg = f"Unknown action when parsing tweet {tid}"
+                logger.error(msg)
+                if self.config["PRODUCTION"] == "True":
+                    u.prowl(message=msg, priority=1)
                 
             element += 1
             
         return ACTIONS
 
-    def is_trading_signal(self, text):
+    def is_trading_signal(self, text:str) -> bool:
         """
             Returns true if the text is a trading signal.
         """
         # if string beings with ALERT
-        if text.upper().startswith("ALERT"):
-            is_trading_signal = True
-        else:
-            is_trading_signal = False
+        is_trading_signal = True if text.upper().startswith("ALERT") else False
         return is_trading_signal
 
-    def export(self, filename="signals.json"):
+    def export(self, filename="signals", format="json"):
         """
-            This method will export all the signals to a JSON file.
+            Export all signals to JSON file.
         """
+        # create filepath to temp/ folder
+        filename = f"temp/{filename}.{format}"
+
+        logger.info(f"Exporting signals to {filename}")
+        
         # Get all signals
         result = self.db_tweets.aggregate([
-            {
-                '$match': {
-                    'alert': True
-                }
-            },
-            {
-                # Sort, oldest first
-                '$sort': {
-                    'created_at': 1
-                }
-            },
+            { '$match': { 'alert': True } },
+            { '$sort': { 'created_at': 1 } },
             {
                 "$project": {
                     "_id": 0,
@@ -478,29 +470,35 @@ class Signal:
             },
             #{ '$limit' : 10 }
         ])
+        
+        if format == "json":
+            # Export to JSON
+            with open(filename, 'w') as outfile:
+                json.dump(list(result), outfile, default=u.serialize_datetime)
+        elif format == "csv":
+            # Export to CSV
 
+            with open(filename, 'w') as outfile:
+                header = "tid;created_at;text;signals;signals_manual\n"
+                outfile.write(header)
 
-        # Export to CSV
-        filename = "signals.csv"
+                for t in result:
+                    print(t)
+                    tid = t["tid"]
+                    dt = t["created_at"]
+                    text = self.__normalize_text(t)
+                    try:
+                        sig = ','.join(t["signals"])
+                    except:
+                        sig = ""
 
-        with open(filename, 'w') as outfile:
-            header = "tid;created_at;raw_signal;signals_manual\n"
-            outfile.write(header)
+                    try:
+                        sig_man = ','.join(t["signals_manual"])
+                    except:
+                        sig_man = ""
 
-            for t in result:
-                raw_sig = self.__normalize_text(t)
-                tid = t["tid"]
-                dt = t["created_at"]
-                answer = ','.join(t["signals_manual"])
-                line = f"{tid};{dt};{raw_sig};{answer}\n"
-                outfile.writelines(line)
-            
-
-            print(line)
-
-        # Export to JSON
-        #with open(filename, 'w') as outfile:
-        #    json.dump(list(result), outfile)
+                    line = f"{tid};{dt};{text};{sig};{sig_man}\n"
+                    outfile.writelines(line)
 
     def backtest(self):
         """
@@ -510,17 +508,8 @@ class Signal:
             Each signal parsed (programatically) is compared against a manually created known-good list.
         """
         result = self.db_tweets.aggregate([
-            {
-                "$match": {
-                    "alert": True,
-                }
-            },
-            {
-                # Sort, oldest first
-                "$sort": {
-                    "created_at": 1
-                }
-            }
+            { "$match": { "alert": True } },
+            { "$sort": { "created_at": 1 } }
         ])
 
         count_success = list()
@@ -528,7 +517,11 @@ class Signal:
         for tweet in result:
             tid = tweet["tid"]
             text = self.__normalize_text(tweet)
-            signals = tweet["signals"]
+            try:
+                signals = tweet["signals"]
+            except KeyError:
+                logger.error(f"{tid} missing signals. Try running signal --updateall")
+                continue
 
             if tid in ignore_tweets:
                 print(tid, "Backtest", colored(f"IGNORED", "yellow"), self.__normalize_text(tweet))
@@ -541,7 +534,7 @@ class Signal:
                 continue
 
             # compare two lists
-            signals_match = self.compare_lists(tweet["signals"], tweet["signals_manual"])
+            signals_match = self.__compare_lists(tweet["signals"], tweet["signals_manual"])
             if not signals_match:
                 diff = list(set(sorted(signals)) - set(sorted(signals_manual)))
                 print(colored(f"{tid} FAILED", "red"), text, "difference:", colored(diff, "yellow"))
@@ -559,77 +552,8 @@ class Signal:
         for i in count_failed:
             self.manual(i)
 
-    def generate_signals_file(self, username="NTLiveStream"):
-        # Load backtest.json
-        filename = "signals-backtest.json"
-        original = dict()
-        f = open(filename)
-        original = json.load(f)
 
-        # get alert tweets from DB
-        result = self.db_tweets.aggregate([
-            {
-                '$match': {
-                    'username': username,
-                    'alert': True
-                }
-            },
-            {
-                # Sort, oldest first
-                '$sort': {
-                    'created_at': 1
-                }
-            },
-            {
-                '$project': {
-                    'username': 0,
-                    '_id': 0
-                }
-            },
-            #{ '$limit' : 10 }
-        ])
-        dbdata = []
-        for i in result:
-            dbdata.append({
-                "tid": i["tid"],
-                "text": i["text"],
-                "action": ["TICKER_ACTION_DIRECTION_IN_PRICE_SL_POINTS"],
-            })
-        
-        # helper to check if tid already exists in json file
-        def is_in_dict(search, dict):
-            for i in dict:
-                if search == i["tid"]:
-                    return True
-            return False
-
-        # function to add to JSON
-        def write_json(new_data, filename=filename):
-            with open(filename,'r+') as file:
-                # First we load existing data into a dict.
-                file_data = json.load(file)
-                # Join new_data with file_data inside emp_details
-                file_data.append(new_data)
-                # Sets file's current position at offset.
-                file.seek(0)
-                # convert back to json.
-                json.dump(file_data, file, indent = 4)
-        
-        # append tweets to backtest.json if it doesn't exist already
-        for i in dbdata:
-            tid = i["tid"]
-            if is_in_dict(tid, original):
-                print(f"{tid} already in {filename}")
-            else:
-                print(f"{tid} adding to {filename}")
-                out = {
-                    "tid": i["tid"],
-                    "text": i["text"],
-                    "action": i["action"],
-                }
-                write_json(out)
-
-    def compare_lists(self, list1, list2):
+    def __compare_lists(self, list1, list2):
         if len(list1) != len(list2):
             return False
         sorted_list1 = sorted(list1)
@@ -641,7 +565,7 @@ class Signal:
 
     def manual(self, tid):
         """
-            This method will prompt the user to manually review the signals and confirm them.
+            Prompt for manually reviewing signals and confirm them.
         """
         tweet = self.db.tweets.find_one({"tid": tid})
         tid = tweet["tid"]
@@ -659,13 +583,13 @@ class Signal:
             return
         
         # Check if signals and signals_manual are the same
-        signals_match = self.compare_lists(tweet["signals"], tweet["signals_manual"])
+        signals_match = self.__compare_lists(tweet["signals"], tweet["signals_manual"])
 
         # If signals don't match, prompt user to confirm or manually enter signals
         if not signals_match:
             # signals_manual doesn't exist yet
             # generate signals from text and suggest to use it
-            generated_signal = self.text_to_signal(tweet)
+            generated_signal = self.__text_to_signal(tweet)
             print(tid, "Backtest", colored(f"FAILED", "red"), self.__normalize_text(tweet), colored("new suggested value:", "green"), colored(generated_signal, "yellow"))
 
             # add prompt asking to confirm signals (c) or manually enter signals (m)
