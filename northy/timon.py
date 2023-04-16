@@ -2,32 +2,25 @@ import time
 import tweepy
 import pyprowl
 from datetime import datetime
-from pymongo import MongoClient
-from pymongo.errors import DuplicateKeyError
-from dotenv import dotenv_values
 from termcolor import colored
 from . import TradeSignal
 from . import SaxoTrader
-import click
+from .utils import Utils
+from .database import Database, Tweets
+from .logger import get_logger
 
-config = dotenv_values(".env")
-database_name = "northy"
-tweets_collection_name = "tweets"
+u = Utils()
+logger = get_logger("timon", "timon.log")
 
 class Timon:
     def __init__(self):
-        # APIv1 - Authenticate as a user
-        auth = tweepy.OAuthHandler(config["consumer_key"],config["consumer_secret"])
-        auth.set_access_token(config["access_key"],config["access_secret"])
-        self.api = tweepy.API(auth, wait_on_rate_limit=True)
-        
-        # MongoDB
-        client = MongoClient(config["mongodb_conn"])
-        self.db = client[database_name]
-        self.tweets_collection = self.db[tweets_collection_name]
+        # Get config
+        u = Utils()
+        self.config = u.get_config()
 
-        # Prepare DB
-        self.db[tweets_collection_name].create_index('tid', unique=True)
+        # MongoDB
+        db = Database()
+        self.db_tweets = db.tweets
 
     def __print_nice(self, tweet):
         """ 
@@ -40,42 +33,38 @@ class Timon:
         text = tweet["text"].replace('\n', '')
         print(now, tid, created_at, username, text)
 
-    def __add_tweet_to_db(self, data):
-        try:
-            self.tweets_collection.insert_one(data)
-            # Indicate that new Tweet was added
-            return True
-        except DuplicateKeyError:
-            # Indicate that Tweet already exists
-            return False
+    def twitter_api(self):
+        """ 
+            Authenticate to Twitter and return API object
+        """
+        if self.twitter_api is not None:
+            return self.twitter_api
+        else:
+            # APIv1 - Authenticate as a user
+            logger.info("Authenticating to Twitter...")
+            auth = tweepy.OAuthHandler(self.config["consumer_key"], self.config["consumer_secret"])
+            auth.set_access_token(self.config["access_key"], self.config["access_secret"])
+            self.twitter_api = tweepy.API(auth, wait_on_rate_limit=True)
+            return self.twitter_api
 
-    def readdb(self, username=None, limit=10):
-        pipeline = []
-
-        # Get latest tweets
-        pipeline.append({"$sort": { "created_at": -1 }})  
-        
-        # Filter by username
-        if username != None:
-            pipeline.append({"$match": { "username": username }})
-        
-        # Limit output
-        pipeline.append({"$limit": limit})
-        
-        # Reverse output order so oldest -> latest
-        pipeline.append({"$sort": { "created_at": 1 }})
-
-        for i in self.tweets_collection.aggregate(pipeline):
-            self.__print_nice(i)
+    def readdb(self, username, limit=10):
+        pipeline = [
+            {"$sort": { "created_at": -1 }},        # Get latest tweets
+            {"$match": { "username": username }},   # Filter by username
+            {"$limit": limit},                      # Limit output
+            {"$sort": { "created_at": 1 }}          # Reverse output order so oldest -> latest
+        ]
+        for tweet in self.db_tweets.aggregate(pipeline):
+            self.__print_nice(tweet)
 
     def fetch(self, username="NTLiveStream", limit=1):
         """
             Fetch tweet(s) from User Timeline and add them into the DB.
         """
-        response = self.api.user_timeline(screen_name=username, count=limit)
-
         signal = TradeSignal.Signal()
-        for tweet in response:
+        tweets = Tweets()
+        for tweet in self.twitter_api.user_timeline(screen_name=username, count=limit):
+            # Prepare Tweet data
             is_alert = signal.is_trading_signal(tweet.text)
             tid = str(tweet.id)
             data = {
@@ -87,12 +76,13 @@ class Timon:
             }
 
             # Add Tweet to DB
-            new_tweet = self.__add_tweet_to_db(data)
+            tweets.add(data)
 
+            # TODO: Move this out of fetch() into the function that's using it
             if limit > 1:
                 self.__print_nice(data)
-            else:
-                return data
+            
+            return data
 
     def watch(self):
         last_tid = None
@@ -128,14 +118,63 @@ class Timon:
                         saxo = SaxoTrader.Saxo()
                         saxo.trade(signal)
 
+
             except Exception as e:
                 # TODO: use logger
                 print(f"Exception {e}")
                 print(f"Going to sleep for 1 min.")
                 time.sleep(60)
 
+    def watch2(self):
+        pipeline = [{ '$match': { 'operationType': { '$in': ['update', 'insert'] } } }]
+        logger.info("Setting up change stream...")
+
+        try:
+            resume_token = u.read_json(filename="temp/resume_token.json")
+        except Exception as e:
+            logger.debug("No resume token found")
+        
+        try:
+            print("Setting up stream using resume token: ", u.json_to_string(resume_token))
+            stream = self.db_tweets.watch(pipeline=pipeline, resume_after=resume_token)
+            u.write_json(data=stream.resume_token, filename="temp/resume_token.json")
+            print("Stream setup complete. Writing resume token to file.")
+        except Exception as e:
+            print("Failed to resume stream, setting up new stream")
+            stream = self.db_tweets.watch(pipeline=pipeline)
+            u.write_json(data=stream.resume_token, filename="temp/resume_token.json")
+            print("Stream setup complete. Writing resume token to file.")
+
+        for change in stream:
+            operationType = change["operationType"]
+            _id = change["documentKey"]["_id"]
+            print(f"Change ({operationType}) detected on document ID: {_id}")
+            tweet = self.db_tweets.find_one({"_id": _id})
+
+            # Skip if not an alert
+            print(tweet["text"])
+            if not tweet["alert"]:
+                print(tweet["tid"], "is not an alert")
+            else:
+                print(tweet["tid"], "Alert detected, sending notification and executing trade(s)...")
+                # send prowl notification
+                self.prowl(tweet["text"])
+
+                # Add TradeSignal
+                signal = TradeSignal.Signal()
+                signals = signal.update(tweet["tid"])
+
+                # Execute TradeSignal
+                for signal in signals:
+                    # Must be initialized every time, otherwise trade() might fail
+                    # TODO: handle re-authentication within the trade() method
+                    saxo = SaxoTrader.Saxo()
+                    orders = saxo.trade(signal)
+                    print("Successfully executed trade(s):", u.json_to_string(orders))
+
     def prowl(self, message):
-        p = pyprowl.Prowl(config["prowl_api_key"])
+        # TODO: Move Prowl to its own file or utils.py
+        p = pyprowl.Prowl(self.config["prowl_api_key"])
 
         try:
             p.verify_key()
@@ -149,34 +188,3 @@ class Timon:
             print("Notification successfully sent to Prowl!")
         except Exception as e:
             print("Error sending notification to Prowl: {}".format(e))
-
-    def datafeed(self):
-        from tvDatafeed import TvDatafeed, Interval
-        #tv = TvDatafeed(config["TW_USER"], config["TW_PASS"])
-        tv = TvDatafeed()
-
-        tickers = [
-            {"symbol": "NDX", "exchange": "NASDAQ"},
-            {"symbol": "SPX", "exchange": "SP"},
-            {"symbol": "US100", "exchange": "CAPITALCOM"},
-            {"symbol": "US500", "exchange": "CAPITALCOM"},
-            {"symbol": "RUT", "exchange": "TVC"},
-        ]
-        for ticker in tickers:
-            _symbol = ticker["symbol"]
-            _exchange = ticker["exchange"]
-            collection = f"twfeed-{_exchange}-{_symbol}"
-            self.db[collection].create_index('dt', unique=True)
-
-            minutes_in_day = 1440
-            minutes_in_day = 100
-            df = tv.get_hist(symbol=_symbol, exchange=_exchange, interval=Interval.in_1_minute, n_bars=minutes_in_day*2, extended_session=True)
-            for date, row in df.T.items():
-                d = { "dt": date, "h": row["high"], "l": row["low"], "o": row["open"], "c": row["close"] }
-                try:
-                    self.db[collection].insert_one(d)
-                    print(f"+ Inserting {_exchange}:{_symbol} {d}")
-                except DuplicateKeyError:
-                    print(f"+ Already exist {_exchange}:{_symbol} {d}")
-                    pass
-
