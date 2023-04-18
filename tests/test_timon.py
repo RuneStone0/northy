@@ -19,7 +19,9 @@ def test_fetch():
     from northy import timon
     t = timon.Timon()
 
-    assert isinstance(t.fetch(), dict)
-    assert isinstance(t.fetch(username="NTLiveStream"), dict)
-    assert isinstance(t.fetch(username="NTLiveStream", limit=1), dict)
-    assert isinstance(t.fetch(username="NTLiveStream", limit=2), dict)
+    assert isinstance(t.fetch(), list)
+    assert isinstance(t.fetch(username="NTLiveStream"), list)
+    assert isinstance(t.fetch(username="NTLiveStream", limit=1), list)
+    assert isinstance(t.fetch(username="NTLiveStream", limit=2), list)
+
+    assert "tid" in t.fetch(username="NTLiveStream", limit=1)[0]
