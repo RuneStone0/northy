@@ -2,18 +2,18 @@ import os
 import logging
 from logging.handlers import RotatingFileHandler
 import coloredlogs
-from .utils import Utils
+from dotenv import dotenv_values
 
-u = Utils()
+config = dotenv_values(".env")
 
 def get_logger(self, loggername="main", filename="logs.log"):
-    config = u.get_config()
-    log_level = config["LOG_LEVEL"]
+    # get environment variable
+    LOG_LEVEL = config["LOG_LEVEL"]
     root = logging.getLogger(loggername)
 
     # Log to console
     coloredlogs.install(
-        level=log_level,
+        level=LOG_LEVEL,
         logger=root,
         fmt='%(asctime)s %(name)s %(funcName)s():%(lineno)s %(levelname)s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',

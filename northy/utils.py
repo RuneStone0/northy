@@ -3,19 +3,31 @@ import json
 import pyprowl
 from dotenv import dotenv_values
 from datetime import datetime
+
+from .logger import get_logger
+logger = get_logger("logger", "logger.log")
+
 class Utils:
     def __init__(self):
         self.config = None
         self.get_config()
 
-    def write_json(self, data, filename='.saxo-session'):
+    def write_json(self, data, filename):
+        logger.debug("Writing data to: {}".format(filename))
         with open(filename,'w') as f:
             json.dump(data, f, indent=4)
 
-    def read_json(self, filename='.saxo-session'):
-        with open(filename,'r') as f:
-            data = json.load(f)
-        return data
+    def read_json(self, filename):
+        logger.debug("Reading data from: {}".format(filename))
+        try:
+            with open(filename,'r') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            logger.warning(f"File {filename} not found.")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            return None
     
     def json_to_string(self, data):
         return json.dumps(data)
@@ -32,7 +44,7 @@ class Utils:
 
         return self.config
 
-    def serialize_datetime(self, obj):
+    def serialize_datetime(self, obj) -> str:
         if isinstance(obj, datetime):
             return obj.isoformat()
 
@@ -44,17 +56,17 @@ class Utils:
 
         try:
             p.verify_key()
-            #print("Prowl API key successfully verified!")
+            logger.debug("Prowl API key successfully verified!")
         except Exception as e:
-            #print("Error verifying Prowl API key: {}".format(e))
-            exit()
+            logger.error("Error verifying Prowl API key: {}".format(e))
 
-        try:
-            p.notify(event="Alert", 
-                     description=message, 
-                     priority=priority, 
-                     url=url, 
-                     appName=app_name)
-            print("Notification successfully sent to Prowl!")
-        except Exception as e:
-            print("Error sending notification to Prowl: {}".format(e))
+        response = p.notify(event="Alert", 
+                    description=message, 
+                    priority=priority, 
+                    url=url, 
+                    appName=app_name)
+        logger.debug("Prowl response: {}".format(response))
+        if response["status"] == "success":
+            logger.info("Prowl notification successfully sent: {}".format(message))
+        else:
+            logger.error("Error sending notification to Prowl: {}".format(response))
