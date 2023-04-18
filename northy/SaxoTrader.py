@@ -10,6 +10,8 @@ import saxo_openapi.endpoints.rootservices as rs
 import saxo_openapi.endpoints.trading as tr
 import saxo_openapi.endpoints.portfolio as pf
 from .logger import get_logger
+from .utils import Utils
+u = Utils()
 
 logger = get_logger("SaxoTrader", "SaxoTrader.log")
 
@@ -27,6 +29,7 @@ conf = {
     "AppSecret": "aa2b0b4d070e4950b576b9c024a69914"
 }
 
+# https://www.developer.saxo/openapi/learn/oauth-authorization-code-grant
 base_url = conf["OpenApiBaseUrl"]
 client_id = conf["AppKey"]
 redirect_uri = conf["RedirectUrls"][1]
@@ -36,15 +39,10 @@ pwd = "4ueax1y3"
 basic = HTTPBasicAuth(conf["AppKey"], conf["AppSecret"])
 session_filename = ".saxo-session"
 
-# https://www.developer.saxo/openapi/learn/oauth-authorization-code-grant
-
-
-
 # create random context that contain letters (a-z) and numbers (0-9) as well as - (dash) and _ (underscore). It is case insensitive. Max length is 50 characters.
 ContextId = ''.join(random.choice(string.ascii_letters + string.digits + '-_') for i in range(50))
 ReferenceId = ''.join(random.choice(string.ascii_letters + string.digits + '-_') for i in range(50))
 
-#print(self.ContextId)
 TraderConfig = {
     "SAXO_TICKER_LOOKUP": 
         {
@@ -84,7 +82,7 @@ class Saxo:
         self.s.headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         self.token = self.__get_bearer()
         self.client = None
-        self.connect()
+        self._connect()
 
         # Set trade account config
         self.config = TraderConfig["SAXO_DEMO"]
@@ -135,42 +133,33 @@ class Saxo:
             logger.warning("401 Unauthorized")
             return None
         else:
-            _jwt = r.json()
+            __jwt = r.json()
             # mask middle of token
-            _access_token_masked = _jwt["access_token"][:10] + "..." + _jwt["access_token"][-10:]
-            _masked_refresh_token = _jwt["refresh_token"][:5] + "..." + _jwt["refresh_token"][-5:]
+            _access_token_masked = __jwt["access_token"][:10] + "..." + __jwt["access_token"][-10:]
+            _masked_refresh_token = __jwt["refresh_token"][:5] + "..." + __jwt["refresh_token"][-5:]
 
             logger.debug("Access Token: " + _access_token_masked + " Refresh Token: " + _masked_refresh_token)
 
             # Write access token to file
-            self.__write_json(_jwt)
+            u.write_json(data=__jwt, filename=session_filename)
 
             # Set token
-            self.token = _jwt["access_token"]
+            self.token = __jwt["access_token"]
             
-            return _jwt
+            return __jwt
 
-    def __write_json(self, data, filename='.saxo-session'):
-        with open(filename,'w') as f:
-            json.dump(data, f, indent=4)
-
-    def __read_json(self, filename='.saxo-session'):
-        with open(filename,'r') as f:
-            data = json.load(f)
-        return data
-    
     def __get_bearer(self):
         """ Get bearer token from .saxo-session file """
-        access_token = None
-        try:
-            data = self.__read_json()
-            access_token = data["access_token"]
-        except FileNotFoundError:
+        __jwt = u.read_json(filename=session_filename)
+        if __jwt is None:
             logger.warning("No .saxo-session file found, authenticating..")
-            self.authenticate()
-            data = self.__read_json()
-            access_token = data["access_token"]
+            __jwt = self.__authenticate()
+
+        if "access_token" not in __jwt:
+            logger.warning("No access_token in .saxo-session file, authenticating..")
+            __jwt = self.__authenticate()
         
+        access_token = __jwt["access_token"]
         return access_token
 
     def __get_sl_price(self, entry_price, sl_points, BuySell):
@@ -181,7 +170,7 @@ class Saxo:
             exit_price = entry_price + sl_points
         return exit_price
 
-    def authenticate(self):
+    def __authenticate(self) -> dict:
         """
             Authenticate using OAuth 2.0 Authorization Code Grant
             Reference: https://www.developer.saxo/openapi/learn/oauth-authorization-code-grant
@@ -202,20 +191,20 @@ class Saxo:
 
         return access_obj
 
-    def refresh_token(self):
+    def __refresh_token(self):
         # Read refresh token from file
-        self.access_obj = self.__read_json()
+        self.access_obj = u.read_json(filename=session_filename)
 
         # Attempt to refresh token
         _token = self.__access_token(self.access_obj["refresh_token"], grant_type="refresh_token")
         if _token is None:
             logger.error("Unable to refresh token. Attempting to re-authenticate.")
-            self.authenticate()
+            self.__authenticate()
         else:
             logger.info("Token refreshed.")
             return self.token
 
-    def has_token_expired(self, token):
+    def __has_token_expired(self, token):
         try:
             jwt.decode(token, options={"verify_signature": False})
             return False
@@ -226,32 +215,35 @@ class Saxo:
             logger.error("Something else went wrong", e)
             return True
 
-    def get_balance(self):
-        url = f"{base_url}/port/v1/balances/me"
-        logger.debug(f"GET {url}")
-        data = self.s.get(url)
-        return data
-
-    def connect(self):
+    def _connect(self):
         logger.debug("Test existing session..")
 
         # Check if token has expired
-        if self.has_token_expired(self.token):
+        if self.__has_token_expired(self.token):
             logger.warning("Token has expired. Attempting to use refresh token..")
-            self.refresh_token()
-            return
+            self.__refresh_token()
 
         # Test if token is valid
         try:
             self.client = API(access_token=self.token)
-            r = self.client.request(rs.diagnostics.Get())
-            self.s.headers = self.token
-            logger.debug("Connected. Storing valid headers in session..")
-        except:
-            logger.warning("Connection failed. Re-authenticating..")
-            self.authenticate()
+            self.client.request(rs.diagnostics.Get())
 
-    def signal_to_order(self, signal):
+            # TODO: Use this instead
+            """
+            r = self.s.get("https://gateway.saxobank.com/sim/openapi/root/v1/user")
+            print(r.status_code)
+            if r.status_code == 200:
+                print("OK")
+            """
+
+            self.s.headers = headers = {'Authorization': 'Bearer ' + self.token}
+            logger.debug("Connected. Storing valid headers in session..")
+        except Exception as e:
+            logger.error(e)
+            logger.warning("Connection failed. Re-authenticating..")
+            self.__authenticate()
+
+    def __signal_to_order(self, signal):
         """ Convert signal to Saxo order """
         logger.debug(f"Input Signal: {signal}")
         s = signal.split("_")
@@ -308,14 +300,77 @@ class Saxo:
         elif _action == "FLAT":
             """ Set position to break even """
             logger.info(f"Handling FLATSTOP signal: {signal}")
-            for _p in self.positions():
-                # Only handle CFDs
-                if _p["AssetType"] != "CfdOnIndex":
+            __positions = self.positions()
+            for _p in __positions["Data"]:
+                
+                #logger.debug("Position: {}".format(_p))
+                __pos_base = _p["PositionBase"]
+                __pos_view = _p["PositionView"]
+                __pos_id = _p["PositionId"]
+                
+                # Only touch CFDs
+                __AssetType = __pos_base["AssetType"]
+                if __AssetType != "CfdOnIndex":
+                    logger.debug("Skipping position with AssetType: {}".format(__AssetType))
                     continue
 
-                # Show positions without stop loss
-                print(_p)
-                #if _p["StopLoss"] is None:
+                # Only touch open positions
+                __status = __pos_base["Status"]  # Open, Closed, Pending, Rejected, Cancelled
+                if __status != "Open":
+                    logger.debug("Skipping position with status: {}".format(__status))
+                    continue
+
+                # Only touch positions in profit
+                __PL = __pos_view["ProfitLossOnTrade"]
+                if __PL < 0:
+                    logger.debug("Skipping position with ProfitLossOnTrade < 0: {}".format(__PL))
+                    continue
+
+                # TODO
+                # Position might already have a stop loss
+                # If SL is far away we set it to break even
+                # If SL is close we do nothing
+                """
+                related_orders = __pos_base["RelatedOpenOrders"]
+                print(related_orders)
+                if len(related_orders) > 0:
+                    for o in related_orders:
+                        print(o)
+                        _orderType = o["OrderType"]
+                        pass
+                """
+
+                # Only touch positions with specific ticker??
+                # TODO: Implement this
+
+                # Set stop loss to break even
+                logger.info("Setting stop loss to break even for position: {}".format(__pos_id))
+                
+                _amount = __pos_base["Amount"] * -1  # Reverse of the position amount
+                _BuySell = "Buy" if _amount > 0 else "Sell"
+                _orderPrice = __pos_base["OpenPrice"]  # TODO: Currently, we set the stop loss at break even, which might be different from Sven's entry price
+                order = {
+                    "PositionId": __pos_id,
+                    "Orders":[{
+                        "ManualOrder": False,
+                        "AccountKey": TraderConfig["SAXO_DEMO"]["AccountKey"],
+                        "Uic": TraderConfig["SAXO_TICKER_LOOKUP"][_symbol]["Uic"],
+                        "AssetType": "CfdOnIndex",
+                        "Amount": _amount,
+                        "BuySell": _BuySell,
+                        "OrderDuration": { "DurationType":"GoodTillCancel" },
+                        "OrderPrice": _orderPrice,
+                        "OrderType": "StopIfTraded",
+                    }]
+                }
+                r = self.s.post(f"{base_url}/trade/v2/orders", json=order)
+                if r.status_code != 200:
+                    logger.error("Failed to set stop loss for position: {}".format(__pos_id))
+                    logger.error("Response: {}".format(r.json()))
+                else:
+                    logger.info("Successfully set stop loss for position: {}".format(__pos_id))
+
+                return None
 
         elif _action == "CLOSED":
             """ Close position """
@@ -449,10 +504,10 @@ class Saxo:
 
     def trade(self, signal):
         """ Execute Trade based on signal """
+        logger.debug("Executing trade({})".format(json.dumps(signal)))
 
-        order = self.signal_to_order(signal)
+        order = self.__signal_to_order(signal)
         logger.debug("Order: {}".format(json.dumps(order)))
-
         if isinstance(order, dict):
             logger.debug("Order: {}".format(json.dumps(order)))
             r = tr.orders.Order(data=order)
@@ -468,48 +523,14 @@ class Saxo:
             return None
   
     def positions(self):
+        """
+            Get all positions
+
+            Example output:
+                See `tests/mock_data/SaxoTrader_Saxo_positions.json`
+        """
+        logger.debug("Getting positions.")
         r = pf.positions.PositionsMe()
         rv = self.client.request(r)
+        logger.debug("Response: {}".format(json.dumps(rv)))
         return rv
-
-    def test_orders(self, ACTION="TRADE"):
-        # TRADE LONG
-        if ACTION == "TRADE":
-            # 1564611389154627584, 1587398208833159174
-            for s in ["SPX_TRADE_LONG_IN_3703_SL_10", "SPX_TRADE_SHORT_IN_3911_SL_10"]:
-                saxo.trade(s)
-
-        # FLAT - adjust existing order
-        if ACTION == "FLAT":
-            saxo.trade("NDX_FLAT")  # 1572950706344148993
-
-        # FLATSTOP - ignore :)
-        if ACTION == "FLATSTOP":
-            saxo.trade("NDX_FLATSTOP")  # 1579486112367923201
-
-        # CLOSED
-        if ACTION == "CLOSED":
-            saxo.trade("SPX_CLOSED")  # 1552366393990971392
-
-        # SCALEOUT
-        if ACTION == "SCALEOUT":
-            orders = [
-                "SPX_SCALEOUT_IN_3492_OUT_3685_POINTS_193",  # 1580876949982846976
-                "NDX_SCALEOUT_IN_13720_OUT_12484_POINTS_1236",  # 1564010447782776832
-            ]
-            for s in orders:
-                saxo.trade(s)
-
-        # LIMIT
-        if ACTION == "LIMIT":
-            orders = [
-                "SPX_LIMIT_LONG_IN_4000_OUT_3985_SL_15",  # 1641890973302116358
-                "SPX_LIMIT_SHORT_IN_4318_OUT_4308_SL_10",  # 1560000766043119617
-            ]
-            for s in orders:
-                saxo.trade(s)
-
-if __name__ == "__main__":
-    saxo = Saxo()
-    #saxo.test_orders(ACTION="CLOSED")
-    #saxo.positions()

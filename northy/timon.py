@@ -13,10 +13,31 @@ logger = get_logger("timon", "timon.log")
 config = u.get_config()
 
 class Timon:
+    _instance = None  # Class-level variable to store the singleton instance
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self):
+        if not hasattr(self, 'api'):
+            self.api = None
+            self.__authenticate()
+
         # MongoDB
         db = Database()
         self.db_tweets = db.tweets
+
+    def __authenticate(self):
+        """ 
+            Authenticate to Twitter and initialize API object
+        """
+        # APIv1 - Authenticate as a user
+        logger.info("Authenticating to Twitter...")
+        auth = tweepy.OAuthHandler(config["consumer_key"], config["consumer_secret"])
+        auth.set_access_token(config["access_key"], config["access_secret"])
+        self.api = tweepy.API(auth, wait_on_rate_limit=True)
 
     def __print_nice(self, tweet):
         """ 
@@ -29,17 +50,6 @@ class Timon:
         text = tweet["text"].replace('\n', '')
         print(now, tid, created_at, username, text)
 
-    def __twitter_api(self):
-        """ 
-            Authenticate to Twitter and return API object
-        """
-        # APIv1 - Authenticate as a user
-        logger.info("Authenticating to Twitter...")
-        auth = tweepy.OAuthHandler(config["consumer_key"], config["consumer_secret"])
-        auth.set_access_token(config["access_key"], config["access_secret"])
-        api = tweepy.API(auth, wait_on_rate_limit=True)
-        return api
-
     def readdb(self, username, limit=10):
         pipeline = [
             {"$sort": { "created_at": -1 }},        # Get latest tweets
@@ -50,14 +60,17 @@ class Timon:
         for tweet in self.db_tweets.aggregate(pipeline):
             self.__print_nice(tweet)
 
-    def fetch(self, username="NTLiveStream", limit=1):
+    def fetch(self, username="NTLiveStream", limit=1) -> list:
         """
             Fetch tweet(s) from User Timeline and add them into the DB.
         """
+        logger.info(f"Fetching tweets from {username} limit {limit}")
         signal = TradeSignal.Signal()
         tweets = Tweets()
-        api = self.__twitter_api()
-        for tweet in api.user_timeline(screen_name=username, count=limit):
+        tweet_timeline = self.api.user_timeline(screen_name=username, count=limit)
+        
+        ret_data = list()
+        for tweet in tweet_timeline:
             # Prepare Tweet data
             is_alert = signal.is_trading_signal(tweet.text)
             tid = str(tweet.id)
@@ -70,23 +83,22 @@ class Timon:
             }
 
             # Add Tweet to DB
+            self.__print_nice(data)
             tweets.add(data)
-
-            # TODO: Move this out of fetch() into the function that's using it
-            if limit > 1:
-                self.__print_nice(data)
+            ret_data.append(data)
             
-            return data
+        return ret_data
 
     def watch(self):
         last_tid = None
         while True:
             try:
                 # Sleep to avoid rate limit
+                logger.debug("Sleeping for 5 seconds...")
                 time.sleep(5)
 
                 # Fetch latest tweet
-                tweet = self.fetch()
+                tweet = self.fetch(limit=1)[0]
 
                 # If not a new tweet, print dot
                 if last_tid == tweet["tid"]:

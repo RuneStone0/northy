@@ -489,13 +489,18 @@ class Signal:
                     text = self.__normalize_text(t)
                     try:
                         sig = ','.join(t["signals"])
-                    except:
+                    except KeyError:
                         sig = ""
+                    except Exception as e:
+                        logger.error("Unknown error", e)
 
                     try:
                         sig_man = ','.join(t["signals_manual"])
-                    except:
+                    except KeyError:
                         sig_man = ""
+                    except Exception as e:
+                        logger.error("Unknown error", e)
+
 
                     line = f"{tid};{dt};{text};{sig};{sig_man}\n"
                     outfile.writelines(line)

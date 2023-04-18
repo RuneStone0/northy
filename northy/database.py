@@ -5,17 +5,28 @@ from .logger import get_logger
 import bson
 import mongomock
 
-logger = get_logger("db", "db.log")
+
 config = Utils().get_config()
-testing = True
+logger = get_logger("db", "db.log")
 
 class Database:
+    _instance = None  # Class-level variable to store the singleton instance
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            return cls._instance
+        else:
+            return cls._instance
+
     def __init__(self):
-        self.init_db(testing=config["PRODUCTION"])
-            
-    def init_db(self, testing=True):
+        if not hasattr(self, 'client'):
+            self.client = None
+            self.init_db(production=config["PRODUCTION"])
+
+    def init_db(self, production=False):
         logger.info("Connecting to DB..")
-        if testing == "True":
+        if production == True:
             logger.critical("Using MongoDB Atlas (PRODUCTION MODE)")
             self.client = MongoClient(config["mongodb_conn"])
             self.db = self.client["tweets"]
@@ -32,7 +43,7 @@ class Database:
             # load BSON data from file
             with open('backups/tweets.bson', 'rb') as f:
                 data = bson.decode_all(f.read())
-            
+
             # insert data into collection
             self.tweets.insert_many(data)
             return self.client
