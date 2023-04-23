@@ -31,9 +31,8 @@ class Timon:
 
     def __authenticate(self):
         """ 
-            Authenticate to Twitter and initialize API object
+            Authenticate to Twitter App as specific user and initialize API object
         """
-        # APIv1 - Authenticate as a user
         logger.info("Authenticating to Twitter...")
         auth = tweepy.OAuthHandler(config["consumer_key"], config["consumer_secret"])
         auth.set_access_token(config["access_key"], config["access_secret"])
@@ -67,7 +66,12 @@ class Timon:
         logger.info(f"Fetching tweets from {username} limit {limit}")
         signal = TradeSignal.Signal()
         tweets = Tweets()
-        tweet_timeline = self.api.user_timeline(screen_name=username, count=limit)
+
+        try:
+            tweet_timeline = self.api.user_timeline(screen_name=username, count=limit)
+        except Exception as e:
+            logger.error(e)
+            u.prowl(message=f"Timon.py: {e}")
         
         ret_data = list()
         for tweet in tweet_timeline:
@@ -79,8 +83,11 @@ class Timon:
                 "username": tweet.user.screen_name,
                 "created_at": tweet.created_at,
                 "text": tweet.text,
-                "alert": is_alert
+                "alert": is_alert,
             }
+
+            # Add TradeSignal
+            data["signals"] = signal.text_to_signal(tweet=data)
 
             # Add Tweet to DB
             self.__print_nice(data)
@@ -89,25 +96,24 @@ class Timon:
             
         return ret_data
 
-    def watch(self):
-        last_tid = None
+    def watch_tweets(self):
+        """
+            Watch for new Tweets every 5 seconds and add them into the DB.
+        """
         while True:
-            try:
                 # Sleep to avoid rate limit
                 logger.debug("Sleeping for 5 seconds...")
                 time.sleep(5)
 
+                # If market is closed, skip
+                if not u.is_market_open():
+                    continue
+
                 # Fetch latest tweet
                 tweet = self.fetch(limit=1)[0]
 
-                # If not a new tweet, print dot
-                if last_tid == tweet["tid"]:
-                    #click.echo(".", nl=False)
-                    continue
-                
                 # Process new tweet
                 self.__print_nice(tweet)
-                last_tid = tweet["tid"]
 
                 if tweet["alert"]:
                     # send prowl notification
@@ -124,56 +130,47 @@ class Timon:
                         saxo = SaxoTrader.Saxo()
                         saxo.trade(signal)
 
-
-            except Exception as e:
-                # TODO: use logger
-                print(f"Exception {e}")
-                print(f"Going to sleep for 1 min.")
-                time.sleep(60)
-
-    def watch2(self):
-        pipeline = [{ '$match': { 'operationType': { '$in': ['update', 'insert'] } } }]
-        logger.info("Setting up change stream...")
-
-        try:
-            resume_token = u.read_json(filename="temp/resume_token.json")
-        except Exception as e:
-            logger.debug("No resume token found")
-        
-        try:
-            print("Setting up stream using resume token: ", u.json_to_string(resume_token))
-            stream = self.db_tweets.watch(pipeline=pipeline, resume_after=resume_token)
-            u.write_json(data=stream.resume_token, filename="temp/resume_token.json")
-            print("Stream setup complete. Writing resume token to file.")
-        except Exception as e:
-            print("Failed to resume stream, setting up new stream")
+    def watch_alerts(self):
+        """
+            Watch for new Tweets inserted into the DB. If a new Tweet is a trade alert, send a notification and execute the trade.
+        """
+        def _stream():
+            logger.info("Setting up change stream...")
+            pipeline = [{ '$match': { 'operationType': { '$in': ['update', 'insert'] } } }]
             stream = self.db_tweets.watch(pipeline=pipeline)
-            u.write_json(data=stream.resume_token, filename="temp/resume_token.json")
-            print("Stream setup complete. Writing resume token to file.")
-
-        for change in stream:
-            operationType = change["operationType"]
-            _id = change["documentKey"]["_id"]
-            print(f"Change ({operationType}) detected on document ID: {_id}")
-            tweet = self.db_tweets.find_one({"_id": _id})
+            logger.debug("Stream ready. Waiting for changes to happen..")
+            return stream
+        
+        def _process(tweet):
+            tid = tweet["tid"]
 
             # Skip if not an alert
-            print(tweet["text"])
             if not tweet["alert"]:
-                print(tweet["tid"], "is not an alert")
-            else:
-                print(tweet["tid"], "Alert detected, sending notification and executing trade(s)...")
-                # send prowl notification
-                u.prowl(tweet["text"])
+                logger.debug("{} is not an alert".format(tid))
+                return
 
-                # Add TradeSignal
-                signal = TradeSignal.Signal()
-                signals = signal.update(tweet["tid"])
+            logger.info(f"Alert detected: {tid} {tweet['text']}")
 
-                # Execute TradeSignal
-                for signal in signals:
-                    # Must be initialized every time, otherwise trade() might fail
-                    # TODO: handle re-authentication within the trade() method
-                    saxo = SaxoTrader.Saxo()
-                    orders = saxo.trade(signal)
-                    print("Successfully executed trade(s):", u.json_to_string(orders))
+            # send prowl notification
+            u.prowl(tweet["text"])
+
+            # Execute TradeSignal
+            for signal in tweet["signals"]:
+                # Must be initialized every time, otherwise trade() might fail
+                # TODO: handle re-authentication within the trade() method
+                saxo = SaxoTrader.Saxo()
+                orders = saxo.trade(signal)
+                logger.info("Successfully executed trade(s):", u.json_to_string(orders))
+
+        for change in _stream():
+            operationType = change["operationType"]
+            _id = change["documentKey"]["_id"]
+            logger.debug(f"Change ({operationType}) detected on document ID: {_id}")
+
+            # Get document that changed
+            tweet = self.db_tweets.find_one({"_id": _id})
+            
+            _process(tweet)
+            logger.info("Done processing. Waiting for next change...")
+
+
