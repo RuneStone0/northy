@@ -3,6 +3,8 @@ import json
 import pyprowl
 from dotenv import dotenv_values
 from datetime import datetime
+import datetime
+import pytz
 
 from .logger import get_logger
 logger = get_logger("logger", "logger.log")
@@ -70,3 +72,28 @@ class Utils:
             logger.info("Prowl notification successfully sent: {}".format(message))
         else:
             logger.error("Error sending notification to Prowl: {}".format(response))
+
+    def is_market_open(self):
+        # Set the timezone to Central Time (CT)
+        tz = pytz.timezone('US/Central')
+
+        # Get the current time in Central Time (CT)
+        now = datetime.datetime.now(tz)
+
+        # If Friday after 4pm skip
+        if now.weekday() == 4 and now.hour >= 16:
+            logger.debug("Market is closed. It's Friday after 5pm.")
+            return False
+
+        # If Saturday skip
+        if now.weekday() == 5:
+            logger.debug("Market is closed. It's Saturday.")
+            return False
+
+        # If Sunday before 5pm skip
+        if now.weekday() == 6 and now.hour < 17:
+            logger.debug("Market is closed. It's Sunday before 5pm.")
+            return False
+
+        logger.debug("Market is open!")
+        return True
