@@ -5,6 +5,7 @@ from termcolor import colored
 from .logger import get_logger
 from .utils import Utils
 from .database import Database
+from datetime import datetime
 
 u = Utils()
 config = u.get_config()
@@ -471,10 +472,14 @@ class Signal:
             #{ '$limit' : 10 }
         ])
         
+        def serialize_datetime(obj):
+            if isinstance(obj, datetime):
+                return obj.isoformat()
+
         if format == "json":
             # Export to JSON
             with open(filename, 'w') as outfile:
-                json.dump(list(result), outfile, default=u.serialize_datetime)
+                json.dump(list(result), outfile, indent=4, default=serialize_datetime)
         elif format == "csv":
             # Export to CSV
 

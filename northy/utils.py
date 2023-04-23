@@ -46,10 +46,6 @@ class Utils:
 
         return self.config
 
-    def serialize_datetime(self, obj) -> str:
-        if isinstance(obj, datetime):
-            return obj.isoformat()
-
     def prowl(self, message, priority=0, url=None, app_name='Northy'):
         """
             Send push notification using Prowl.
