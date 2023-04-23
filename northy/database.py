@@ -11,6 +11,8 @@ logger = get_logger("db", "db.log")
 
 class Database:
     _instance = None  # Class-level variable to store the singleton instance
+    db_name = "northy"
+    tweets_collection_name = "tweets"
 
     def __new__(cls):
         if cls._instance is None:
@@ -29,16 +31,16 @@ class Database:
         if production == True:
             logger.critical("Using MongoDB Atlas (PRODUCTION MODE)")
             self.client = MongoClient(config["mongodb_conn"])
-            self.db = self.client["tweets"]
-            self.tweets = self.db[config["tweets_collection_name"]]
+            self.db = self.client[self.db_name]
+            self.tweets = self.db[self.tweets_collection_name]
             return self.client
         else:
             logger.warning("Using mongomock (testing mode)")
             self.client = mongomock.MongoClient()
 
             # create a database and collection
-            self.db = self.client['northy']
-            self.tweets = self.db['tweets']
+            self.db = self.client[self.db_name]
+            self.tweets = self.db[self.tweets_collection_name]
 
             # load BSON data from file
             with open('backups/tweets.bson', 'rb') as f:
@@ -56,7 +58,7 @@ class Database:
         
         # create collection
         print("Creating tweets collection..")
-        self.db().create_collection(self.config["tweets_collection_name"])
+        self.db().create_collection(self.tweets_collection_name)
 
         # create index
         print("Creating tid index on tweets collection..")
@@ -75,8 +77,11 @@ class Tweets:
             Add a tweet to the database.
         """
         try:
-            self.collection.insert_one(data)
+            r = self.collection.insert_one(data)
+            print(r)
             logger.debug("Added Tweet to DB")
         except DuplicateKeyError:
             logger.debug("Tweet already exists")
+        except Exception as e:
+            logger.error(e)
 
