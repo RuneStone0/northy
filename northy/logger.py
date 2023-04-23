@@ -15,7 +15,7 @@ def get_logger(self, loggername="main", filename="logs.log"):
     coloredlogs.install(
         level=LOG_LEVEL,
         logger=root,
-        fmt='%(asctime)s %(name)s %(funcName)s():%(lineno)s %(levelname)s %(message)s',
+        fmt='%(asctime)s %(name)-11s %(funcName)-15s:%(lineno)-3s %(levelname)-8s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
         level_styles={
             # Colors: 'black', 'blue', 'cyan', 'green', 'magenta', 'red', 'white' and 'yellow'
