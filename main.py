@@ -56,18 +56,21 @@ if __name__ == '__main__':
         t.fetch(username=username, limit=limit)
 
     @click.command()
-    @click.option('--username', default="NTLiveStream", help='Filter by username')
-    def watch(username):
-        """ Watch for new Tweets by user """
-        logger.info("Watching for new Tweets..")
+    @click.option('--tweets', default=False, is_flag=True, help='Watch for new Tweets')
+    @click.option('--alerts', default=False, is_flag=True, help='Watch for new Alerts')
+    def watch(tweets, alerts):
+        """
+            Watch for new Tweets or Alerts.
+        """
         t = Timon()
-        t.watch()
-
-    @click.command()
-    def watch2():
-        """ Watch2 """
-        t = Timon()
-        t.watch2()
+        if tweets:
+            logger.info("Watching for new Tweets..")
+            t.watch_tweets()
+        elif alerts:
+            logger.info("Watching for new Alerts..")
+            t.watch_alerts()
+        else:
+            logger.info("Please specify --tweets or --alerts")
 
     @click.command()
     @click.option('--backtest', default=False, is_flag=True, help='Compare dynamicly parsed Tweets from DB against manually validated Tweets from backtest file')
@@ -150,7 +153,6 @@ if __name__ == '__main__':
     cli.add_command(readdb)
     cli.add_command(fetch)
     cli.add_command(watch)
-    cli.add_command(watch2)
     cli.add_command(signal)
     cli.add_command(trade)
     cli.add_command(datafeed)
