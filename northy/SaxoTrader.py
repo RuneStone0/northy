@@ -37,7 +37,7 @@ state = str(uuid.uuid4())
 user = "17470793"
 pwd = "4ueax1y3"
 basic = HTTPBasicAuth(conf["AppKey"], conf["AppSecret"])
-session_filename = ".saxo-session"
+session_filename = "temp/.saxo-session"
 
 # create random context that contain letters (a-z) and numbers (0-9) as well as - (dash) and _ (underscore). It is case insensitive. Max length is 50 characters.
 ContextId = ''.join(random.choice(string.ascii_letters + string.digits + '-_') for i in range(50))
@@ -96,7 +96,7 @@ class Saxo:
     def __auth_request(self):
         auth_endpoint = conf["AuthorizationEndpoint"]
         url = f"{auth_endpoint}?response_type=code&client_id={client_id}&state={state}&redirect_uri={redirect_uri}"
-        logger.info(f"GET {url}")
+        logger.debug(f"GET {url}")
         r = self.s.get(url, allow_redirects=False)
         #logger(r.content)
         redirect_url = r.headers["Location"]
@@ -184,10 +184,10 @@ class Saxo:
         # Step 3, get access token
         access_obj = self.__access_token(auth_code, grant_type="authorization_code")
 
-        # Store valid headers in session
-        logger.debug("Connected. Storing valid headers in session..")
+        # Append headers to the session object
+        logger.info("Connected to SaxoBank. Storing valid headers in session..")
         headers = {'Authorization': 'Bearer ' + access_obj["access_token"]}
-        self.s.headers = headers
+        self.s.headers.update(headers)
 
         return access_obj
 
@@ -216,31 +216,22 @@ class Saxo:
             return True
 
     def _connect(self):
-        logger.debug("Test existing session..")
+        logger.debug("Check if connection to SaxoBank is still valid..")
 
         # Check if token has expired
         if self.__has_token_expired(self.token):
             logger.warning("Token has expired. Attempting to use refresh token..")
             self.__refresh_token()
 
-        # Test if token is valid
-        try:
-            self.client = API(access_token=self.token)
-            self.client.request(rs.diagnostics.Get())
-
-            # TODO: Use this instead
-            """
-            r = self.s.get("https://gateway.saxobank.com/sim/openapi/root/v1/user")
-            print(r.status_code)
-            if r.status_code == 200:
-                print("OK")
-            """
-
-            self.s.headers = headers = {'Authorization': 'Bearer ' + self.token}
-            logger.debug("Connected. Storing valid headers in session..")
-        except Exception as e:
-            logger.error(e)
-            logger.warning("Connection failed. Re-authenticating..")
+        # Test if requests session is valid
+        _url = f"{base_url}/root/v1/user"
+        self.s.headers.update({'Authorization': 'Bearer ' + self.token})
+        logger.debug("GET {}".format(_url))
+        r = self.s.get(_url)
+        if r.status_code == 200:
+            logger.info("SaxoBank session is valid.")
+        else:
+            logger.warning("SaxoBank session is invalid. Re-authenticating..")
             self.__authenticate()
 
     def __signal_to_order(self, signal):
