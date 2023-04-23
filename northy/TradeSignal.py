@@ -70,7 +70,7 @@ class Signal:
             Print signal in color.
         """
         text = self.__normalize_text(tweet)
-        signals = self.__text_to_signal(tweet)
+        signals = self.text_to_signal(tweet)
         signal_text = ", ".join(signals)
 
         tid = tweet["tid"]
@@ -88,7 +88,7 @@ class Signal:
             logger.error(f"Failed getting Tweet by ID '{tid}'.")
             return None
         
-        signals = self.__text_to_signal(tweet)
+        signals = self.text_to_signal(tweet)
         self.__pretty_print_signal(tweet)
         return signals
 
@@ -135,7 +135,7 @@ class Signal:
             logger.error(f"Failed getting Tweet by ID '{tid}'.")
             return None
         
-        signals = self.__text_to_signal(tweet)
+        signals = self.text_to_signal(tweet)
         text = self.__normalize_text(tweet)
         print(colored(f"Input:\t\t{text}", "yellow"))
         print(colored(f"Signals:", "green"))
@@ -159,7 +159,7 @@ class Signal:
             tid = tweet["tid"]
             self.parse(tid)
         
-    def __text_to_signal(self, tweet:dict) -> list:
+    def text_to_signal(self, tweet:dict) -> list:
         """
             Parse raw tweet to an array of trading signal.
 
@@ -557,7 +557,6 @@ class Signal:
         for i in count_failed:
             self.manual(i)
 
-
     def __compare_lists(self, list1, list2):
         if len(list1) != len(list2):
             return False
@@ -594,7 +593,7 @@ class Signal:
         if not signals_match:
             # signals_manual doesn't exist yet
             # generate signals from text and suggest to use it
-            generated_signal = self.__text_to_signal(tweet)
+            generated_signal = self.text_to_signal(tweet)
             print(tid, "Backtest", colored(f"FAILED", "red"), self.__normalize_text(tweet), colored("new suggested value:", "green"), colored(generated_signal, "yellow"))
 
             # add prompt asking to confirm signals (c) or manually enter signals (m)
