@@ -181,7 +181,7 @@ class Signal:
         
         # Filter out non-alerts
         if not self.is_trading_signal(tweet["text"]):
-            logger.warning("No trading signal found")
+            logger.debug("No trading signal found")
             return []
         
         # Filter out ignored tweets

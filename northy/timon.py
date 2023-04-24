@@ -112,9 +112,6 @@ class Timon:
                 # Fetch latest tweet
                 tweet = self.fetch(limit=1)[0]
 
-                # Process new tweet
-                self.__print_nice(tweet)
-
                 if tweet["alert"]:
                     # send prowl notification
                     u.prowl(tweet["text"])
