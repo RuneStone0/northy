@@ -1,5 +1,6 @@
 import time
 import tweepy
+from pymongo.errors import NetworkTimeout
 from datetime import datetime
 from termcolor import colored
 from . import TradeSignal
@@ -7,6 +8,7 @@ from . import SaxoTrader
 from .utils import Utils
 from .database import Database, Tweets
 from .logger import get_logger
+import sys
 
 u = Utils()
 logger = get_logger("timon", "timon.log")
@@ -158,16 +160,27 @@ class Timon:
                 saxo = SaxoTrader.Saxo()
                 orders = saxo.trade(signal)
                 logger.info("Successfully executed trade(s):", u.json_to_string(orders))
+        
+        while True:
+            try:
+                for change in _stream():
+                    operationType = change["operationType"]
+                    _id = change["documentKey"]["_id"]
+                    logger.debug(f"Change ({operationType}) detected on document ID: {_id}")
 
-        for change in _stream():
-            operationType = change["operationType"]
-            _id = change["documentKey"]["_id"]
-            logger.debug(f"Change ({operationType}) detected on document ID: {_id}")
-
-            # Get document that changed
-            tweet = self.db_tweets.find_one({"_id": _id})
-            
-            _process(tweet)
-            logger.info("Done processing. Waiting for next change...")
+                    # Get document that changed
+                    tweet = self.db_tweets.find_one({"_id": _id})
+                    
+                    _process(tweet)
+                    logger.info("Done processing. Waiting for next change...")
+            except NetworkTimeout as e:
+                logger.error("Stream network timeout. Retrying...")
+                pass
+            except KeyboardInterrupt:
+                logger.info("KeyboardInterrupt detected. Exiting...")
+                sys.exit(0)
+            except Exception as e:
+                logger.error(e)
+                pass
 
 
