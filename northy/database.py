@@ -78,7 +78,6 @@ class Tweets:
         """
         try:
             r = self.collection.insert_one(data)
-            print(r)
             logger.debug("Added Tweet to DB")
         except DuplicateKeyError:
             logger.debug("Tweet already exists")
