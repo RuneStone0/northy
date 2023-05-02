@@ -42,6 +42,10 @@ def get_logger(self, loggername="main", filename="logs.log"):
     fileHandler = RotatingFileHandler(log_fname, maxBytes=1000000, backupCount=10) #10 files of 1MB each
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     fileHandler.setFormatter(formatter)
-    root.addHandler(fileHandler)
+
+    # Skip logging to file.
+    # When running `fetch --limit 200` we get anerror message indicating that a logging handler
+    # unable to rotate the log file because it was being used by another process
+    #root.addHandler(fileHandler)
 
     return root
