@@ -15,7 +15,7 @@ mongomock
 pymongo[srv]
 
 # TradingView
-git+https://github.com/StreamAlpha/tvdatafeed.git
+# git+https://github.com/StreamAlpha/tvdatafeed.git
 
 # SaxoBank SDK
 #git+https://github.com/hootnot/saxo_openapi.git
