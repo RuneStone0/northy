@@ -104,8 +104,9 @@ class Timon:
         """
         while True:
                 # Sleep to avoid rate limit
-                logger.debug("Sleeping for 5 seconds...")
-                time.sleep(5)
+                sleep_time = 5
+                logger.debug(f"Sleeping for {sleep_time} seconds...")
+                time.sleep(sleep_time)
 
                 # If market is closed, skip
                 if not u.is_market_open():
