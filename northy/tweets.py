@@ -13,7 +13,6 @@ import logging
 # Configure the logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 uid = "897502744298258432"  # NTLiveStream
 
 class Timon:
@@ -45,12 +44,8 @@ class Timon:
             Authenticate to Twitter App as specific user and initialize API object
         """
         logger.info("Authenticating to Twitter...")
-        #auth = tweepy.OAuthHandler(config["consumer_key"], config["consumer_secret"])
-        #auth.set_access_token(config["access_key"], config["access_secret"])
-        #self.api = tweepy.API(auth, wait_on_rate_limit=True)
 
         # Step 1: Obtain a User Context Bearer Token
-        #api = tweepy.Client(config["bearer_token"])
         config = self.config
         self.client = tweepy.Client(
             consumer_key=config["consumer_key"],
@@ -60,8 +55,7 @@ class Timon:
             wait_on_rate_limit=True
         )
         me = self.client.get_me()
-        #print(me)
-        print(f"Authenticated to Twitter as: {me.data.name} ({me.data.username})")
+        logger.info(f"Authenticated to Twitter as: {me.data.name} ({me.data.username})")
 
     def init_db(self, production=False):
         logger.info("Connecting to DB..")
@@ -95,12 +89,8 @@ class Timon:
         tid = colored(tweet["tid"], "green")
         created_at = colored(tweet["created_at"].strftime("%Y-%m-%d %H:%M:%S"), "red")
         text = tweet["text"].replace('\n', '')
-        if inserted:
-            inserted_indicator = colored("[+]", "green")
-            print(inserted_indicator, now, tid, created_at, text)
-        else:
-            inserted_indicator =  colored("[-]", "red")
-            print(inserted_indicator, now, tid, created_at, text)
+        inserted_indicator = colored("[+]", "green") if inserted else colored("[-]", "red")
+        print(inserted_indicator, now, tid, created_at, text)
             
     def insert_tweet(self, data):
         """
@@ -193,9 +183,21 @@ class Timon:
             next_token = tweets.meta.get("next_token")
 
     def watcher(self):
+        """
+            Watch for new tweets and add them into the DB.
+        """
+        exponential_backoff = 1
         while True:
-            self.fetch(limit=1)
-            time.sleep(1)
+            try:
+                self.fetch(limit=1)
+                time.sleep(1)
+                exponential_backoff = 1
+            except Exception as e:
+                logger.error(e)
+                logger.error("Error fetching tweets. Sleeping for %d seconds.." % exponential_backoff)
+                time.sleep(exponential_backoff)
+                exponential_backoff *= 2
+
 
 def test_cases():
     t = Timon()
@@ -214,17 +216,7 @@ def test_cases():
     t.watch_tweets()
 
 if __name__ == '__main__':
+    # TODO: Change to CLI tool
+    # TODO: Implement caching, to avoid attempting to insert into db every time
     t = Timon()
-    #t.fetchall()
-
-    #t.fetch(limit=1)
-    #t.fetch(limit=2)
-    #t.fetch(limit=5)
-    #t.fetch(limit=20)
-    #t.fetch(limit=100)
-    #t.fetch(limit=200)
-
     t.watcher()
-    
-
-
