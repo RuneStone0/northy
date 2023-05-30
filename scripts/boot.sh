@@ -1,8 +1,7 @@
 #!/bin/bash
-screen_name="northy"
-folder_name="/home/rune/RuneStone0/northy"
 
 # Change CWD
+folder_name="/home/rune/RuneStone0/northy"
 echo "Changing CWD to $folder_name"
 cd $folder_name
 
@@ -24,12 +23,14 @@ else
   echo "No detached screen sessions found."
 fi
 
-# Fetch latest Tweets
-echo "Fetching latest Tweets..."
-python main.py fetch --limit 200
-
-# Create new screen
+# Create new screens
 echo "Creating new screen..."
-screen -dmS $screen_name  # Start new screen session, detached, with name $screen_name
-screen -S $screen_name -X stuff "python main.py watch$(printf '\r')"
+screen_alerts="alerts"
+screen -dmS $screen_alerts  # Start new screen session, detached, with name $screen_name
+screen -S $screen_alerts -X stuff "python main.py watch --alerts $(printf '\r')"
+
+screen_tweets="tweets"
+screen -dmS $screen_tweets  # Start new screen session, detached, with name $screen_name
+screen -S $screen_tweets -X stuff "python main.py watch  --tweets $(printf '\r')"
+
 screen -ls
