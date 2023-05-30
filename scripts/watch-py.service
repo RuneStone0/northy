@@ -1,0 +1,13 @@
+[Unit]
+Description=Northy Watch Service
+After=network.target
+
+[Service]
+Type=simple
+Restart=no
+User=rune
+ExecStart=python /home/rune/RuneStone0/northy/main.py watch
+ExecStartPre=/bin/sleep 30
+
+[Install]
+WantedBy=multi-user.target
