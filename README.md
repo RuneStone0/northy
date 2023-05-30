@@ -54,10 +54,15 @@ Go to Profile > Settings > Login & Security > Automatic Logout > Max
 
 
 # TODO
-## Short-term
-* use logger instead of print
-* instead of running python main.py watch, create a service that runs in the background (logging must be fixed first, so that it doesn't print to stdout)
-* add unit testing
+* Make sure `python tests/test_TradeSignal.py` is using in memory DB to increase speed
+* Use Twitter API v2 instead of v1. (tweepy.API  -->  tweepy.Client)
+* Setup a service to run on boot
+* Unit testing & Code coverage
+* Add allin command with threading to start watch2 + twitter + pushalert
+* Make "Close Position" work
+* Move config to JSON file
+* Move SaxoTrader conf to config file
+* Prevent Twitter API suspension, only fetch when markets are open
 
 ## Long-term
 * Look into using ML to parse alert tweets
