@@ -1,10 +1,10 @@
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from northy import TradeSignal
+from northy import signal
 from northy.database import Tweets
 
-t = TradeSignal.Signal()
+t = signal.Signal()
 db_tweets = Tweets().get()
 
 def test_TradeSignal_get():
@@ -124,3 +124,5 @@ def test_TradeSignal_manualall():
     # generate test cases for TradeSignal.manualall()
     assert t.manualall() == []
 """
+
+test_TradeSignal_export()
