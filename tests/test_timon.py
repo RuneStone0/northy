@@ -6,7 +6,7 @@ import pytest
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_readdb():
-    from northy import timon
+    from northy.old import timon
     t = timon.Timon()
 
     assert t.readdb(username="NTLiveStream") == None
@@ -16,7 +16,7 @@ def test_readdb():
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_fetch():
-    from northy import timon
+    from northy.old import timon
     t = timon.Timon()
 
     assert isinstance(t.fetch(), list)
