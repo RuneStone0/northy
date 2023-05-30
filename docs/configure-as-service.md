@@ -1,35 +1,27 @@
 # Install dependencies
-```
+```bash
 cd northy/
 pip install -r requirements.txt
 ```
 
 # Create Service
-Create a service file:
+Copy `sudo cp scripts/watch.service /etc/systemd/system`
 
-`nano /etc/systemd/system/watch.service`
-
-Insert the following (update the paths to match your setup):
-
-```
-[Unit]
-Description=Northy Watch Service
-After=network.target
-
-[Service]
-Type=idle
-Restart=always
-RestartSec=1
-User=rune
-ExecStart=/usr/bin/python3 /home/rune/RuneStone0/northy/main.py watch
-ExecStartPre=/bin/sleep 30
-
-[Install]
-WantedBy=multi-user.target
-```
+Modify file paths etc. to fit your needs
+`sudo nano /etc/systemd/system/watch.service`
 
 # Enable and start the service
 ```bash
+chmod +x boot.sh
+sudo systemctl daemon-reload
 sudo systemctl enable watch.service
-sudo systemctl start watch.service
+sudo systemctl restart watch.service
 ```
+
+# Check status
+```bash
+sudo systemctl status watch.service
+screen -ls
+screen -r
+```
+
