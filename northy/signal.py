@@ -1,11 +1,13 @@
 import re
 import sys
 import json
+import time
 from termcolor import colored
 from .logger import get_logger
 from .utils import Utils
-from .database import Database
+from .db import Database
 from datetime import datetime
+from .prowl import Prowl
 
 u = Utils()
 config = u.get_config()
@@ -16,7 +18,10 @@ ignore_tweets = [
     "1633926383146618880", # stopped add-on $SPX &amp; flat stopped remainder original $SPX | Long $SPX | IN: 3908 - 10 pt stop
     "1641890973302116358", # ALERT: Limit buy $SPX | IN: 4000 - 15 point stop
     "1645367498823352320", # REMOVED $SPX 4000 LIMIT BUY ORDER. |  | #HOUSEKEEPING |  | NARRATOR: HA HA HTTPS://T.CO/ZR5COSFEX9
+
+    "1639263064758312965", # ALERT: Flat stopped $SPX (add-on)\n\nRe-entry long\nIN 397 - 10 pt stop
 ]
+prowl = Prowl(API_KEY=config["prowl_api_key"])
 
 logger = get_logger("TradeSignal", "TradeSignal.log")
 
@@ -31,8 +36,8 @@ class Signal:
         self.config = Utils().get_config()
 
         # MongoDB
-        db = Database()
-        self.db_tweets = db.tweets
+        self.db = Database().db
+        self.db_tweets = self.db.tweets
 
     def __unique(self, sequence):
         """
@@ -110,7 +115,9 @@ class Signal:
             Updates auto-generated trading signal by tweet ID.
         """
         query = {"tid": tid, "alert": True}
+        print(query)
         signals = self.get(tid)
+        print(signals)
         newvalues = { "$set": { "signals": signals } }
         self.db_tweets.update_one(query, newvalues)
         return signals
@@ -128,7 +135,11 @@ class Signal:
             self.update(tweet["tid"])
 
     def parse(self, tid, update_db=True):
-        """ Parse Tweet data and return trading signal. """
+        """
+            Parse Tweet ID and return trading signal.
+
+            If `update_db` is `True`, the signal will be updated in the DB.
+        """
         query = {"tid": tid}
         tweet = self.db_tweets.find_one(query)
         
@@ -136,17 +147,29 @@ class Signal:
             logger.error(f"Failed getting Tweet by ID '{tid}'.")
             return None
         
-        signals = self.text_to_signal(tweet)
-        text = self.__normalize_text(tweet)
-        print(colored(f"Input:\t\t{text}", "yellow"))
-        print(colored(f"Signals:", "green"))
-        for s in signals: print(colored(f"\t\t{s}", "green"))
+        data = {}
 
+        # Check if tweet is an alert
+        data["alert"] = True if self.is_trading_signal(tweet["text"]) else False
+        
+        # Parse trading signal
+        if data["alert"]:
+            # Parse trading signal
+            signals = self.text_to_signal(tweet)
+            data["signals"] = signals
+
+            # Only for console output
+            text = self.__normalize_text(tweet)
+            print(colored(f"Input:\t\t{text}", "yellow"))
+            print(colored(f"Signals:", "green"))
+            for s in signals: print(colored(f"\t\t{s}", "green"))
+
+        # Update DB if enabled
         if update_db:
-            newvalues = { "$set": { "signals": signals } }
+            newvalues = { "$set": data }
             self.db_tweets.update_one(query, newvalues)
 
-        return signals
+        return data
 
     def parseall(self):
         """
@@ -333,6 +356,7 @@ class Signal:
             
             # Move to flat
             if "TO FLAT" in text or "TO FLT" in text:
+                print("TO FLAT", text)
                 """
                     Examples:
                         1610655996531048453 `STOP ADJ TO FLT $NDX .`
@@ -647,3 +671,52 @@ class Signal:
         ])
         for tweet in results:
             self.manual(tweet["tid"])
+        
+    def watcher(self):
+        """
+            Watch for new tweets and parse them.
+
+            If a trading signal is found, we add it to the DB.
+        """
+        prowl.send("test")
+        def __log(doc, data):
+            tid = doc["tid"]
+            text = doc["text"].strip()
+            if data["alert"]:
+                logger.info(f"Found trading signal in {tid} - {text}")
+                prowl.send(text)
+            else:
+                logger.info(f"No trading signal found in {tid} - {text}")
+
+        # Refresh backlog to make sure we're up-to-date (before starting change stream)
+        pipeline = [
+            { "$match": { "alert": { "$exists": False } } }, # Get tweets where "alerts" it not set (yet)
+            { "$sort": { "created_at": 1 } }, # Sort, oldest first
+        ]
+        for doc in self.db["tweets"].aggregate(pipeline):
+            data = self.parse(doc["tid"], update_db=True)
+            __log(doc, data)
+
+        # Start change stream
+        logger.info("Starting change stream...")
+        while True:
+            try:
+                # Watch for new documents (tweets) where "alert" is not set
+                pipeline = [
+                    { "$match": { "operationType": { "$in": ["insert"] } } }, # 'insert', 'update', 'replace', 'delete'
+                    { "$match": { "alert": { "$exists": False } } }, # Get tweets where "alerts" it not set (yet)
+                ]
+                # Create a change stream
+                change_stream = self.db["tweets"].watch(pipeline)
+
+                # Iterate over the change stream
+                for change in change_stream:
+                    doc = change["fullDocument"]
+                    data = self.parse(doc["tid"], update_db=True)
+                    __log(doc, data)
+
+            except Exception as e:
+                print(f"An error occurred: {e}")
+
+                # Pause for 60 seconds before resuming
+                time.sleep(60)

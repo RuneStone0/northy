@@ -1,15 +1,16 @@
 import os
 import click
-import time
-from northy.timon import Timon
-from northy.TradeSignal import Signal
+from northy.signal import Signal
 from northy.logger import get_logger
 from northy.utils import Utils
-import os
+from northy.tweets import Tweets
 from datetime import datetime
+from northy.db import Database
 
 u = Utils()
 logger = get_logger("main", "main.log")
+db = Database().db
+tw = Tweets(db=db)
 
 if __name__ == '__main__':
     # set env var to PYTHONDONTWRITEBYTECODE=1
@@ -37,38 +38,26 @@ if __name__ == '__main__':
         logger.info("Backup complete!")
 
     @click.command()
-    @click.option('--limit', default=10, help='Number of tweets to return')
-    @click.option('--username', default="NTLiveStream", help='Filter by username')
-    def readdb(username, limit):
-        """ Read Tweets from DB """
-        t = Timon()
-        t.readdb(username=username, limit=limit)
-    
-    @click.command()
     @click.option('--limit', default=200, help='Number of tweets to return')
-    @click.option('--username', default="NTLiveStream", help='Filter by username')
-    def fetch(username, limit):
+    def fetch(limit):
         """
             Fetching the lastest 200 tweets from user and adds them into the DB.
             This is mainly used when DB is out of sync.
         """
-        t = Timon()
-        t.fetch(username=username, limit=limit)
+        tw.fetch(limit=limit)
 
     @click.command()
     @click.option('--tweets', default=False, is_flag=True, help='Watch for new Tweets')
-    @click.option('--alerts', default=False, is_flag=True, help='Watch for new Alerts')
+    @click.option('--alerts', default=False, is_flag=True, help='Watch for new Trading Alerts')
     def watch(tweets, alerts):
         """
             Watch for new Tweets or Alerts.
         """
-        t = Timon()
         if tweets:
-            logger.info("Watching for new Tweets..")
-            t.watch_tweets()
+            tw.watcher()
         elif alerts:
-            logger.info("Watching for new Alerts..")
-            t.watch_alerts()
+            s = Signal()
+            s.watcher()
         else:
             logger.info("Please specify --tweets or --alerts")
 
@@ -121,20 +110,6 @@ if __name__ == '__main__':
             click.echo(ctx.get_help())
 
     @click.command()
-    def datafeed():
-        """ Fetch data from TradingView """
-        t = Timon()
-        while True:
-            try:
-                t.datafeed()
-                logger.info(f"Going to sleep for 12 hour")
-                time.sleep(60*60*12)  # 12 hours
-            except Exception as e:
-                logger.error(f"Exception {e}")
-                logger.info(f"Going to sleep for 1 hour")
-                time.sleep(60*60)
-
-    @click.command()
     @click.option('--tid', default="", type=str, help='Execute trades by Twitter ID')
     def trade(tid):
         """ SaxoTrader """
@@ -150,10 +125,8 @@ if __name__ == '__main__':
             print("Signal: ", signal)
 
     cli.add_command(backup)
-    cli.add_command(readdb)
     cli.add_command(fetch)
     cli.add_command(watch)
     cli.add_command(signal)
     cli.add_command(trade)
-    cli.add_command(datafeed)
     cli()

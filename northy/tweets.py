@@ -1,12 +1,7 @@
-import ast
 import time
-import bson
 import tweepy
-from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
-import mongomock
-from datetime import datetime
-from dotenv import dotenv_values
+from .config import Config
 from termcolor import colored
 import logging
 
@@ -15,29 +10,18 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 uid = "897502744298258432"  # NTLiveStream
 
-class Timon:
-    def __init__(self):
+class Tweets:
+    def __init__(self, db=None, config=None):
         # Placeholder for Class Variables
-        self.db = None # DB Object
+        self.db = db # DB Object
         self.tweets = None # DB Collection
         self.client = None # Twitter Client
 
         # Initialize Class
-        self.get_config()
-        self.init_db(production=self.config["PRODUCTION"])
+        self.config = Config().config
+
+        # TODO: Move twitter out of init and only call it when needed
         self.init_twitter()
-
-    def get_config(self):
-        """
-            Get config from .env file. If already fetched, return cached version.
-        """
-        logger.debug("Getting config...")
-        self.config = dotenv_values(".env")
-
-        # Convert string to bool
-        self.config["PRODUCTION"] = ast.literal_eval(self.config["PRODUCTION"])
-
-        return self.config
 
     def init_twitter(self):
         """ 
@@ -54,32 +38,8 @@ class Timon:
             access_token_secret=config["access_secret"],
             wait_on_rate_limit=True
         )
-        me = self.client.get_me()
-        logger.info(f"Authenticated to Twitter as: {me.data.name} ({me.data.username})")
-
-    def init_db(self, production=False):
-        logger.info("Connecting to DB..")
-        db_name = "northy"
-        tweets_collection_name = "tweets"
-        if production == True:
-            logger.warning("Using MongoDB Atlas (PRODUCTION MODE)")
-            client = MongoClient(self.config["mongodb_conn"])
-            self.db = client[db_name]
-            self.tweets = self.db[tweets_collection_name]
-        else:
-            logger.warning("Using mongomock (testing mode)")
-            client = mongomock.MongoClient()
-
-            # create a database and collection
-            self.db = client[db_name]
-            self.tweets = self.db[tweets_collection_name]
-
-            # load BSON data from file
-            with open('backups/tweets.bson', 'rb') as f:
-                data = bson.decode_all(f.read())
-
-            # insert data into collection
-            self.tweets.insert_many(data)
+        #me = self.client.get_me()
+        #logger.info(f"Authenticated to Twitter as: {me.data.name} ({me.data.username})")
 
     def __print_nice(self, tweet, inserted=False):
         """ 
@@ -97,7 +57,7 @@ class Timon:
             Insert Tweet into DB
         """
         try:
-            r = self.tweets.insert_one(data)
+            r = self.db.tweets.insert_one(data)
             self.__print_nice(data, inserted=True)
         except DuplicateKeyError:
             logger.debug("Tweet already exists")
@@ -144,7 +104,7 @@ class Timon:
 
             ret_limit_left -= 1
             if ret_limit_left == 0:
-                return 
+                return
 
     def fetchall(self):
         """
@@ -190,7 +150,7 @@ class Timon:
         while True:
             try:
                 self.fetch(limit=1)
-                time.sleep(1)
+                time.sleep(5)  # 1 second caused API violation. Trying with 5 seconds..
                 exponential_backoff = 1
             except Exception as e:
                 logger.error(e)
@@ -198,9 +158,8 @@ class Timon:
                 time.sleep(exponential_backoff)
                 exponential_backoff *= 2
 
-
 def test_cases():
-    t = Timon()
+    t = Tweets()
     # Fetching all tweets
     t.fetchall()
 
@@ -218,5 +177,5 @@ def test_cases():
 if __name__ == '__main__':
     # TODO: Change to CLI tool
     # TODO: Implement caching, to avoid attempting to insert into db every time
-    t = Timon()
+    t = Tweets()
     t.watcher()
