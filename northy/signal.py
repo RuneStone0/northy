@@ -678,13 +678,13 @@ class Signal:
 
             If a trading signal is found, we add it to the DB.
         """
-        prowl.send("test")
         def __log(doc, data):
             tid = doc["tid"]
             text = doc["text"].strip()
             if data["alert"]:
                 logger.info(f"Found trading signal in {tid} - {text}")
-                prowl.send(text)
+                url = f"https://twitter.com/NTLiveStream/statuses/{tid}"  # NOTE: Hardcoded Twitter handle
+                prowl.send(text, url)
             else:
                 logger.info(f"No trading signal found in {tid} - {text}")
 
