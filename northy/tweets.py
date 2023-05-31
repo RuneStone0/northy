@@ -89,8 +89,8 @@ class Tweets:
         tweets = self.client.get_users_tweets(
             id=uid, 
             max_results=max_results, 
-            user_auth=True, 
-            tweet_fields=["created_at"])
+            user_auth=True,
+            tweet_fields=["created_at", 'entities'])  # Entities contains tweet URL and other metadata
 
         # Set the maximum number of results to process
         ret_limit_left = limit
