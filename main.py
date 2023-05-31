@@ -119,8 +119,8 @@ if __name__ == '__main__':
         print("Twitter ID: ", tid)
         print("Signals: ", signals)
         for signal in signals:
-            from northy import SaxoTrader
-            trader = SaxoTrader.Saxo()
+            from northy import saxo
+            trader = saxo.Saxo()
             trader.trade(signal)
             print("Signal: ", signal)
 
