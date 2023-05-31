@@ -1,18 +1,21 @@
-import random, string
-from collections import namedtuple
-import time, uuid, json
-import requests
-from requests.auth import HTTPBasicAuth
 import jwt
-from jwt.exceptions import ExpiredSignatureError
+import logging
+import requests
+import random, string
+import time, uuid, json
+from utils2 import Utils
 from datetime import datetime
+from collections import namedtuple
 from saxo_openapi import API
+from requests.auth import HTTPBasicAuth
+from jwt.exceptions import ExpiredSignatureError
 import saxo_openapi.endpoints.trading as tr
-from .logger import get_logger
-from .utils import Utils
-u = Utils()
 
-logger = get_logger("SaxoTrader", "SaxoTrader.log")
+# Configure the logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+utils = Utils()
 
 conf = {
     "AppName": "Sim Timon",
@@ -36,7 +39,7 @@ state = str(uuid.uuid4())
 user = "17470793"
 pwd = "4ueax1y3"
 basic = HTTPBasicAuth(conf["AppKey"], conf["AppSecret"])
-session_filename = "temp/.saxo-session"
+session_filename = ".saxo-session"
 
 # create random context that contain letters (a-z) and numbers (0-9) as well as - (dash) and _ (underscore). It is case insensitive. Max length is 50 characters.
 ContextId = ''.join(random.choice(string.ascii_letters + string.digits + '-_') for i in range(50))
@@ -47,11 +50,13 @@ TraderConfig = {
         {
         "NDX": {
             "Uic": 4912,
-            "AssetType": "CfdOnIndex"
+            "AssetType": "CfdOnIndex",
+            "Stoploss": 25
         },
         "SPX": {
             "Uic": 4913,
-            "AssetType": "CfdOnIndex"
+            "AssetType": "CfdOnIndex",
+            "Stoploss": 10
         }
     },
     "SAXO_DEMO": {
@@ -138,7 +143,7 @@ class Saxo:
             logger.debug("Access Token: " + _access_token_masked + " Refresh Token: " + _masked_refresh_token)
 
             # Write access token to file
-            u.write_json(data=__jwt, filename=session_filename)
+            utils.write_json(data=__jwt, filename=session_filename)
 
             # Set token
             self.token = __jwt["access_token"]
@@ -147,7 +152,7 @@ class Saxo:
 
     def __get_bearer(self):
         """ Get bearer token from .saxo-session file """
-        __jwt = u.read_json(filename=session_filename)
+        __jwt = utils.read_json(filename=session_filename)
         if __jwt is None:
             logger.warning("No .saxo-session file found, authenticating..")
             __jwt = self.__authenticate()
@@ -194,7 +199,7 @@ class Saxo:
 
     def __refresh_token(self):
         # Read refresh token from file
-        self.access_obj = u.read_json(filename=session_filename)
+        self.access_obj = utils.read_json(filename=session_filename)
 
         # Attempt to refresh token
         _token = self.__access_token(self.access_obj["refresh_token"], grant_type="refresh_token")
@@ -221,7 +226,7 @@ class Saxo:
             self.__refresh_token()
             return False
 
-    def __get(self, path) -> tuple:
+    def get(self, path) -> tuple:
         """
             Make GET request to SaxoBank API.
 
@@ -252,7 +257,7 @@ class Saxo:
         logger.debug("{} {}".format(response.status_code, response.json))
         return response
 
-    def __post(self, path, data) -> tuple:
+    def post(self, path, data) -> tuple:
         """
             Make POST request to SaxoBank API.
 
@@ -349,7 +354,7 @@ class Saxo:
         
         time.sleep(1)  # Max 1 request per second (https://www.developer.saxo/openapi/learn/rate-limiting?phrase=Rate+Limit)
 
-    def __get_stoploss_price(self, entry, stoploss, BuySell):
+    def get_stoploss_price(self, entry, stoploss, BuySell):
         """ Calculate stop loss price """
         if BuySell == "Buy":
             exit_price = entry - stoploss
@@ -428,7 +433,6 @@ class Saxo:
         # Execute order
         rsp = self.__post(path="/trade/v2/orders", data=order)
         time.sleep(2)
-
 
     def __action_flat(self, signal, order):
         """ Execute FLATSTOP signal """
@@ -642,7 +646,7 @@ class Saxo:
         order["OrderType"] = "Limit"
 
         # Stop Loss order
-        _SL_price = self.__get_stoploss_price(entry=s.entry, stoploss=s.stoploss, BuySell=order["BuySell"])
+        _SL_price = self.get_stoploss_price(entry=s.entry, stoploss=s.stoploss, BuySell=order["BuySell"])
         _SL_BuySell_Direction = "Sell" if order["BuySell"] == "Buy" else "Buy"
         order["Orders"] =  [{
             "BuySell": _SL_BuySell_Direction,
@@ -652,3 +656,160 @@ class Saxo:
             "OrderType": "StopIfTraded"
         }]
         logger.info("{} was converted to a limit order at ~{} with stop loss at {}".format(s.raw, s.entry, _SL_price))
+
+class Trading(Saxo):
+    def __init__(self):
+        super().__init__()
+        self.order = dict()
+        self.config = self.config
+
+        self.accountKey = self.config["AccountKey"]
+    
+    def post(self, path, data):
+        return super().post(path, data)
+
+    def get(self, path):
+        return super().get(path)
+
+    def uic_lookup(self, symbol):
+        """
+            Lookup Uic and AssetType for a given symbol
+        """
+        symbol = symbol.upper()
+        TABLE = {
+            "NDX": {
+                "Uic": 4912,
+                "AssetType": "CfdOnIndex"
+            },
+            "SPX": {
+                "Uic": 4913,
+                "AssetType": "CfdOnIndex"
+            }
+        }
+        try:
+            return TABLE[symbol]
+        except KeyError:
+            return None
+
+    def get_stoploss_price(self, entry, stoploss, BuySell):
+        """ Calculate stop loss price """
+        return super().get_stoploss_price(entry, stoploss, BuySell)
+
+    def stoploss_order(self, stoploss_price, BuySell):
+        """ Create stop loss order """
+        _SL_BuySell_Direction = "Sell" if BuySell is "Buy" else "Buy"  # Invert BuySell value
+        stoploss_order = {
+            "Uic": self.order["Uic"],
+            "AccountKey": self.accountKey,
+            "AssetType": "CfdOnIndex",
+            "OrderType": "StopIfTraded",
+            "ManualOrder": False,
+            "BuySell": _SL_BuySell_Direction,
+            "Amount": self.order["Amount"],
+            "OrderDuration": { "DurationType": "GoodTillCancel" },
+            "OrderPrice": stoploss_price,
+        }
+        return [stoploss_order]
+
+    def base_order(self, symbol, amount, buy=True, limit=None, stoploss_points=None, stoploss_price=None):
+        """
+            Handle Trade Orders 
+
+            Example signal:
+                SPX_TRADE_SHORT_IN_4162_SL_10
+        """
+        # Base order parameters
+        self.order["Uic"] = self.uic_lookup(symbol)["Uic"]
+        self.order["AssetType"] = self.uic_lookup(symbol)["AssetType"]
+        self.order["OrderType"] = self.config["OrderType"]
+        self.order["ManualOrder"] = False
+
+        # Market order
+        self.order["BuySell"] = "Buy" if buy == True else "Sell"
+        self.order["Amount"] = amount
+        self.order["AccountKey"] = self.accountKey
+        self.order["OrderDuration"] = { "DurationType": "DayOrder" }
+
+        # Limit order
+        if limit is not None:
+            self.order["OrderPrice"] = limit
+            self.order["OrderType"] = "Limit"
+
+        # Stop Loss
+        if stoploss_price is not None:
+            # Set fixed Stop Loss
+            order = self.stoploss_order(stoploss_price=stoploss_price, BuySell=self.order["BuySell"])
+            self.order["Orders"] = order
+        elif stoploss_points is not None:
+            # Set Stop Loss on Market Order
+            
+            # When adding SL to a market order, we don't know the entry price of the trade yet.
+            # We therefore estimate the entry price by looking at the current bid price.
+            bid = trading.bid(symbol)  # estimated entry price
+            #print("Estimated entry price: {}".format(bid))
+
+            stoploss_points = 25 if symbol == "NDX" else 10 # TODO: Make this dynamic
+            #print("Stop loss points: {}".format(stoploss_points))
+
+            stoploss_price = self.get_stoploss_price(entry=bid, stoploss=stoploss_points, BuySell=self.order["BuySell"])
+            #print("Stop loss price: {}".format(stoploss_price))
+
+            order = self.stoploss_order(stoploss_price=stoploss_price, BuySell=self.order["BuySell"])
+
+            self.order["Orders"] = order
+        else:
+            # No Stop Loss added to order
+            pass
+
+        # Execute order
+        logger.info(self.order)
+        rsp = self.post(path="/trade/v2/orders", data=self.order)
+        
+        # Sleep to avoid rate limiting
+        time.sleep(2)
+
+        return rsp
+
+    def market(self, symbol, amount, buy=True, stoploss_points=None, stoploss_price=None):
+        return self.base_order(symbol=symbol,
+                               amount=amount,
+                               buy=buy, 
+                               stoploss_points=stoploss_points,
+                               stoploss_price=stoploss_price)
+
+    def limit(self, symbol, amount, buy=True, limit=None, stoploss_price=None):
+        return self.base_order(symbol=symbol, 
+                               amount=amount, 
+                               buy=buy, 
+                               limit=limit, 
+                               stoploss_price=stoploss_price)
+
+    def price(self, symbol):
+        uic = self.uic_lookup(symbol)["Uic"]
+        assetType = self.uic_lookup(symbol)["AssetType"]
+        path = f"/trade/v1/infoprices/?Uic={uic}&AssetType={assetType}"
+        rsp = self.get(path=path)
+        return rsp.json
+    
+    def bid(self, symbol):
+        return self.price(symbol=symbol)["Quote"]["Bid"]
+
+if __name__ == "__main__":
+    trading = Trading()
+    #trading.buy(symbol="NDX", amount=10)
+
+    # Market order
+    #trading.market(buy=False, amount=5, symbol="NDX")
+    #trading.market(buy=False, amount=5, symbol="NDX", stoploss_points=25)      # Dynamic SL
+    #trading.market(buy=True, amount=5, symbol="NDX", stoploss_points=14325)    # Fixed SL
+
+    # Limit order
+    #trading.limit(buy=False, amount=5, symbol="SPX", limit=4210)
+
+    # TODO: Close Order
+    # TODO: Flat Stop
+    # TODO: Scale Out
+    
+
+    
+
