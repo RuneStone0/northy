@@ -1,9 +1,10 @@
 import os
 import click
-from northy.signal import Signal
+from northy.signal2 import Signal
 from northy.logger import get_logger
 from northy.utils import Utils
 from northy.tweets import Tweets
+from northy.autotrader import AutoTrader
 from datetime import datetime
 from northy.db import Database
 
@@ -124,9 +125,16 @@ if __name__ == '__main__':
             trader.trade(signal)
             print("Signal: ", signal)
 
+    @click.command()
+    def autotrader():
+        """ AutoTrader """
+        trader = AutoTrader(db=db)
+        trader.run()
+
     cli.add_command(backup)
     cli.add_command(fetch)
     cli.add_command(watch)
     cli.add_command(signal)
     cli.add_command(trade)
+    cli.add_command(autotrader)
     cli()
