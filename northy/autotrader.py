@@ -1,10 +1,10 @@
+import pytz
 import time
 import logging
-from collections import namedtuple
-from saxo import Trading, Saxo, Helper
-from datetime import datetime
 import dateutil.parser
-import pytz
+from datetime import datetime
+from collections import namedtuple
+from .saxo import Trading, Saxo, Helper
 
 # Configure the logger
 logging.basicConfig(level=logging.INFO)
@@ -195,17 +195,3 @@ class AutoTrader:
 
     def run(self):
         self.watch()
-
-if __name__ == "__main__":
-    autotrader = AutoTrader()
-    
-    # Trade
-    #autotrader.trade("SPX_TRADE_SHORT_IN_4162_SL_10")
-    #autotrader.trade("SPX_TRADE_LONG_IN_4162_SL_10")
-
-    # FLAT
-    #autotrader.trade("NDX_FLAT")
-
-    # CLOSE
-    autotrader.process_signal("SPX_CLOSED")
-
