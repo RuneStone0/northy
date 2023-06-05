@@ -3,7 +3,7 @@ import logging
 import requests
 import random, string
 import time, uuid, json
-from utils2 import Utils
+from .utils2 import Utils
 from datetime import datetime
 from collections import namedtuple
 from saxo_openapi import API
