@@ -1,12 +1,10 @@
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
-from .utils import Utils
 from .logger import get_logger
+from .config import config
 import bson
 import mongomock
 
-
-config = Utils().get_config()
 logger = get_logger("db", "db.log")
 
 class Database:

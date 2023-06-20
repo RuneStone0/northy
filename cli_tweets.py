@@ -3,7 +3,7 @@ import click
 import logging
 from termcolor import colored
 from northy.tweets import Tweets, TweetsDB, Helper
-from northy.config2 import config
+from northy.config import config
 from datetime import datetime
 
 # Configure the logger

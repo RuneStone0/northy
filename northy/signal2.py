@@ -6,11 +6,11 @@ from termcolor import colored
 from .logger import get_logger
 from .utils import Utils
 from .db import Database
+from .config import config
 from datetime import datetime
 from .prowl import Prowl
 
 u = Utils()
-config = u.get_config()
 ignore_tweets = [
     "1557516667357380608", # FLAT STOPPED $SPX | RE-ENTRY SHORT | IN 4211 - 10 PT STOP. | ADJUSTED $NDX STOP TO -25. |  | TAKING THE STOP RISK OVERNIGHT
     "1565311603251232768", # Moved $RUT stop to -10 again.\nI'm have to step away from the desk for a bit, but generally keep an eye on things via mobile.
@@ -33,7 +33,7 @@ class Signal:
     """
     def __init__(self):
         # Environment Variables
-        self.config = Utils().get_config()
+        self.config = config
 
         # MongoDB
         self.db = Database().db
@@ -456,7 +456,7 @@ class Signal:
                 msg = f"Unknown action when parsing tweet {tid}"
                 logger.error(msg)
                 if self.config["PRODUCTION"] == "True":
-                    u.prowl(message=msg, priority=1)
+                    prowl.send(message=msg, priority=1)
                 
             element += 1
             

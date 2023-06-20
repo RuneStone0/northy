@@ -2,13 +2,12 @@ from pymongo import MongoClient
 import mongomock
 import bson
 from .config import Config
+from .config import config
 import logging
 
 # Configure the logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-config = Config().config
 
 class Database(object):
     def __init__(self, connection_string=config["mongodb_conn"], database_name="northy", collection_name="tweets") -> None:
