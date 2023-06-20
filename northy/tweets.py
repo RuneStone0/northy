@@ -57,7 +57,7 @@ class Helper:
         rate_limit_per_app = 15 * 60 / 10  # 10 requests per 15 minutes
         rate_limit_per_user = 15 * 60 / 5  #  5 requests per 15 minutes
         buffer = 2
-        rate_limit_per_user = rate_limit_per_user - buffer
+        rate_limit_per_user = rate_limit_per_user + buffer
         print(f"rate_limit_handler, waiting {rate_limit_per_user} seconds...")
         time.sleep(rate_limit_per_user)
 
