@@ -38,7 +38,7 @@ if __name__ == '__main__':
         tweets = Tweets(config)
         db = TweetsDB(config)
 
-        data = tweets.fetch(limit=limit).data
+        data = tweets.fetch(max_results=limit).data
         for tweet in data:
             db.add_tweet(tweet)
 
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     @click.command()
     def fetchall():
         tweets = Tweets(config)
-        tweets.all()
+        tweets.fetchall()
 
     @click.command()
     def watch():
@@ -56,28 +56,20 @@ if __name__ == '__main__':
             Watch for new tweets and add them into the DB.
         """
         tweets = Tweets(config)
+        helper = Helper()
+
+        tweetsdb = TweetsDB(config)
+        latest_twitter_id = tweetsdb.get_latest()['tid']
+
         while True:
-            # if not weekday, sleep for 1 hour
-            if datetime.today().weekday() >= 5:
-                sleep_minutes = 60
-                logger.info(f"It's weekend. Sleeping for {sleep_minutes} minutes..")
-                time.sleep(sleep_minutes)
-                continue
+            # only fetch tweets during trading hours
+            if helper.is_trading_hours():
+                data = tweets.fetch(since_id=latest_twitter_id).data
+                for tweet in data:
+                    tweetsdb.add_tweet(tweet)
 
-            # if time is not between 8:30 and 15:00 central time, sleep for 15 min
-            now = datetime.now()
-            if now.hour < 7 or now.hour > 15:
-                sleep_minutes = 15
-                logger.info(f"It's not trading hours. Sleeping for {sleep_minutes} min..")
-                time.sleep(sleep_minutes*60)
-                continue
-            
-            tweets.fetch(rate_limit=True)
-
-    @click.command()
-    def analyze():
-        tweets = Tweets(config)
-        tweets.all()
+                latest_twitter_id = tweetsdb.get_latest()['tid']
+                helper.rate_limit_handler()
 
     cli.add_command(me)
     cli.add_command(search)

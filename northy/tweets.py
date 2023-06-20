@@ -3,7 +3,7 @@ import time
 import tweepy
 import logging
 from termcolor import colored
-from pymongo import MongoClient
+from pymongo import MongoClient, DESCENDING
 from pymongo.errors import DuplicateKeyError
 
 logger = logging.getLogger(__name__)
@@ -56,8 +56,42 @@ class Helper:
     def rate_limit_handler(self):
         rate_limit_per_app = 15 * 60 / 10  # 10 requests per 15 minutes
         rate_limit_per_user = 15 * 60 / 5  #  5 requests per 15 minutes
+        buffer = 2
+        rate_limit_per_user = rate_limit_per_user - buffer
         print(f"rate_limit_handler, waiting {rate_limit_per_user} seconds...")
         time.sleep(rate_limit_per_user)
+
+    def is_trading_hours(self):
+        """
+            Check if it's trading hours
+        """
+        import pytz
+        from datetime import datetime
+        import time
+        
+        # Set the timezone to US Central Time
+        us_central_timezone = pytz.timezone('US/Central')
+
+        # if not weekday, sleep for 1 hour
+        if datetime.now(tz=us_central_timezone).weekday() >= 5:
+            sleep_minutes = 60
+            logger.info(f"It's the weekend. Sleeping for {sleep_minutes} minutes..")
+            time.sleep(sleep_minutes)
+            return False
+
+        # if time is not between 8:30 and 15:00 Central Time, sleep for 15 minutes
+        now = datetime.now(tz=us_central_timezone)
+        trading_start_time = now.replace(hour=8, minute=30, second=0, microsecond=0)
+        trading_end_time = now.replace(hour=15, minute=0, second=0, microsecond=0)
+
+        if now < trading_start_time or now > trading_end_time:
+            sleep_minutes = 15
+            logger.info(f"It's not trading hours. Sleeping for {sleep_minutes} minutes..")
+            time.sleep(sleep_minutes * 60)
+            return False
+        
+        return True
+        
 
 class Tweets:
     """
@@ -104,7 +138,7 @@ class Tweets:
         }
         return data
 
-    def fetch(self, limit=5, user_auth=True, rate_limit=False) -> list:
+    def fetch(self, max_results=5, user_auth=True, since_id=None) -> list:
         """
             Fetch tweet(s) from User Timeline and add them into the DB.
 
@@ -114,25 +148,24 @@ class Tweets:
                 rate_limit (bool): Pause after each request to avoid rate limit
         """
         # Set max_results to min 5 or max 100
-        max_results = min(100, max(5, limit))
+        max_results = min(100, max(5, max_results))
         uid = self.uid
 
         # Get tweets
         logger.info(f"Fetching {max_results} tweets from {uid} User Timeline...")
+        if since_id != None: logger.info(f"since_id: {since_id}")
         tweets = self.client.get_users_tweets(
             id=uid, 
             max_results=max_results,
             user_auth=user_auth,
+            since_id=None,
             tweet_fields=["created_at", 'entities', 'author_id'])  # Entities contains tweet URL and other metadata
-
-        if rate_limit:
-            self.rate_limit_handler()
         
         return tweets
 
     def fetchall(self):
         from .config import config
-        db = TweetsDB(connection_string=config["mongodb_conn"])
+        db = TweetsDB(config)
         helper = Helper()
         
         pagination_token = None  # Set the initial pagination_token to None
@@ -146,6 +179,7 @@ class Tweets:
                 user_auth=True,
                 pagination_token=pagination_token  # Pass the pagination_token
             )
+            print(tweets)
 
             # Check if no more tweets are available
             next_token = tweets.meta.get('next_token')
@@ -207,6 +241,13 @@ class TweetsDB:
             Get a tweet from the database.
         """
         return self.collection.find_one({"tid": tid})
+
+    def get_latest(self):
+        """
+            Get a tweet from the database.
+        """
+        doc = self.collection.find_one({}, sort=[("created_at", DESCENDING)])
+        return doc
     
     def add_tweet(self, data):
         """
