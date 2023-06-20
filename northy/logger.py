@@ -2,9 +2,7 @@ import os
 import logging
 from logging.handlers import RotatingFileHandler
 import coloredlogs
-from dotenv import dotenv_values
-
-config = dotenv_values(".env")
+from .config import config
 
 def get_logger(self, loggername="main", filename="logs.log"):
     # get environment variable

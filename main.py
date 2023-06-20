@@ -3,6 +3,7 @@ import click
 from northy.signal2 import Signal
 from northy.logger import get_logger
 from northy.utils import Utils
+from northy.config import config
 from northy.tweets import Tweets
 from northy.autotrader import AutoTrader
 from datetime import datetime
@@ -11,7 +12,6 @@ from northy.db import Database
 u = Utils()
 logger = get_logger("main", "main.log")
 db = Database().db
-tw = Tweets(db=db)
 
 if __name__ == '__main__':
     # set env var to PYTHONDONTWRITEBYTECODE=1
@@ -27,7 +27,6 @@ if __name__ == '__main__':
         """ Backup DB """
         logger.info("Backing up DB..")
 
-        config = u.get_config()
         database_name = "northy"
         tweets_collection_name = "tweets"
 
@@ -45,6 +44,7 @@ if __name__ == '__main__':
             Fetching the lastest 200 tweets from user and adds them into the DB.
             This is mainly used when DB is out of sync.
         """
+        tw = Tweets(db=db)
         tw.fetch(limit=limit)
 
     @click.command()
@@ -55,6 +55,7 @@ if __name__ == '__main__':
             Watch for new Tweets or Alerts.
         """
         if tweets:
+            tw = Tweets(db=db)
             tw.watcher()
         elif alerts:
             s = Signal()
@@ -131,10 +132,25 @@ if __name__ == '__main__':
         trader = AutoTrader(db=db)
         trader.run()
 
+    @click.command()
+    @click.option('--signal', default="", type=str, help='Manually trade signal')
+    def trader(signal):
+        """ AutoTrader """
+        trader = AutoTrader(db=db)
+        trader.process_signal(signal)
+
+    @click.command()
+    def tweets():
+        """ AutoTrader """
+        tweets = Tweets()
+        trader.process_signal(signal)
+
+
     cli.add_command(backup)
     cli.add_command(fetch)
     cli.add_command(watch)
     cli.add_command(signal)
     cli.add_command(trade)
     cli.add_command(autotrader)
+    cli.add_command(trader)
     cli()
