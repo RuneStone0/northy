@@ -64,7 +64,12 @@ if __name__ == '__main__':
         while True:
             # only fetch tweets during trading hours
             if helper.is_trading_hours():
-                data = tweets.fetch(since_id=latest_twitter_id).data
+                try:
+                    data = tweets.fetch(since_id=latest_twitter_id).data
+                except Exception as e:
+                    logger.error(e)
+                    continue
+
                 for tweet in data:
                     tweetsdb.add_tweet(tweet)
 
