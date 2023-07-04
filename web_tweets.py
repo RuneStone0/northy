@@ -1,3 +1,4 @@
+import sys
 from flask import Flask
 from northy.tweets import Tweets, TweetsDB, Helper
 from northy.config import config
@@ -23,5 +24,6 @@ def fetch():
     return response
 
 if __name__ == '__main__':
-    app.run(debug=True, port=4444)
+    host = '0.0.0.0' if '--live' in sys.argv else '127.0.0.1'
+    app.run(debug=True, port=4444, host=host)
 
