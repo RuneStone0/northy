@@ -68,6 +68,7 @@ if __name__ == '__main__':
                     data = tweets.fetch(since_id=latest_twitter_id).data
                 except Exception as e:
                     logger.error(e)
+                    time.sleep(60)
                     continue
 
                 for tweet in data:
