@@ -13,7 +13,10 @@ def hello():
 def fetch():
     tweets = Tweets(config)
     db = TweetsDB(config)
-    data = request.json
+    data = request.get_json()
+    if data is None:
+        return 'Invalid JSON data', 400
+
     mock_data = {
         "anapp": "Twitter",
         "anbigicon": "%anbigicon",
@@ -41,30 +44,29 @@ def fetch():
         "anwhentime": "1688498748786"
     }
 
+    # Get data from AutoNotification
     antag = data["antag"]  # URL to Twitter App, opening User ID
     antext = data["antext"]  # Tweet text
     antitle = data["antitle"]  # Tweet Nickname
 
-    response = {}
-    # Handle NTLiveStream Tweet
+    # Prepare response
+    response = {
+        "status": "success",
+        "title": antitle,
+        "text": antext
+    }
+
+    # Process request
+    print(f"Tweet from {antitle}: {antext}")
     if "897502744298258432" in antag:
-        print(f"Tweet from {antitle}: {antext}")
-        # Initialize fetch of tweets
-        # TODO: Only fetch if its ALERT tweet
+        # When NTLiveStream, we fetch the last 5 tweets and add them to the DB
         for tweet in tweets.fetch(max_results=5).data: db.add_tweet(tweet)
-        response["status"] = "success"
-        response["title"] = antitle
-        response["text"] = antext
-        
-    # Handle RuneStone Tweet (for debugging purposes)
+        response["status"] = "success - fetching tweets from NTLiveStream"
     elif "246817629" in antag:
-        print(f"Tweet from {antitle}: {antext}")
-        response["status"] = "success"
-        response["title"] = antitle
-        response["text"] = antext
-    
-    # Any other tweet, we ignore
+        # Handle RuneStone Tweet (for debugging purposes)
+        pass
     else:
+        # Any other tweet, we ignore
         response["status"] = "skip"
 
     return response
