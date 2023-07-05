@@ -64,14 +64,14 @@ def fetch():
 
     # Process request
     print(colored(f"[ ] Tweet from {antitle}: {antext}", "blue"))
-    if "897502744298258432" in antag:
+    if "Northy" in antitle:
         # When NTLiveStream, we fetch the last 5 tweets and add them to the DB
         print(colored(f"[+] Fetching tweets from NTLiveStream", "green"))
         tweets = Tweets(config)
         db = TweetsDB(config)
         for tweet in tweets.fetch(max_results=5).data: db.add_tweet(tweet)
         return response, 201
-    elif "246817629" in antag:
+    elif "RuneStone" in antitle:
         # Handle RuneStone Tweet (for debugging purposes)
         pass
     else:
