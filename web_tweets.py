@@ -1,4 +1,5 @@
 import sys
+import time
 from termcolor import colored
 from flask import Flask, request
 from northy.tweets import Tweets, TweetsDB, Helper
@@ -68,6 +69,8 @@ def fetch():
         print(colored(f"[+] Fetching tweets from NTLiveStream", "green"))
         tweets = Tweets(config)
         db = TweetsDB(config)
+        print("Sleeping for 1 second before attempting to fetch tweets..")
+        time.sleep(1)
         for tweet in tweets.fetch(max_results=5).data: db.add_tweet(tweet)
         return response, 201
     elif "RuneStone" in antitle:
