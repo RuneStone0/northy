@@ -64,6 +64,10 @@ def fetch():
 
     # Process request
     print(colored(f"[ ] Tweet from {antitle}: {antext}", "blue"))
+    print(data)
+    print(antitle)
+    print(type(antitle))
+    print("Northy" in antitle)
     if "Northy" in antitle:
         # When NTLiveStream, we fetch the last 5 tweets and add them to the DB
         print(colored(f"[+] Fetching tweets from NTLiveStream", "green"))
@@ -76,6 +80,7 @@ def fetch():
         pass
     else:
         # Any other tweet, we ignore
+        print("[ ] Ignoring tweet")
         response["status"] = "skip"
 
     return response, 200
