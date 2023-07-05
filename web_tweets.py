@@ -69,8 +69,9 @@ def fetch():
         print(colored(f" * Fetching tweets from NTLiveStream", "green"))
         tweets = Tweets(config)
         db = TweetsDB(config)
-        print(" * Sleeping for 2 second before attempting to fetch tweets..")
-        time.sleep(2)
+        sleep_time = 5
+        print(f" * Sleeping for {sleep_time} second before attempting to fetch tweets..")
+        time.sleep(sleep_time)
         for tweet in tweets.fetch(max_results=5).data: db.add_tweet(tweet)
         return response, 201
     elif "RuneStone" in antitle:
