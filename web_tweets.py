@@ -48,7 +48,7 @@ def fetch():
     # Validate JSON data
     data = request.get_json()
     if data is None:
-        print(f"[-] Invalid JSON data: {data}", file=sys.stderr)
+        print(f" * Invalid JSON data: {data}", file=sys.stderr)
         return 'Invalid JSON data', 400
 
     # Get data from AutoNotification
@@ -63,13 +63,13 @@ def fetch():
     }
 
     # Process request
-    print(colored(f"[ ] Tweet from {antitle}: {antext}", "blue"))
+    print(colored(f" * Tweet from {antitle}: {antext}", "blue"))
     if "Northy" in antitle:
         # When NTLiveStream, we fetch the last 5 tweets and add them to the DB
-        print(colored(f"[+] Fetching tweets from NTLiveStream", "green"))
+        print(colored(f" * Fetching tweets from NTLiveStream", "green"))
         tweets = Tweets(config)
         db = TweetsDB(config)
-        print("Sleeping for 2 second before attempting to fetch tweets..")
+        print(" * Sleeping for 2 second before attempting to fetch tweets..")
         time.sleep(2)
         for tweet in tweets.fetch(max_results=5).data: db.add_tweet(tweet)
         return response, 201
@@ -78,7 +78,7 @@ def fetch():
         pass
     else:
         # Any other tweet, we ignore
-        print(colored(f"[ ] Ignoring Tweet from {antitle}: {antext}", "yellow"))
+        print(colored(f" * Ignoring Tweet from {antitle}: {antext}", "yellow"))
         response["status"] = "skip"
 
     return response, 200
