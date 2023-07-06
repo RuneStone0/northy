@@ -40,6 +40,12 @@ def hello():
 
 @app.route('/fetch', methods=['POST'])
 def fetch():
+    print("------------ DEBUG ------------")
+    print('Received request:', request.method, request.path)
+    print('Request headers:', request.headers)
+    print('Request body:', request.get_json())
+    print("------------ DEBUG ------------")
+
     # Validate X-Northy header
     x_northy_header = request.headers.get('X-Northy')
     if x_northy_header != config['x_northy']:
