@@ -2,8 +2,28 @@ import sys
 import time
 from termcolor import colored
 from flask import Flask, request
-from northy.tweets import Tweets, TweetsDB, Helper
+from northy.tweets import Tweets, TweetsDB
 from northy.config import config
+from datetime import datetime
+import logging
+import pytz
+
+def setup_logging():
+    # Create a formatter with the desired log format
+    base_log = colored('%(asctime)s [%(levelname)s]', "blue")
+    log_format = f"{base_log} %(message)s"
+    formatter = logging.Formatter(log_format, datefmt='%Y-%m-%d %H:%M:%S')
+
+    # Create a handler and set the formatter
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+
+    # Create a logger and add the handler
+    log = logging.getLogger(__name__)
+    log.addHandler(handler)
+    log.setLevel(logging.DEBUG)
+    return log
+log = setup_logging()
 
 app = Flask(__name__)
 config['x_northy'] = '18dc651a-983b-41d8-9220-eb7c93142afc'
@@ -33,18 +53,59 @@ mock_data = {
     "antouchaction": "d59607cb-5edf-4fab-8aa9-8634a22df00e",
     "anwhentime": "1688498748786"
 }
+non_alert_tweets = None
+
+# Function to set the global variable
+def set_non_alert_tweets():
+    global non_alert_tweets
+    non_alert_tweets = 0
+    return non_alert_tweets
+
+def increment_non_alert_tweets():
+    global non_alert_tweets
+    non_alert_tweets += 1
+    return non_alert_tweets
+
+def reset_non_alert_tweets():
+    global non_alert_tweets
+    non_alert_tweets = 0
+    return non_alert_tweets
+
+def get_non_alert_tweets():
+    global non_alert_tweets
+    return non_alert_tweets
+
+# Register the function to be executed before the first request
+@app.before_request
+def before_request():
+    global non_alert_tweets
+    if non_alert_tweets is None:
+        set_non_alert_tweets()
+
+def debug():
+    try:
+        body = request.get_json()
+    except:
+        body = "[Empty]"
+    print("------------ DEBUG ------------")
+    print(colored('Received request:', "yellow"), request.method, request.path)
+    print(colored('Request headers:', "yellow"), request.headers)
+    print(colored('Request body:', "yellow"), body)
+    print("------------ DEBUG ------------")
 
 @app.route('/')
 def hello():
-    return "Hello, World!"
+    debug()
+
+    val = get_non_alert_tweets()
+    msg = f"Hello, World! {val}"
+    log.info(msg)
+    increment_non_alert_tweets()
+    return msg
 
 @app.route('/fetch', methods=['POST'])
 def fetch():
-    print("------------ DEBUG ------------")
-    print('Received request:', request.method, request.path)
-    print('Request headers:', request.headers)
-    print('Request body:', request.get_json())
-    print("------------ DEBUG ------------")
+    debug()
 
     # Validate X-Northy header
     x_northy_header = request.headers.get('X-Northy')
@@ -52,10 +113,11 @@ def fetch():
         return 'Invalid X-Northy header', 401
     
     # Validate JSON data
-    data = request.get_json()
-    if data is None:
-        print(f" * Invalid JSON data: {data}", file=sys.stderr)
-        return 'Invalid JSON data', 400
+    try:
+        data = request.get_json()
+    except:
+        print(f"Invalid JSON data: {data}", file=sys.stderr)
+        return 'Invalid JSON data', 415
 
     # Get data from AutoNotification
     antext = data["antext"]  # Tweet text
@@ -69,23 +131,46 @@ def fetch():
     }
 
     # Process request
-    print(colored(f" * Tweet from {antitle}: {antext}", "blue"))
+    log.info(f"Tweet from {antitle}: {antext}")
     if "Northy" in antitle:
-        # When NTLiveStream, we fetch the last 5 tweets and add them to the DB
-        print(colored(f" * Fetching tweets from NTLiveStream", "green"))
-        tweets = Tweets(config)
-        db = TweetsDB(config)
-        sleep_time = 5
-        print(f" * Sleeping for {sleep_time} second before attempting to fetch tweets..")
-        time.sleep(sleep_time)
-        for tweet in tweets.fetch(max_results=5).data: db.add_tweet(tweet)
-        return response, 201
+        def fetch():
+            # Fetch tweets
+            tweets = Tweets(config)
+            db = TweetsDB(config)
+
+            # Insert delay, to make sure Twitter User Timeline is updated
+            sleep_time = 5
+            log.info(f"Sleeping for {sleep_time} second before fetching..")
+            time.sleep(sleep_time)
+
+            log.info(colored(f"Fetching tweets from NTLiveStream", "green"))
+            for tweet in tweets.fetch(max_results=5).data: db.add_tweet(tweet)
+
+        log.info(f"non_alert_tweets counter: {non_alert_tweets}")
+        if "ALERT" not in antext.upper():
+            # Handle non-alert tweet
+            increment_non_alert_tweets()
+            log.info(f"ALERT not found in tweet, incrementing non_alert_tweets to {non_alert_tweets}")
+
+            # Store non-alert tweets
+            if non_alert_tweets >= 3:
+                reset_non_alert_tweets()
+                fetch()
+        else:
+            # Handle alert tweet
+            reset_non_alert_tweets()
+            log.info(f"ALERT found in tweet, resetting non_alert_tweets to {non_alert_tweets}")
+            fetch()
+        
+        return response, 200
+    
     elif "RuneStone" in antitle:
         # Handle RuneStone Tweet (for debugging purposes)
         pass
+    
     else:
         # Any other tweet, we ignore
-        print(colored(f" * Ignoring Tweet from {antitle}: {antext}", "yellow"))
+        log.info(colored(f"Ignoring Tweet from {antitle}: {antext}", "yellow"))
         response["status"] = "skip"
 
     return response, 200
@@ -93,4 +178,3 @@ def fetch():
 if __name__ == '__main__':
     host = '0.0.0.0' if '--live' in sys.argv else '127.0.0.1'
     app.run(debug=True, port=4444, host=host)
-
