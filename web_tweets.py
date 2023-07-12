@@ -7,6 +7,7 @@ from northy.config import config
 from datetime import datetime
 import logging
 import pytz
+import json, ast
 
 def setup_logging():
     # Create a formatter with the desired log format
@@ -93,6 +94,22 @@ def debug():
     print(colored('Request body:', "yellow"), body)
     print("------------ DEBUG ------------")
 
+def parse_body(data):
+    """
+        Parse the body of the request.
+
+        Tasker sometimes passes a string and sometimes passes bytes. This function will handle both cases.
+    """
+    if type(data) == str:
+        return ast.literal_eval(data)
+    elif type(data) == bytes:
+        data = data.decode("utf-8")
+        data = data.replace("\t", " ")
+        data = data.replace("\n", " ")
+        return json.loads(data)
+    else:
+        return data
+
 @app.route('/')
 def hello():
     debug()
@@ -114,7 +131,7 @@ def fetch():
     
     # Validate JSON data
     try:
-        data = request.get_json()
+        data = parse_body(request.data)
     except:
         print(f"Invalid JSON data: {request.data}", file=sys.stderr)
         return 'Invalid JSON data', 415
