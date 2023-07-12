@@ -116,7 +116,7 @@ def fetch():
     try:
         data = request.get_json()
     except:
-        print(f"Invalid JSON data: {data}", file=sys.stderr)
+        print(f"Invalid JSON data: {request.data}", file=sys.stderr)
         return 'Invalid JSON data', 415
 
     # Get data from AutoNotification
