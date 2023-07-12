@@ -139,7 +139,7 @@ def fetch():
             db = TweetsDB(config)
 
             # Insert delay, to make sure Twitter User Timeline is updated
-            sleep_time = 5
+            sleep_time = 10
             log.info(f"Sleeping for {sleep_time} second before fetching..")
             time.sleep(sleep_time)
 
