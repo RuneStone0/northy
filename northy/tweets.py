@@ -5,8 +5,7 @@ import logging
 from termcolor import colored
 from pymongo import MongoClient, DESCENDING
 from pymongo.errors import DuplicateKeyError
-
-logger = logging.getLogger(__name__)
+from .logger_config import logger
 
 class Helper:
     def __init__(self) -> None:
@@ -51,7 +50,13 @@ class Helper:
         created_at_color = colored(_created_at, "red")
         text_color = colored(' '.join(_text.splitlines()), "white")
 
+        # Output to log
+        indicator = "[+]" if inserted else "[-]"
+        logger.info(f"{indicator} {_tid} {_author_id} {_created_at} {_text}")
+
+        # Friendly print
         print(inserted_indicator, tid_color, author_id_color, created_at_color, text_color)
+
 
     def rate_limit_handler(self):
         rate_limit_per_app = 15 * 60 / 10  # 10 requests per 15 minutes

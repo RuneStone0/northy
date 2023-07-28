@@ -1,9 +1,5 @@
 import pyprowl
-import logging
-
-# Configure the logger
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from .logger_config import logger
 
 class Prowl:
     def __init__(self, API_KEY=None) -> None:
