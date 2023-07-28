@@ -2,9 +2,7 @@ import json
 from datetime import datetime
 import datetime
 import pytz
-
-from .logger import get_logger
-logger = get_logger("logger", "logger.log")
+from .logger_config import logger
 
 class Utils:
     def __init__(self):

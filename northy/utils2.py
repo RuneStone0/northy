@@ -1,9 +1,5 @@
 import json
-import logging
-
-# Configure the logger
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from .logger_config import logger
 
 class Utils:
     def __init__(self):

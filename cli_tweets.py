@@ -5,10 +5,11 @@ from termcolor import colored
 from northy.tweets import Tweets, TweetsDB, Helper
 from northy.config import config
 from datetime import datetime
+from northy.logger_config import logger
 
 # Configure the logger
+
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 helper = Helper()
 
 if __name__ == '__main__':

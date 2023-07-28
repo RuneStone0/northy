@@ -3,12 +3,12 @@ import sys
 import json
 import time
 from termcolor import colored
-from .logger import get_logger
 from .utils import Utils
 from .db import Database
 from .config import config
 from datetime import datetime
 from .prowl import Prowl
+from .logger_config import logger
 
 u = Utils()
 ignore_tweets = [
@@ -22,8 +22,6 @@ ignore_tweets = [
     "1639263064758312965", # ALERT: Flat stopped $SPX (add-on)\n\nRe-entry long\nIN 397 - 10 pt stop
 ]
 prowl = Prowl(API_KEY=config["prowl_api_key"])
-
-logger = get_logger("TradeSignal", "TradeSignal.log")
 
 class Signal:
     """

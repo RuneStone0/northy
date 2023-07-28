@@ -10,10 +10,7 @@ from saxo_openapi import API
 from requests.auth import HTTPBasicAuth
 from jwt.exceptions import ExpiredSignatureError
 import saxo_openapi.endpoints.trading as tr
-
-# Configure the logger
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from .logger_config import logger
 
 utils = Utils()
 
@@ -385,37 +382,6 @@ class Saxo:
         
         return pos
 
-    def trade2(self, signal):
-        """ Execute Trade based on signal """
-        logger.debug("Executing trade({})".format(json.dumps(signal)))
-        s = self.__signal_tuple(signal)
-
-        # Fixed order parameters
-        order = dict()
-        order["Uic"] = TraderConfig["SAXO_TICKER_LOOKUP"][s.symbol]["Uic"]
-        order["AssetType"] = TraderConfig["SAXO_TICKER_LOOKUP"][s.symbol]["AssetType"]
-        order["OrderType"] = self.config["OrderType"]
-        order["ManualOrder"] = False
-
-        # Determine order action
-        logger.info(f"Handling {s.action} signal ({s.raw})")
-        if s.action == "TRADE":
-            self.__action_trade(s, order)
-        if s.action == "FLAT":
-            self.__action_flat(s, order)
-        if s.action == "SCALEOUT":
-            self.__action_scaleout(s, order)
-        if s.action == "CLOSED":
-            self.__action_closed(s, order)  # TODO: not sure if order is needed??
-        if s.action == "FLATSTOP":
-            logger.debug("FLATSTOP. No action needed.")
-            return "FLATSTOP"
-        if s.action == "LIMIT":
-            self.__action_limit(s, order)
-            pass
-        
-        time.sleep(1)  # Max 1 request per second (https://www.developer.saxo/openapi/learn/rate-limiting?phrase=Rate+Limit)
-
     def get_stoploss_price(self, entry, stoploss, BuySell):
         """ Calculate stop loss price """
         if BuySell == "Buy":
@@ -423,39 +389,6 @@ class Saxo:
         else:
             exit_price = entry + stoploss
         return exit_price
-
-    def __signal_tuple(self, signal):
-        """ 
-            Convert signal into a namedtuple
-
-            Example signal:
-                SPX_TRADE_SHORT_IN_4162_SL_10
-                NDX_FLATSTOP
-        """
-        s = signal.split("_")
-        __action = s[1]
-
-        if __action == "TRADE":
-            # NDX_TRADE_SHORT_IN_13199_SL_25
-            _entry, _sl = float(s[4]), float(s[6])
-            return namedtuple("signal", ["symbol", "action", "direction", "entry", "stoploss", "raw"])(s[0], s[1], s[2], _entry, _sl, signal)
-        
-        if __action == "SCALEOUT":
-            # SPX_SCALEOUT_IN_3809_OUT_4153_POINTS_344
-            return namedtuple("signal", ["symbol", "action", "entry", "exit", "points", "raw"])(s[0], s[1], s[3], s[5], s[7], signal)
-
-        if __action == "FLAT":
-            # SPX_FLAT
-            return namedtuple("signal", ["symbol", "action", "raw"])(s[0], s[1], signal)
-        
-        if __action == "CLOSED":
-            # NDX_CLOSED
-            return namedtuple("signal", ["symbol", "action", "raw"])(s[0], s[1], signal)
-        
-        if __action == "LIMIT":
-            # SPX_LIMIT_LONG_IN_3749_OUT_3739_SL_10
-            _entry, _exit, _sl = float(s[4]), float(s[6]), float(s[8])
-            return namedtuple("signal", ["symbol", "action", "direction", "entry", "exit", "stoploss", "raw"])(s[0], s[1], s[2], _entry, _exit, _sl, signal)
 
     def __action_trade(self, signal, order):
         """
@@ -921,3 +854,40 @@ class Helper():
         amount = p["PositionBase"]["Amount"] * -1
         print("ID\t\tDATE\t\t\tSYMBOL\tAMOUNT\tENTRY\t\tProfit\tprofit_adj")
         print("{pos_id}\t{entry_date}\t{symbol}\t{amount}\t{entry}\t\t{profit}\t{profit_adj}".format(pos_id=pos_id, symbol=symbol, entry=entry, profit=profit, amount=amount, entry_date=entry_date, profit_adj=profit_adj))
+
+    def signal_to_tuple(self, signal):
+        """ 
+            Convert signal into a namedtuple
+
+            Example signal:
+                SPX_TRADE_SHORT_IN_4162_SL_10
+                NDX_FLATSTOP
+        """
+        s = signal.split("_")
+        __action = s[1]
+
+        if __action == "TRADE":
+            # NDX_TRADE_SHORT_IN_13199_SL_25
+            _entry, _sl = float(s[4]), float(s[6])
+            return namedtuple("signal", ["symbol", "action", "direction", "entry", "stoploss", "raw"])(s[0], s[1], s[2], _entry, _sl, signal)
+        
+        if __action == "SCALEOUT":
+            # SPX_SCALEOUT_IN_3809_OUT_4153_POINTS_344
+            return namedtuple("signal", ["symbol", "action", "entry", "exit", "points", "raw"])(s[0], s[1], s[3], s[5], s[7], signal)
+
+        if __action == "FLAT":
+            # SPX_FLAT
+            return namedtuple("signal", ["symbol", "action", "raw"])(s[0], s[1], signal)
+
+        if __action == "FLATSTOP":
+            # SPX_FLATSTOP
+            return namedtuple("signal", ["symbol", "action", "raw"])(s[0], s[1], signal)
+                
+        if __action == "CLOSED":
+            # NDX_CLOSED
+            return namedtuple("signal", ["symbol", "action", "raw"])(s[0], s[1], signal)
+        
+        if __action == "LIMIT":
+            # SPX_LIMIT_LONG_IN_3749_OUT_3739_SL_10
+            _entry, _exit, _sl = float(s[4]), float(s[6]), float(s[8])
+            return namedtuple("signal", ["symbol", "action", "direction", "entry", "exit", "stoploss", "raw"])(s[0], s[1], s[2], _entry, _exit, _sl, signal)

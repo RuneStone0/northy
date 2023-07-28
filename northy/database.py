@@ -1,11 +1,9 @@
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
-from .logger import get_logger
 from .config import config
 import bson
 import mongomock
-
-logger = get_logger("db", "db.log")
+from .logger_config import logger
 
 class Database:
     _instance = None  # Class-level variable to store the singleton instance
