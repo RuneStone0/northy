@@ -1,5 +1,4 @@
 import jwt
-import logging
 import requests
 import random, string
 import time, uuid, json
@@ -10,52 +9,16 @@ from saxo_openapi import API
 from requests.auth import HTTPBasicAuth
 from jwt.exceptions import ExpiredSignatureError
 import saxo_openapi.endpoints.trading as tr
-from .logger_config import logger
+import logging
 
 utils = Utils()
-
-conf = {
-    "AppName": "Sim Timon",
-    "AppKey": "c96263868bf745aa9ea697b6aef0f500",
-    "AuthorizationEndpoint": "https://sim.logonvalidation.net/authorize",
-    "TokenEndpoint": "https://sim.logonvalidation.net/token",
-    "GrantType": "Code",
-    "OpenApiBaseUrl": "https://gateway.saxobank.com/sim/openapi",
-    "RedirectUrls": [
-        "http://timon.rtk-cv.dk",
-        "http://localhost/"
-    ],
-    "AppSecret": "aa2b0b4d070e4950b576b9c024a69914"
-}
-
-# https://www.developer.saxo/openapi/learn/oauth-authorization-code-grant
-base_url = conf["OpenApiBaseUrl"]
-client_id = conf["AppKey"]
-redirect_uri = conf["RedirectUrls"][1]
-state = str(uuid.uuid4())
-user = "17470793"
-pwd = "4ueax1y3"
-basic = HTTPBasicAuth(conf["AppKey"], conf["AppSecret"])
-session_filename = ".saxo-session"
 
 # create random context that contain letters (a-z) and numbers (0-9) as well as - (dash) and _ (underscore). It is case insensitive. Max length is 50 characters.
 ContextId = ''.join(random.choice(string.ascii_letters + string.digits + '-_') for i in range(50))
 ReferenceId = ''.join(random.choice(string.ascii_letters + string.digits + '-_') for i in range(50))
 
+"""
 TraderConfig = {
-    "SAXO_TICKER_LOOKUP": 
-        {
-        "NDX": {
-            "Uic": 4912,
-            "AssetType": "CfdOnIndex",
-            "Stoploss": 25
-        },
-        "SPX": {
-            "Uic": 4913,
-            "AssetType": "CfdOnIndex",
-            "Stoploss": 10
-        }
-    },
     "SAXO_DEMO": {
         # Saxo Demo Account
         'AccountId': '17470793',
@@ -63,12 +26,6 @@ TraderConfig = {
         'ContextId': ContextId,
         "ReferenceId": ReferenceId,
 
-        # Set stake size (aka. 100%) for each instrument
-        # Scales will be 25% of the stake size defined
-        'TradeSize': {
-            'NDX': 20.0,
-            'SPX': 70.0
-        },
 
         # Set preferred order type
         # Market, will be executed immediately
@@ -76,6 +33,7 @@ TraderConfig = {
         'OrderType': 'Market',
     }
 }
+"""
 
 def uic_lookup(symbol=None, uic=None):
     """
@@ -96,7 +54,7 @@ def uic_lookup(symbol=None, uic=None):
         symbol = symbol.upper()
         try:
             res = TABLE[symbol]
-            logger.debug(f"{symbol} --> {res}")
+            self.logger.debug(f"{symbol} --> {res}")
             return res
         except KeyError:
             return None
@@ -105,23 +63,49 @@ def uic_lookup(symbol=None, uic=None):
         uic = int(uic)
         for symbol, v in TABLE.items():
             if v["Uic"] == uic:
-                logger.debug(f"{uic} --> {symbol}")
+                self.logger.debug(f"{uic} --> {symbol}")
                 return symbol
         return None
 
 class Saxo:
-    def __init__(self):
+    def __init__(self, config=None, profile_name="default"):
+        # Create a logger instance for the class
+        self.logger = logging.getLogger(__name__)
+
+        # Set trade account config
+        self.config = config # TraderConfig["SAXO_DEMO"]
+        self.set_profile(profile_name)
+        self.tickers = self.config["tickers"]
+
+        # Misc vars
+        self.session_filename = ".saxo-session"
+        self.base_url = self.environment["OpenApiBaseUrl"]
+        self.state = str(uuid.uuid4())
+
+        # Setup Saxo API connection
         self.s = requests.session()
         self.token = self.__get_bearer()
         self.client = API(access_token=self.token)
 
-        # Set trade account config
-        self.config = TraderConfig["SAXO_DEMO"]
+    def set_profile(self, profile_name):
+        """ Set profile """
+        self.profile_name = profile_name
+        self.profile = self.config["profiles"][self.profile_name]
+        self.environment_name = self.profile["environment"]
+        self.environment = self.config["environments"][self.environment_name]
+        self.username = self.profile["username"]
+        self.password = self.profile["password"]
+
+        self.logger.info(f"Using profile: {self.profile_name} ({self.environment_name})")
 
     def __auth_request(self):
-        auth_endpoint = conf["AuthorizationEndpoint"]
-        url = f"{auth_endpoint}?response_type=code&client_id={client_id}&state={state}&redirect_uri={redirect_uri}"
-        logger.debug(f"GET {url}")
+        # Vars
+        auth_endpoint = self.environment["AuthorizationEndpoint"]
+        client_id = self.environment["AppKey"]
+        redirect_uri = self.environment["RedirectUrls"][1]
+
+        url = f"{auth_endpoint}?response_type=code&client_id={client_id}&state={self.state}&redirect_uri={redirect_uri}"
+        self.logger.debug(f"GET {url}")
         r = self.s.get(url, allow_redirects=False)
         #logger(r.content)
         redirect_url = r.headers["Location"]
@@ -136,21 +120,27 @@ class Saxo:
             return parse_qs(parsed_url.query)
 
         # Login
-        data = {"field_userid": user, "field_password": pwd}
-        logger.info(f"POST {redirect_url}")
+        data = {"field_userid": self.username, "field_password": self.password}
+        self.logger.info(f"POST {redirect_url}")
         r = self.s.post(redirect_url, data=data, allow_redirects=False)
         post_login_url = r.headers["Location"]
 
         # Post login, fetch auth code
-        logger.info(f"GET {post_login_url}")
+        self.logger.info(f"GET {post_login_url}")
         r = self.s.get(post_login_url, allow_redirects=False)
         auth_code_url = r.headers["Location"]
         auth_code = __parse_url(auth_code_url)["code"][0]
-        logger.debug(f"Auth Code: {auth_code}")
+        self.logger.debug(f"Auth Code: {auth_code}")
         return auth_code
 
     def __access_token(self, auth_code, grant_type):
-        url = conf["TokenEndpoint"]
+        # Vars
+        redirect_uri = self.environment["RedirectUrls"][1]
+        token_endpoint = self.environment["TokenEndpoint"]
+        app_key = self.environment["AppKey"]
+        app_secret = self.environment["AppSecret"]
+        basic = HTTPBasicAuth(app_key, app_secret)
+
         data = { "redirect_uri": redirect_uri, "grant_type": grant_type}
 
         if grant_type == "authorization_code":
@@ -158,10 +148,11 @@ class Saxo:
         elif grant_type == "refresh_token":
             data["refresh_token"] = auth_code
         
-        logger.info(f"POST {url}")
-        r = self.s.post(url, auth=basic, data=data)
+        self.logger.info(f"POST {token_endpoint}")
+
+        r = self.s.post(token_endpoint, auth=basic, data=data)
         if r.status_code == 401:
-            logger.warning("401 Unauthorized")
+            self.logger.warning("401 Unauthorized")
             return None
         else:
             __jwt = r.json()
@@ -169,10 +160,10 @@ class Saxo:
             _access_token_masked = __jwt["access_token"][:10] + "..." + __jwt["access_token"][-10:]
             _masked_refresh_token = __jwt["refresh_token"][:5] + "..." + __jwt["refresh_token"][-5:]
 
-            logger.debug("Access Token: " + _access_token_masked + " Refresh Token: " + _masked_refresh_token)
+            self.logger.debug("Access Token: " + _access_token_masked + " Refresh Token: " + _masked_refresh_token)
 
             # Write access token to file
-            utils.write_json(data=__jwt, filename=session_filename)
+            utils.write_json(data=__jwt, filename=self.session_filename)
 
             # Set token
             self.token = __jwt["access_token"]
@@ -181,13 +172,13 @@ class Saxo:
 
     def __get_bearer(self):
         """ Get bearer token from .saxo-session file """
-        __jwt = utils.read_json(filename=session_filename)
+        __jwt = utils.read_json(filename=self.session_filename)
         if __jwt is None:
-            logger.warning("No .saxo-session file found, authenticating..")
+            self.logger.warning("No .saxo-session file found, authenticating..")
             __jwt = self.__authenticate()
 
         if "access_token" not in __jwt:
-            logger.warning("No access_token in .saxo-session file, authenticating..")
+            self.logger.warning("No access_token in .saxo-session file, authenticating..")
             __jwt = self.__authenticate()
         
         access_token = __jwt["access_token"]
@@ -205,7 +196,7 @@ class Saxo:
             Authenticate using OAuth 2.0 Authorization Code Grant
             Reference: https://www.developer.saxo/openapi/learn/oauth-authorization-code-grant
         """
-        logger.info("Authenticating to SaxoBank..")
+        self.logger.info("Authenticating to SaxoBank..")
 
         # Step 1, make auth request
         redirect_url = self.__auth_request()
@@ -217,7 +208,7 @@ class Saxo:
         access_obj = self.__access_token(auth_code, grant_type="authorization_code")
 
         # Append headers to the session object
-        logger.info("Connected to SaxoBank. Storing valid headers in session..")
+        self.logger.info("Connected to SaxoBank. Storing valid headers in session..")
         headers = {
             #'Content-Type': 'application/x-www-form-urlencoded',
             'Authorization': 'Bearer ' + access_obj["access_token"]
@@ -228,15 +219,15 @@ class Saxo:
 
     def __refresh_token(self):
         # Read refresh token from file
-        self.access_obj = utils.read_json(filename=session_filename)
+        self.access_obj = utils.read_json(filename=self.session_filename)
 
         # Attempt to refresh token
         _token = self.__access_token(self.access_obj["refresh_token"], grant_type="refresh_token")
         if _token is None:
-            logger.error("Unable to refresh token. Attempting to re-authenticate.")
+            self.logger.error("Unable to refresh token. Attempting to re-authenticate.")
             self.__authenticate()
         else:
-            logger.info("Token refreshed.")
+            self.logger.info("Token refreshed.")
             return self.token
 
     def __valid_token(self, token):
@@ -247,11 +238,11 @@ class Saxo:
             jwt.decode(token, options={"verify_signature": False})
             return True
         except ExpiredSignatureError:
-            logger.error("Token has expired")
+            self.logger.error("Token has expired")
             self.__refresh_token()
             return False
         except Exception as e:
-            logger.error("Something else went wrong", e)
+            self.logger.error("Something else went wrong", e)
             self.__refresh_token()
             return False
 
@@ -271,19 +262,19 @@ class Saxo:
         self.__valid_token(self.token)
 
         # Make request
-        url = base_url + path
-        logger.debug("GET {}".format(url))
+        url = self.base_url + path
+        self.logger.debug("GET {}".format(url))
         rsp = self.s.get(url)
 
         if rsp.status_code == 401:
-            logger.warning("401 Unauthorized")
+            self.logger.warning("401 Unauthorized")
             self.__authenticate()
-            logger.debug("GET {} (retry)".format(url))
+            self.logger.debug("GET {} (retry)".format(url))
             rsp = self.s.get(url)
 
         # Return response        
         response = namedtuple("Response", ["status_code", "json"])(rsp.status_code, rsp.json())
-        logger.debug("{} {}".format(response.status_code, response.json))
+        self.logger.debug("{} {}".format(response.status_code, response.json))
         return response
 
     def post(self, path, data) -> tuple:
@@ -302,43 +293,43 @@ class Saxo:
         self.__valid_token(self.token)
 
         # Make request
-        url = base_url + path
-        logger.debug("POST {}".format(url))
+        url = self.base_url + path
+        self.logger.debug("POST {}".format(url))
 
         rsp = self.s.post(url, json=data)
 
         if rsp.status_code == 401:
-            logger.warning("401 Unauthorized")
+            self.logger.warning("401 Unauthorized")
             self.__authenticate()
-            logger.debug("POST {} (retry)".format(url))
+            self.logger.debug("POST {} (retry)".format(url))
             rsp = self.s.post(url, json=data)
 
         # Return response        
         response = namedtuple("Response", ["status_code", "json"])(rsp.status_code, rsp.json())
         if response.status_code == 200:
-            logger.debug("{} {}".format(response.status_code, json.dumps(response.json)))
+            self.logger.debug("{} {}".format(response.status_code, json.dumps(response.json)))
         else:
-            logger.error("{} {}".format(response.status_code, json.dumps(response.json)))
+            self.logger.error("{} {}".format(response.status_code, json.dumps(response.json)))
         return response
 
     def trade(self, signal):
         """ Execute Trade based on signal """
-        logger.debug("Executing trade({})".format(json.dumps(signal)))
+        self.logger.debug("Executing trade({})".format(json.dumps(signal)))
 
         order = self.__signal_to_order(signal)
-        logger.debug("Order: {}".format(json.dumps(order)))
+        self.logger.debug("Order: {}".format(json.dumps(order)))
         if isinstance(order, dict):
-            logger.debug("Order: {}".format(json.dumps(order)))
+            self.logger.debug("Order: {}".format(json.dumps(order)))
             r = tr.orders.Order(data=order)
             rv = self.client.request(r)
-            logger.debug("Response: {}".format(json.dumps(rv)))
+            self.logger.debug("Response: {}".format(json.dumps(rv)))
             
             return rv
         elif isinstance(order, str):
-            logger.warning(f"Ignoring Order: {order}")
+            self.logger.warning(f"Ignoring Order: {order}")
             return None
         else:
-            logger.error(f"Unable to execute order {order}")
+            self.logger.error(f"Unable to execute order {order}")
             return None
   
     def positions(self, cfd_only=True, profit_only=True, symbol=None, status_open=True):
@@ -348,25 +339,25 @@ class Saxo:
             Example output:
                 See `tests/mock_data/SaxoTrader_Saxo_positions.json`
         """
-        logger.info("Getting positions.")
+        self.logger.info("Getting positions.")
         pos = self.get(f"/port/v1/positions/me").json
 
         # Filter positions
         if cfd_only:
-            logger.info("Filtering positions, showing CFDs only")
+            self.logger.info("Filtering positions, showing CFDs only")
             pos["Data"] = [p for p in pos["Data"] if p["PositionBase"]["AssetType"] == "CfdOnIndex"]
         
         if profit_only:
-            logger.info("Filtering positions, showing positions in profit only")
+            self.logger.info("Filtering positions, showing positions in profit only")
             pos["Data"] = [p for p in pos["Data"] if p["PositionView"]["ProfitLossOnTrade"] > 0]
         
         if symbol is not None:
-            logger.info(f"Filtering positions, showing positions for {symbol} only")
+            self.logger.info(f"Filtering positions, showing positions for {symbol} only")
             pos["Data"] = [p for p in pos["Data"] if symbol == uic_lookup(uic=p["PositionBase"]["Uic"])]
 
         if status_open:
             status = "Open" if status_open else "Closed"
-            logger.info(f"Filtering positions, showing positions with status {status} only")
+            self.logger.info(f"Filtering positions, showing positions with status {status} only")
             pos["Data"] = [p for p in pos["Data"] if p["PositionBase"]["Status"] == status]
 
         # Inject adjusted ProfitLossOnTrade based on real-time price
@@ -381,6 +372,25 @@ class Saxo:
             p["PositionView"]["ProfitLossOnTradeAdjusted"] = profit_adj
         
         return pos
+
+    def orders(self, status_open=True):
+        """
+            Get all orders
+
+            Example output:
+                See `tests/mock_data/SaxoTrader_Saxo_orders.json`
+        """
+        self.logger.info("Getting orders.")
+        orders = self.get(f"/port/v1/orders?ClientKey=" + self.profile["AccountKey"]).json
+
+        # Filter orders
+        """
+        if status_open:
+            status = "Open" if status_open else "Closed"
+            self.logger.info(f"Filtering orders, showing orders with status {status} only")
+            orders["Data"] = [o for o in orders["Data"] if o["Status"] == status]
+        """
+        return orders
 
     def get_stoploss_price(self, entry, stoploss, BuySell):
         """ Calculate stop loss price """
@@ -398,7 +408,7 @@ class Saxo:
                 SPX_TRADE_SHORT_IN_4162_SL_10
         """
         s = signal
-        accountKey = TraderConfig["SAXO_DEMO"]["AccountKey"]
+        accountKey = self.TraderConfig["SAXO_DEMO"]["AccountKey"]
 
         # Market order
         order["BuySell"] = "Buy" if s.direction == "LONG" else "Sell"  # Set BuySell value
@@ -423,7 +433,7 @@ class Saxo:
         order["Orders"] = [stoploss_order]
         #order = {"AccountKey":"wlgQxI5-JzdhnV4s6BsDiA==","ManualOrder": False,"Uic":4913,"AssetType":"CfdOnIndex","OrderType":"Market","BuySell":"Buy","Amount":70,"OrderDuration":{"DurationType":"DayOrder"},"OrderRelation":"StandAlone","OrderContext":{"QuoteId":"638178880555876049","LastSeenClientBidPrice":4128.33,"LastSeenClientAskPrice":4129.23},"AppHint":17105153,"Orders":[{"AccountKey":"wlgQxI5-JzdhnV4s6BsDiA==","Uic":4913,"ManualOrder": False,"AssetType":"CfdOnIndex","Amount":70,"BuySell":"Sell","OrderDuration":{"DurationType":"GoodTillCancel"},"OrderPrice":4046.64,"OrderType":"StopIfTraded","AppHint":17105153}]}
 
-        logger.info("{} was converted to market order at ~{} with stop loss at {}".format(s.raw, s.entry, _SL_price))
+        self.logger.info("{} was converted to market order at ~{} with stop loss at {}".format(s.raw, s.entry, _SL_price))
 
         # Execute order
         rsp = self.__post(path="/trade/v2/orders", data=order)
@@ -436,7 +446,7 @@ class Saxo:
         __positions = self.positions()
         for _p in __positions["Data"]:
             
-            #logger.debug("Position: {}".format(_p))
+            #self.logger.debug("Position: {}".format(_p))
             __pos_base = _p["PositionBase"]
             __pos_view = _p["PositionView"]
             __pos_id = _p["PositionId"]
@@ -444,19 +454,19 @@ class Saxo:
             # Only touch CFDs
             __AssetType = __pos_base["AssetType"]
             if __AssetType != "CfdOnIndex":
-                logger.debug("Skipping position with AssetType: {}".format(__AssetType))
+                self.logger.debug("Skipping position with AssetType: {}".format(__AssetType))
                 continue
 
             # Only touch open positions
             __status = __pos_base["Status"]  # Open, Closed, Pending, Rejected, Cancelled
             if __status != "Open":
-                logger.debug("Skipping position with status: {}".format(__status))
+                self.logger.debug("Skipping position with status: {}".format(__status))
                 continue
 
             # Only touch positions in profit
             __PL = __pos_view["ProfitLossOnTrade"]
             if __PL < 0:
-                logger.debug("Skipping position with ProfitLossOnTrade < 0: {}".format(__PL))
+                self.logger.debug("Skipping position with ProfitLossOnTrade < 0: {}".format(__PL))
                 continue
 
             # TODO
@@ -477,7 +487,7 @@ class Saxo:
             # TODO: Implement this
 
             # Set stop loss to break even
-            logger.info("Setting stop loss to break even for position: {}".format(__pos_id))
+            self.logger.info("Setting stop loss to break even for position: {}".format(__pos_id))
             
             _amount = __pos_base["Amount"] * -1  # Reverse of the position amount
             _BuySell = "Buy" if _amount > 0 else "Sell"
@@ -486,8 +496,8 @@ class Saxo:
                 "PositionId": __pos_id,
                 "Orders":[{
                     "ManualOrder": False,
-                    "AccountKey": TraderConfig["SAXO_DEMO"]["AccountKey"],
-                    "Uic": TraderConfig["SAXO_TICKER_LOOKUP"][s.symbol]["Uic"],
+                    "AccountKey": self.profile["AccountKey"],
+                    "Uic": self.tickers[s.symbol]["Uic"],
                     "AssetType": "CfdOnIndex",
                     "Amount": _amount,
                     "BuySell": _BuySell,
@@ -496,12 +506,12 @@ class Saxo:
                     "OrderType": "StopIfTraded",
                 }]
             }
-            r = self.s.post(f"{base_url}/trade/v2/orders", json=order)
+            r = self.s.post(f"{self.base_url}/trade/v2/orders", json=order)
             if r.status_code != 200:
-                logger.error("Failed to set stop loss for position: {}".format(__pos_id))
-                logger.error("Response: {}".format(r.json()))
+                self.logger.error("Failed to set stop loss for position: {}".format(__pos_id))
+                self.logger.error("Response: {}".format(r.json()))
             else:
-                logger.info("Successfully set stop loss for position: {}".format(__pos_id))
+                self.logger.info("Successfully set stop loss for position: {}".format(__pos_id))
 
             return None
 
@@ -513,13 +523,13 @@ class Saxo:
             SaxoBank will eventually handle real-time netting of the two orders.
         """
         s = signal
-        logger.info(f"Handling scale out signal: {s.raw}")
+        self.logger.info(f"Handling scale out signal: {s.raw}")
 
         order["BuySell"] = "Buy" if s.entry > s.exit else "Sell"        # Set BuySell value
         order["Amount"] = self.config["TradeSize"][s.symbol] * 0.25     # Set amount (25% of trade size)
         order["OrderType"] = self.config["OrderType"]                   # Set OrderType
 
-        logger.info("Scaling out by placing a {BuySell}ing {amount}".format(
+        self.logger.info("Scaling out by placing a {BuySell}ing {amount}".format(
             amount=order["Amount"], 
             BuySell=order["BuySell"])
         )
@@ -592,25 +602,25 @@ class Saxo:
             # Only deal with positions opened within the last 1 hour
             _open_time = datetime.strptime(_p["PositionBase"]["ExecutionTimeOpen"], "%Y-%m-%dT%H:%M:%SZ")
             if (datetime.now() - _open_time).total_seconds() > 3600:
-                logger.info("Position was opened more than 1 hour. Skipping.")
+                self.logger.info("Position was opened more than 1 hour. Skipping.")
                 continue
             else:
-                logger.info("Position was opened less than 1 hour.")
+                self.logger.info("Position was opened less than 1 hour.")
 
             # Only deal with positions within 25 points of profit/loss
             _points = (_p["PositionView"]["CurrentPrice"] - _p["PositionBase"]["OpenPrice"])
             if _points >= 25 or _points <= -25:
-                logger.info("Position is not within 25 points of profit/loss. Skipping.")  
+                self.logger.info("Position is not within 25 points of profit/loss. Skipping.")  
                 continue
             else:
-                logger.info("Position is within 25 points of profit/loss. Closing.")
+                self.logger.info("Position is within 25 points of profit/loss. Closing.")
 
             # Closing position
-            logger.info("Closing position.")
+            self.logger.info("Closing position.")
             _position_size = _p["PositionBase"]["Amount"]
             order["Amount"] = -int(_position_size)
             order["PositionId"] = _p["PositionId"]
-            order["AccountKey"] = TraderConfig["SAXO_DEMO"]["AccountKey"]
+            order["AccountKey"] = self.profile["AccountKey"]
             print(order)
             
             # Close position using saxo_openapi
@@ -621,7 +631,7 @@ class Saxo:
             # Close order using requests
             """
             self.authenticate()
-            r = self.s.put(f"{base_url}/trade/v1/positions/stringValue/exercise", data=order)
+            r = self.s.put(f"{self.base_url}/trade/v1/positions/stringValue/exercise", data=order)
             print(r.content)
             """
 
@@ -650,7 +660,7 @@ class Saxo:
             "OrderPrice": _SL_price,
             "OrderType": "StopIfTraded"
         }]
-        logger.info("{} was converted to a limit order at ~{} with stop loss at {}".format(s.raw, s.entry, _SL_price))
+        self.logger.info("{} was converted to a limit order at ~{} with stop loss at {}".format(s.raw, s.entry, _SL_price))
 
     def price(self, uic=None, symbol=None):
         """ Get price for one or more UICs """
@@ -748,7 +758,7 @@ class Trading(Saxo):
             pass
 
         # Execute order
-        logger.info(self.order)
+        self.logger.info(self.order)
         rsp = self.post(path="/trade/v2/orders", data=self.order)
         
         # Sleep to avoid rate limiting
@@ -788,8 +798,8 @@ class Trading(Saxo):
         }
 
         # Execute order
-        logger.debug(order)
-        logger.info("Closing position: {}".format(PositionId))
+        self.logger.debug(order)
+        self.logger.info("Closing position: {}".format(PositionId))
         rsp = self.post(path="/trade/v2/orders", data=order)
         time.sleep(1) # Sleep to avoid rate limiting
         return rsp
