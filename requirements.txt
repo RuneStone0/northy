@@ -5,11 +5,11 @@ colorama
 termcolor
 pyprowl
 PyJWT
+flask
 
 # Logging
 colorlog
 coloredlogs
-concurrent_log_handler
 
 # MongoDB
 mongomock
