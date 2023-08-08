@@ -155,7 +155,13 @@ def fetch():
             tweets = Tweets(config)
             db = TweetsDB(config)
 
-            # Insert delay, to make sure Twitter User Timeline is updated
+            """
+                Insert delay, to make sure Twitter User Timeline is updated
+                Push notifications are sent real-time to devices, while the 
+                Twitter User Timeline takes a few seconds before its updated.
+                If we attempt to fetch the timeline immedeatly, it will not 
+                have latest Tweets.
+            """
             sleep_time = 10
             log.info(f"Sleeping for {sleep_time} second before fetching..")
             time.sleep(sleep_time)

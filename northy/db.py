@@ -1,27 +1,26 @@
+import logging
 from pymongo import MongoClient
+from .config import config
 import mongomock
 import bson
-from .config import Config
-from .config import config
-from .logger_config import logger
 
 class Database(object):
-    def __init__(self, connection_string=config["mongodb_conn"], database_name="northy", collection_name="tweets") -> None:
-        self.logger = logger
-        self.config = config
-
+    def __init__(self, connection_string=None, database_name="northy", collection_name="tweets", production=True) -> None:
+        # Create a logger instance for the class
+        self.logger = logging.getLogger(__name__)
+        
+        self.connection_string = config["MONGODB_CONN"]
+        self.production = production
         self.database_name = database_name
         self.collection_name = collection_name
-        self.connection_string = connection_string
-        self.production = self.config["PRODUCTION"]
 
         self.db = None  # DB Object
         self.collection = None # DB Collection
-        self.connect(production=self.production)
+        self.__connect()
 
-    def connect(self, production=False):
+    def __connect(self):
         self.logger.info("Connecting to DB..")
-        if production == True:
+        if self.production:
             self.logger.critical("Using MongoDB Atlas (PRODUCTION MODE)")
             self.client = MongoClient(self.connection_string)
             self.db = self.client[self.database_name]

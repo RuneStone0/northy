@@ -1,16 +1,28 @@
+import os
 import pyprowl
-from .logger_config import logger
+import logging
 
 class Prowl:
+    """
+        Prowl API wrapper (https://www.prowlapp.com/)
+
+        params:
+            API_KEY: Prowl API key (attempts to get it from the environment variable PROWL_API_KEY)
+
+    """
     def __init__(self, API_KEY=None) -> None:
+        # Create a logger instance for the class
+        self.logger = logging.getLogger(__name__)
+        
+        self.PROWL_API_KEY = os.environ.get('PROWL_API_KEY') if API_KEY is None else API_KEY
         self.prowl = pyprowl.Prowl(API_KEY)
 
     def test(self):
         try:
             self.prowl.verify_key()
-            logger.debug("Prowl API key successfully verified!")
+            self.logger.debug("Prowl API key successfully verified!")
         except Exception as e:
-            logger.error("Error verifying Prowl API key: {}".format(e))
+            self.logger.error("Error verifying Prowl API key: {}".format(e))
 
     def send(self, message, priority=0, url=None, app_name="Northy"):
         """
@@ -21,8 +33,8 @@ class Prowl:
                     priority=priority, 
                     url=url, 
                     appName=app_name)
-        logger.debug("Prowl response: {}".format(response))
+        self.logger.debug("Prowl response: {}".format(response))
         if response["status"] == "success":
-            logger.info("Prowl notification sent: {}".format(message))
+            self.logger.info("Prowl notification sent: {}".format(message))
         else:
-            logger.error("Error sending notification to Prowl: {}".format(response))
+            self.logger.error("Error sending notification to Prowl: {}".format(response))
