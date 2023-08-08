@@ -21,8 +21,10 @@ class Prowl:
         try:
             self.prowl.verify_key()
             self.logger.debug("Prowl API key successfully verified!")
+            return True
         except Exception as e:
             self.logger.error("Error verifying Prowl API key: {}".format(e))
+            return False
 
     def send(self, message, priority=0, url=None, app_name="Northy"):
         """
