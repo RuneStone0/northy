@@ -1,6 +1,6 @@
 import click
 import logging
-from northy.logger_config import setup_logger
+from northy.logger import setup_logger
 from northy.signal2 import Signal
 from northy.config import config
 

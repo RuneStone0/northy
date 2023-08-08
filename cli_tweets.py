@@ -4,7 +4,7 @@ from termcolor import colored
 from northy.tweets import Tweets, TweetsDB, Helper
 from northy.config import config
 from datetime import datetime
-from northy.logger_config import logger
+from northy.logger import logger
 
 helper = Helper()
 

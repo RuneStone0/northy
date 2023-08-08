@@ -1,6 +1,6 @@
 import click
 import logging
-from northy.logger_config import setup_logger
+from northy.logger import setup_logger
 from northy.saxo import Saxo
 from northy.config import config
 from northy.tweets import TweetsDB
