@@ -5,10 +5,13 @@ import logging
 from termcolor import colored
 from pymongo import MongoClient, DESCENDING
 from pymongo.errors import DuplicateKeyError
-from .logger_config import logger
+
 
 class Helper:
     def __init__(self) -> None:
+        # Create a logger instance for the class
+        self.logger = logging.getLogger(__name__)
+
         self.last_request = None
 
     def pprint(self, tweet, inserted=False):
@@ -22,7 +25,7 @@ class Helper:
 
         if isinstance(tweet, dict):
             # Handle Tweet data dict
-            logger.debug("Handling Tweet data dict")
+            self.logger.debug("Handling Tweet data dict")
             try:
                 _tid = str(tweet["tid"])
                 _author_id = tweet["author_id"]
@@ -33,7 +36,7 @@ class Helper:
                 print(tweet)
         else:
             # Handle tweepy.tweet.Tweet Object
-            logger.info("Handling tweepy.tweet.Tweet Object")
+            self.logger.info("Handling tweepy.tweet.Tweet Object")
             try:
                 _tid = tweet.id
                 _author_id = tweet.author_id
@@ -52,11 +55,10 @@ class Helper:
 
         # Output to log
         indicator = "[+]" if inserted else "[-]"
-        logger.info(f"{indicator} {_tid} {_author_id} {_created_at} {_text}")
+        self.logger.info(f"{indicator} {_tid} {_author_id} {_created_at} {_text}")
 
         # Friendly print
         print(inserted_indicator, tid_color, author_id_color, created_at_color, text_color)
-
 
     def rate_limit_handler(self):
         rate_limit_per_app = 15 * 60 / 10  # 10 requests per 15 minutes
@@ -80,7 +82,7 @@ class Helper:
         # if not weekday, sleep for 1 hour
         if datetime.now(tz=us_central_timezone).weekday() >= 5:
             sleep_minutes = 60
-            logger.info(f"It's the weekend. Sleeping for {sleep_minutes} minutes..")
+            self.logger.info(f"It's the weekend. Sleeping for {sleep_minutes} minutes..")
             time.sleep(sleep_minutes)
             return False
 
@@ -91,23 +93,25 @@ class Helper:
 
         if now < trading_start_time or now > trading_end_time:
             sleep_minutes = 15
-            logger.info(f"It's not trading hours. Sleeping for {sleep_minutes} minutes..")
+            self.logger.info(f"It's not trading hours. Sleeping for {sleep_minutes} minutes..")
             time.sleep(sleep_minutes * 60)
             return False
         
         return True
         
-
 class Tweets:
     """
         Class handling everything Twitter related.
     """
     def __init__(self, config):
+        # Create a logger instance for the class
+        self.logger = logging.getLogger(__name__)
+
         # Hardcoded UID for NTLiveStream
         self.uid = "897502744298258432"
 
         # Authenticate to Twitter
-        logger.info("Authenticating to Twitter...")
+        self.logger.info("Authenticating to Twitter...")
         self.client = tweepy.Client(
             consumer_key=config["TWITTER_CONSUMER_KEY"],
             consumer_secret=config["TWITTER_CONSUMER_SECRET"],
@@ -126,7 +130,7 @@ class Tweets:
             max_results=max_results)
 
         if tweets.data == None:
-            logger.info(f"No data found matching query '{query}'")
+            self.logger.info(f"No data found matching query '{query}'")
             return []
         
         return tweets.data
@@ -157,8 +161,8 @@ class Tweets:
         uid = self.uid
 
         # Get tweets
-        logger.info(f"Fetching {max_results} tweets from {uid} User Timeline...")
-        if since_id != None: logger.info(f"since_id: {since_id}")
+        self.logger.info(f"Fetching {max_results} tweets from {uid} User Timeline...")
+        if since_id != None: self.logger.info(f"since_id: {since_id}")
         tweets = self.client.get_users_tweets(
             id=uid, 
             max_results=max_results,
@@ -204,7 +208,7 @@ class Tweets:
 
     def me(self):
         me = self.client.get_me()
-        logger.info(f"Authenticated as: {me.data.name} (@{me.data.username})")
+        self.logger.info(f"Authenticated as: {me.data.name} (@{me.data.username})")
         return me
 
     def test(self):
@@ -237,7 +241,7 @@ class TweetsDB:
     def __init__(self, config):
         self.logger = logging.getLogger(__name__)
 
-        self.client = MongoClient(config["mongodb_conn"])
+        self.client = MongoClient(config["MONGODB_CONN"])
         self.db = self.client["northy"]
         self.collection = self.db["tweets"]
 
@@ -263,12 +267,12 @@ class TweetsDB:
 
         if isinstance(data, dict):
             # Handle basic dict data
-            logger.debug("Handling basic dict data")
+            self.logger.debug("Handling basic dict data")
             data["tid"] = str(data["tid"])  # Ensure tid is always a string
             _data = data
         else:
             # Handle tweepy.tweet.Tweet Object
-            logger.debug("Handling tweepy.tweet.Tweet Object")
+            self.logger.debug("Handling tweepy.tweet.Tweet Object")
             _data = {
                 "tid": str(data.id),
                 "author_id": str(data.author_id),

@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 import json
@@ -5,10 +6,9 @@ import time
 from termcolor import colored
 from .utils import Utils
 from .db import Database
-from .config import config
 from datetime import datetime
 from .prowl import Prowl
-from .logger_config import logger
+import logging
 
 u = Utils()
 ignore_tweets = [
@@ -20,8 +20,9 @@ ignore_tweets = [
     "1645367498823352320", # REMOVED $SPX 4000 LIMIT BUY ORDER. |  | #HOUSEKEEPING |  | NARRATOR: HA HA HTTPS://T.CO/ZR5COSFEX9
 
     "1639263064758312965", # ALERT: Flat stopped $SPX (add-on)\n\nRe-entry long\nIN 397 - 10 pt stop
+    "1660904073049038848"
+    ""
 ]
-prowl = Prowl(API_KEY=config["prowl_api_key"])
 
 class Signal:
     """
@@ -29,13 +30,37 @@ class Signal:
 
         See documentation for more info: [signal.md](docs/signal.md)
     """
-    def __init__(self):
-        # Environment Variables
-        self.config = config
+    def __init__(self, production=None):
+        # Create a logger instance for the class
+        self.logger = logging.getLogger(__name__)
+
+        self.ticker_config = self.__ticker_config()
+        self.prowl = Prowl()
 
         # MongoDB
-        self.db = Database().db
+        self.db = Database()
         self.db_tweets = self.db.tweets
+
+    def __ticker_config(self):
+        """
+            Returns the signal configuration.
+        """
+        # TODO: Store this in a .signal file and generate it dynamically, if old that one month
+        signal_config = {
+            "SPX": {
+                "200ma": 3946,
+            },
+            "NDX": {
+                "200ma": 11946,
+            },
+            "DIJA": {
+                "200ma": 35435,
+            },
+            "RUT": {
+                "200ma": 2015,
+            }
+        }
+        return signal_config
 
     def __unique(self, sequence):
         """
@@ -89,7 +114,7 @@ class Signal:
         """
         tweet = self.db_tweets.find_one({"tid": tid, "alert": True})
         if tweet is None:
-            logger.error(f"Failed getting Tweet by ID '{tid}'.")
+            self.logger.error(f"Failed getting Tweet by ID '{tid}'.")
             return None
         
         signals = self.text_to_signal(tweet)
@@ -100,7 +125,7 @@ class Signal:
         """
             Get all tweets and return trading signal.
         """
-        logger.info("Getting all tweets from DB...")
+        self.logger.info("Getting all tweets from DB...")
         results = self.db_tweets.aggregate([
             { '$match': { 'alert': True } }, # Filter out alerts
             { '$sort': { 'created_at': 1 } } # Sort, oldest first
@@ -139,10 +164,10 @@ class Signal:
             If `update_db` is `True`, the signal will be updated in the DB.
         """
         query = {"tid": tid}
-        tweet = self.db_tweets.find_one(query)
-        
+        tweet = self.db.tweets.find_one(query)
+        self.logger.info(f"Parsing tweet {tid}")
         if tweet is None:
-            logger.error(f"Failed getting Tweet by ID '{tid}'.")
+            self.logger.error(f"Failed getting Tweet by ID '{tid}'.")
             return None
         
         data = {}
@@ -193,21 +218,21 @@ class Signal:
         """
         #### INPUT VALIDATION ####
         if not isinstance(tweet, dict):
-            logger.error("Tweet input is not dict")
+            self.logger.error("Tweet input is not dict")
             return []
         
         if "tid" not in tweet:
-            logger.error("Tweet input is missing 'tid'")
+            self.logger.error("Tweet input is missing 'tid'")
             return []
         
         # Filter out non-alerts
         if not self.is_trading_signal(tweet["text"]):
-            logger.debug("No trading signal found")
+            self.logger.debug("No trading signal found")
             return []
         
         # Filter out ignored tweets
         if tweet["tid"] in ignore_tweets:
-            logger.debug(f"Skipping. Tweet '{tweet['tid']}' is on ignore list.")
+            self.logger.debug(f"Skipping. Tweet '{tweet['tid']}' is on ignore list.")
             return []
         #############################
 
@@ -270,15 +295,21 @@ class Signal:
 
             """
             # 200ma for each symbol
-            ndx, spx, rut = 11946, 3946, 2015  # TODO: Fetch numbers from DB / API
+            ndx = self.ticker_config["NDX"]["200ma"]
+            spx = self.ticker_config["SPX"]["200ma"]
+            rut = self.ticker_config["RUT"]["200ma"]
+            dija = self.ticker_config["DIJA"]["200ma"]
+
             avg_price = (ndx + spx + rut) / 3
-            symbols = ["NDX", "SPX", "RUT"]
+            symbols = [key for key in self.ticker_config]
 
             # Handle a list of multiple numbers
             if len(numbers) > 1:
                 closest_numbers = {symbol: 0 for symbol in symbols}  # initialize with default value
                 for num in numbers:
-                    if abs(num - ndx) <= abs(num - spx) and abs(num - ndx) <= abs(num - rut):
+                    if abs(num - dija) <= abs(num - ndx) and abs(num - dija) <= abs(num - rut):
+                        closest_numbers["DIJA"] = num
+                    elif abs(num - ndx) <= abs(num - spx) and abs(num - ndx) <= abs(num - rut):
                         closest_numbers["NDX"] = num
                     elif abs(num - spx) <= abs(num - ndx) and abs(num - spx) <= abs(num - rut):
                         closest_numbers["SPX"] = num
@@ -291,7 +322,9 @@ class Signal:
             # Handle a single number
             else:
                 num = numbers[0]
-                if abs(num - ndx) <= abs(num - spx) and abs(num - ndx) <= abs(num - rut):
+                if abs(num - dija) <= abs(num - ndx) and abs(num - dija) <= abs(num - rut):
+                    return {"DIJA": num}
+                elif abs(num - ndx) <= abs(num - spx) and abs(num - ndx) <= abs(num - rut):
                     return {"NDX": num}
                 elif abs(num - spx) <= abs(num - ndx) and abs(num - spx) <= abs(num - rut):
                     return {"SPX": num}
@@ -322,13 +355,18 @@ class Signal:
             __ACTION_CODE += f"_TRADE_{direction}"
 
             # Find entry
+            print(symbol)
+            print(text)
+            print(find_INOUT(text, "IN"))
             try:
                 __IN = get_closest_symbols(find_INOUT(text, "IN"))[symbol]
+                print(__IN)
                 __ACTION_CODE += f"_IN_{__IN}"
+                print(__ACTION_CODE)
             except Exception as e:
                 # Sometimes parsing fail. We fall back to "UNKNOWN". We can later on decide, 
                 # if we want to ignore this and put a market order in or skip the trade.
-                logger.warning("Failed to parse IN", e)
+                self.logger.warning("Failed to parse IN", e)
                 __ACTION_CODE += f"_IN_UNKNOWN"
                 raise Exception("Failed to parse IN")
         
@@ -452,9 +490,9 @@ class Signal:
             else:
                 tid = tweet["tid"]
                 msg = f"Unknown action when parsing tweet {tid}"
-                logger.error(msg)
+                self.logger.error(msg)
                 if self.config["PRODUCTION"] == "True":
-                    prowl.send(message=msg, priority=1)
+                    self.prowl.send(message=msg, priority=1)
                 
             element += 1
             
@@ -475,7 +513,7 @@ class Signal:
         # create filepath to temp/ folder
         filename = f"temp/{filename}.{format}"
 
-        logger.info(f"Exporting signals to {filename}")
+        self.logger.info(f"Exporting signals to {filename}")
         
         # Get all signals
         result = self.db_tweets.aggregate([
@@ -519,14 +557,14 @@ class Signal:
                     except KeyError:
                         sig = ""
                     except Exception as e:
-                        logger.error("Unknown error", e)
+                        self.logger.error("Unknown error", e)
 
                     try:
                         sig_man = ','.join(t["signals_manual"])
                     except KeyError:
                         sig_man = ""
                     except Exception as e:
-                        logger.error("Unknown error", e)
+                        self.logger.error("Unknown error", e)
 
 
                     line = f"{tid};{dt};{text};{sig};{sig_man}\n"
@@ -552,7 +590,7 @@ class Signal:
             try:
                 signals = tweet["signals"]
             except KeyError:
-                logger.error(f"{tid} missing signals. Try running signal --updateall")
+                self.logger.error(f"{tid} missing signals. Try running signal --updateall")
                 continue
 
             if tid in ignore_tweets:
@@ -562,7 +600,7 @@ class Signal:
             try:
                 signals_manual = tweet["signals_manual"]
             except KeyError:
-                logger.info(colored(f"{tid} missing signals_manual", "red"))
+                self.logger.info(colored(f"{tid} missing signals_manual", "red"))
                 continue
 
             # compare two lists
@@ -638,9 +676,9 @@ class Signal:
                 try:
                     signals = manual_signal.split(",")
                 except Exception as e:
-                    logger.debug("Failed splitting manual_signal:", manual_signal)
+                    self.logger.debug("Failed splitting manual_signal:", manual_signal)
                     signals = [manual_signal]
-                    logger.debug("Setting signal to:", signals)
+                    self.logger.debug("Setting signal to:", signals)
 
                 print("Inserting manual signals:" + colored(f" {signals}", "green"))
                 newvalues = { "$set": { "signals_manual": signals } }
@@ -649,7 +687,7 @@ class Signal:
                 print("Skipping..")
                 return
             else:
-                logger.debug("Invalid input. Exiting..")
+                self.logger.debug("Invalid input. Exiting..")
                 sys.exit()
 
     def manualall(self):
@@ -670,7 +708,7 @@ class Signal:
         for tweet in results:
             self.manual(tweet["tid"])
         
-    def watcher(self):
+    def watch(self):
         """
             Watch for new tweets and parse them.
 
@@ -680,11 +718,11 @@ class Signal:
             tid = doc["tid"]
             text = doc["text"].strip()
             if data["alert"]:
-                logger.info(f"Found trading signal in {tid} - {text}")
+                self.logger.info(f"Found trading signal in {tid} - {text}")
                 url = f"https://twitter.com/NTLiveStream/statuses/{tid}"  # NOTE: Hardcoded Twitter handle
-                prowl.send(text, url)
+                self.prowl.send(text, url)
             else:
-                logger.info(f"No trading signal found in {tid} - {text}")
+                self.logger.info(f"No trading signal found in {tid} - {text}")
 
         # Refresh backlog to make sure we're up-to-date (before starting change stream)
         pipeline = [
@@ -696,7 +734,7 @@ class Signal:
             __log(doc, data)
 
         # Start change stream
-        logger.info("Starting change stream...")
+        self.logger.info("Starting change stream...")
         while True:
             try:
                 # Watch for new documents (tweets) where "alert" is not set

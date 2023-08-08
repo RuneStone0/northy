@@ -1,9 +1,10 @@
+import os
+import logging
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
-from .config import config
+#from .config import config
 import bson
 import mongomock
-from .logger_config import logger
 
 class Database:
     _instance = None  # Class-level variable to store the singleton instance
@@ -17,21 +18,27 @@ class Database:
         else:
             return cls._instance
 
-    def __init__(self):
+    def __init__(self, connection_string=None, production=None):
+        # Create a logger instance for the class
+        self.logger = logging.getLogger(__name__)
+
+        self.connection_string = os.environ.get('MONGODB_CONN') if connection_string is None else connection_string
+        self.production = bool(os.environ.get('PRODUCTION')) if production is None else production
+
         if not hasattr(self, 'client'):
             self.client = None
-            self.init_db(production=config["PRODUCTION"])
+            self.init_db(production=self.production)
 
     def init_db(self, production=False):
-        logger.info("Connecting to DB..")
+        self.logger.info("Connecting to DB..")
         if production == True:
-            logger.critical("Using MongoDB Atlas (PRODUCTION MODE)")
-            self.client = MongoClient(config["mongodb_conn"])
+            self.logger.critical("Using MongoDB Atlas (PRODUCTION MODE)")
+            self.client = MongoClient(self.connection_string)
             self.db = self.client[self.db_name]
             self.tweets = self.db[self.tweets_collection_name]
             return self.client
         else:
-            logger.warning("Using mongomock (testing mode)")
+            self.logger.warning("Using mongomock (testing mode)")
             self.client = mongomock.MongoClient()
 
             # create a database and collection
@@ -74,9 +81,9 @@ class Tweets:
         """
         try:
             r = self.collection.insert_one(data)
-            logger.debug("Added Tweet to DB")
+            self.logger.debug("Added Tweet to DB")
         except DuplicateKeyError:
-            logger.debug("Tweet already exists")
+            self.logger.debug("Tweet already exists")
         except Exception as e:
-            logger.error(e)
+            self.logger.error(e)
 

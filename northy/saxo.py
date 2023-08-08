@@ -35,45 +35,13 @@ TraderConfig = {
 }
 """
 
-def uic_lookup(symbol=None, uic=None):
-    """
-        Lookup Uic and AssetType for a given symbol
-    """
-    TABLE = {
-        "NDX": {
-            "Uic": 4912,
-            "AssetType": "CfdOnIndex"
-        },
-        "SPX": {
-            "Uic": 4913,
-            "AssetType": "CfdOnIndex"
-        }
-    }
-
-    if symbol is not None:
-        symbol = symbol.upper()
-        try:
-            res = TABLE[symbol]
-            self.logger.debug(f"{symbol} --> {res}")
-            return res
-        except KeyError:
-            return None
-    
-    if uic is not None:
-        uic = int(uic)
-        for symbol, v in TABLE.items():
-            if v["Uic"] == uic:
-                self.logger.debug(f"{uic} --> {symbol}")
-                return symbol
-        return None
-
 class Saxo:
-    def __init__(self, config=None, profile_name="default"):
+    def __init__(self, config_file="saxo_config.json", profile_name="default"):
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
 
         # Set trade account config
-        self.config = config # TraderConfig["SAXO_DEMO"]
+        self.load_config(filename=config_file)
         self.set_profile(profile_name)
         self.tickers = self.config["tickers"]
 
@@ -87,6 +55,12 @@ class Saxo:
         self.token = self.__get_bearer()
         self.client = API(access_token=self.token)
 
+    def load_config(self, filename):
+        """ Read config from file """
+        with open(filename, "r") as file:
+            config = json.load(file)
+        self.config = config
+
     def set_profile(self, profile_name):
         """ Set profile """
         self.profile_name = profile_name
@@ -98,6 +72,88 @@ class Saxo:
 
         self.logger.info(f"Using profile: {self.profile_name} ({self.environment_name})")
 
+    ### Helper functions ###
+    def pretty_print_position(self, position):
+        """ Pretty print position """
+        p = position
+        pos_id = p["PositionId"]
+        entry_date = p["PositionBase"]["ExecutionTimeOpen"]
+
+        # convert entry_date to datetime object
+        entry_date = datetime.strptime(entry_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+        # remove seconds from entry_date
+        entry_date = entry_date.replace(second=0, microsecond=0)
+
+        uic = p["PositionBase"]["Uic"]
+        symbol = self.uic_lookup(uic=uic)
+        entry = p["PositionBase"]["OpenPrice"]
+        profit = p["PositionView"]["ProfitLossOnTrade"]
+        profit_adj = p["PositionView"]["ProfitLossOnTradeAdjusted"]
+        amount = p["PositionBase"]["Amount"] * -1
+        print("ID\t\tDATE\t\t\tSYMBOL\tAMOUNT\tENTRY\t\tProfit\tprofit_adj")
+        print("{pos_id}\t{entry_date}\t{symbol}\t{amount}\t{entry}\t\t{profit}\t{profit_adj}".format(pos_id=pos_id, symbol=symbol, entry=entry, profit=profit, amount=amount, entry_date=entry_date, profit_adj=profit_adj))
+
+    def signal_to_tuple(self, signal):
+        """ 
+            Convert signal into a namedtuple
+
+            Example signal:
+                SPX_TRADE_SHORT_IN_4162_SL_10
+                NDX_FLATSTOP
+        """
+        s = signal.split("_")
+        __action = s[1]
+
+        if __action == "TRADE":
+            # NDX_TRADE_SHORT_IN_13199_SL_25
+            _entry, _sl = float(s[4]), float(s[6])
+            return namedtuple("signal", ["symbol", "action", "direction", "entry", "stoploss", "raw"])(s[0], s[1], s[2], _entry, _sl, signal)
+        
+        if __action == "SCALEOUT":
+            # SPX_SCALEOUT_IN_3809_OUT_4153_POINTS_344
+            return namedtuple("signal", ["symbol", "action", "entry", "exit", "points", "raw"])(s[0], s[1], s[3], s[5], s[7], signal)
+
+        if __action == "FLAT":
+            # SPX_FLAT
+            return namedtuple("signal", ["symbol", "action", "raw"])(s[0], s[1], signal)
+
+        if __action == "FLATSTOP":
+            # SPX_FLATSTOP
+            return namedtuple("signal", ["symbol", "action", "raw"])(s[0], s[1], signal)
+                
+        if __action == "CLOSED":
+            # NDX_CLOSED
+            return namedtuple("signal", ["symbol", "action", "raw"])(s[0], s[1], signal)
+        
+        if __action == "LIMIT":
+            # SPX_LIMIT_LONG_IN_3749_OUT_3739_SL_10
+            _entry, _exit, _sl = float(s[4]), float(s[6]), float(s[8])
+            return namedtuple("signal", ["symbol", "action", "direction", "entry", "exit", "stoploss", "raw"])(s[0], s[1], s[2], _entry, _exit, _sl, signal)
+
+    def uic_lookup(self, symbol=None, uic=None):
+            """
+                Lookup Uic and AssetType for a given symbol
+            """
+            TABLE = self.config["tickers"]
+
+            if symbol is not None:
+                symbol = symbol.upper()
+                try:
+                    res = TABLE[symbol]
+                    self.logger.info(f"{symbol} --> {res}")
+                    return res
+                except KeyError:
+                    return None
+            
+            if uic is not None:
+                uic = int(uic)
+                for symbol, v in TABLE.items():
+                    if v["Uic"] == uic:
+                        print(f"{uic} --> {symbol}")
+                        return symbol
+                return None
+
+    ### Auth ###
     def __auth_request(self):
         # Vars
         auth_endpoint = self.environment["AuthorizationEndpoint"]
@@ -314,23 +370,75 @@ class Saxo:
 
     def trade(self, signal):
         """ Execute Trade based on signal """
-        self.logger.debug("Executing trade({})".format(json.dumps(signal)))
+        self.logger.debug("Executing trade({signal})")
+        s = self.signal_to_tuple(signal)
+        self.logger.info(s)
 
-        order = self.__signal_to_order(signal)
-        self.logger.debug("Order: {}".format(json.dumps(order)))
-        if isinstance(order, dict):
-            self.logger.debug("Order: {}".format(json.dumps(order)))
-            r = tr.orders.Order(data=order)
-            rv = self.client.request(r)
-            self.logger.debug("Response: {}".format(json.dumps(rv)))
+        # Determine order action
+        if s.action == "TRADE":
+            self.logger.info("Placing trade for {signal}")
+            buy = True if s.direction == "LONG" else False
+            if self.profile["OrderPreference"].upper() == "MARKET":
+                self.logger.info("Profile OrderPreference is set to MARKET")
+                self.market(symbol=s.symbol, amount=self.profile["TradeSize"][s.symbol], buy=buy, stoploss_points=s.stoploss)
+            elif self.profile["OrderPreference"].upper() == "LIMIT":
+                self.logger.info("Profile OrderPreference is set to LIMIT")
+                self.limit(symbol=s.symbol, amount=self.profile["TradeSize"][s.symbol], buy=buy, stoploss_points=s.stoploss)
+            else:
+                self.logger.error("Profile OrderPreference is not set")
+        if s.action == "FLAT":
+            # Set all profitable positions to flat
+            positions = self.positions(cfd_only=True, profit_only=True)
+            for i in positions["Data"]: 
+                self.set_stoploss(position=i, points=0)
+        if s.action == "SCALEOUT":
+            # TODO
+            self.logger.info("FLATSTOP not implemented yet")
+            pass
+        if s.action == "CLOSED":
+            # Close latest positions that are not flat
+            positions = self.positions(cfd_only=True, profit_only=False)
+            import pytz
+            import dateutil.parser
+            TZ = pytz.timezone('America/Chicago')
+            def __position_age(position):
+                """
+                    Return the age of a position in minutes
+                """
+                p = position
+                now = datetime.now().astimezone(TZ)
+
+                ExecutionTimeOpen = p["PositionBase"]["ExecutionTimeOpen"]
+                ExecutionTimeOpen = dateutil.parser.parse(ExecutionTimeOpen).astimezone(TZ)
+                delta = now - ExecutionTimeOpen
+                delta_in_minutes = delta.total_seconds() // 60
+                print(f"Position age: {delta_in_minutes} minutes")
+                return delta_in_minutes
             
-            return rv
-        elif isinstance(order, str):
-            self.logger.warning(f"Ignoring Order: {order}")
-            return None
-        else:
-            self.logger.error(f"Unable to execute order {order}")
-            return None
+            for p in positions["Data"]:
+                self.pretty_print_position(p)
+
+                # Don't close positions without stoploss
+                # Northy positions always have a stoploss, so this should be OK to skip
+                if len(p["PositionBase"]["RelatedOpenOrders"]) == 0:
+                    print("Position does not have a stoploss. Skipping..")
+                    continue
+
+                # skip if older than 1 hour
+                # TODO: Analyze all northy close signals and see if they are all closed within 1 hour
+                if __position_age(p) > 60:
+                    print("Position is older than 1 hour. Skipping..")
+                    continue
+
+                self.close(position=p)
+        if s.action == "FLATSTOP":
+            # TODO
+            self.logger.info("FLATSTOP nothing to do here..")
+            pass
+        if s.action == "LIMIT":
+            # TODO
+            self.logger.info("FLATSTOP not implemented yet")
+            pass
   
     def positions(self, cfd_only=True, profit_only=True, symbol=None, status_open=True):
         """
@@ -339,7 +447,6 @@ class Saxo:
             Example output:
                 See `tests/mock_data/SaxoTrader_Saxo_positions.json`
         """
-        self.logger.info("Getting positions.")
         pos = self.get(f"/port/v1/positions/me").json
 
         # Filter positions
@@ -353,7 +460,7 @@ class Saxo:
         
         if symbol is not None:
             self.logger.info(f"Filtering positions, showing positions for {symbol} only")
-            pos["Data"] = [p for p in pos["Data"] if symbol == uic_lookup(uic=p["PositionBase"]["Uic"])]
+            pos["Data"] = [p for p in pos["Data"] if symbol == self.uic_lookup(uic=p["PositionBase"]["Uic"])]
 
         if status_open:
             status = "Open" if status_open else "Closed"
@@ -380,7 +487,6 @@ class Saxo:
             Example output:
                 See `tests/mock_data/SaxoTrader_Saxo_orders.json`
         """
-        self.logger.info("Getting orders.")
         orders = self.get(f"/port/v1/orders?ClientKey=" + self.profile["AccountKey"]).json
 
         # Filter orders
@@ -665,38 +771,18 @@ class Saxo:
     def price(self, uic=None, symbol=None):
         """ Get price for one or more UICs """
         assetType = "CfdOnIndex"
-        uic = uic if uic is not None else uic_lookup(symbol)["Uic"]
+        uic = uic if uic is not None else self.uic_lookup(symbol)["Uic"]
         path = f"/trade/v1/infoprices/?Uic={uic}&AssetType={assetType}"
         time.sleep(1)  # Lame way to avoid rate limiting
         return self.get(path=path).json
 
-class Trading(Saxo):
-    def __init__(self):
-        super().__init__()
-        self.order = dict()
-        self.config = self.config
-
-        self.accountKey = self.config["AccountKey"]
-    
-    def post(self, path, data):
-        return super().post(path, data)
-
-    def price(self, uic=None, symbol=None):
-        return super().price(uic, symbol)
-
-    def get(self, path):
-        return super().get(path)
-
-    def get_stoploss_price(self, entry, stoploss, BuySell):
-        """ Calculate stop loss price """
-        return super().get_stoploss_price(entry, stoploss, BuySell)
-
+    ####### TRADING #######
     def stoploss_order(self, uic, stoploss_price, BuySell):
         """ Create stop loss order """
         _SL_BuySell_Direction = "Sell" if BuySell == "Buy" else "Buy"  # Invert BuySell value
         stoploss_order = {
             "Uic": uic,
-            "AccountKey": self.accountKey,
+            "AccountKey": self.profile["AccountKey"],
             "AssetType": "CfdOnIndex",
             "OrderType": "StopIfTraded",
             "ManualOrder": False,
@@ -707,7 +793,8 @@ class Trading(Saxo):
         }
         return [stoploss_order]
 
-    def base_order(self, symbol, amount, buy=True, limit=None, stoploss_points=None, stoploss_price=None):
+    def base_order(self, symbol, amount, buy=True, 
+                   limit=None, stoploss_points=None, stoploss_price=None, OrderType="Market"):
         """
             Handle Trade Orders 
 
@@ -715,15 +802,16 @@ class Trading(Saxo):
                 SPX_TRADE_SHORT_IN_4162_SL_10
         """
         # Base order parameters
-        self.order["Uic"] = uic_lookup(symbol)["Uic"]
-        self.order["AssetType"] = uic_lookup(symbol)["AssetType"]
-        self.order["OrderType"] = self.config["OrderType"]
+        self.order = dict()
+        self.order["Uic"] = self.uic_lookup(symbol)["Uic"]
+        self.order["AssetType"] = self.uic_lookup(symbol)["AssetType"]
+        self.order["OrderType"] = OrderType
         self.order["ManualOrder"] = False
 
         # Market order
         self.order["BuySell"] = "Buy" if buy == True else "Sell"
         self.order["Amount"] = amount
-        self.order["AccountKey"] = self.accountKey
+        self.order["AccountKey"] = self.profile["AccountKey"]
         self.order["OrderDuration"] = { "DurationType": "DayOrder" }
 
         # Limit order
@@ -804,7 +892,10 @@ class Trading(Saxo):
         time.sleep(1) # Sleep to avoid rate limiting
         return rsp
 
-    def limit(self, symbol, amount, buy=True, limit=None, stoploss_price=None):
+    def limit(self, symbol, amount, buy=True, limit=None, stoploss_points=None, stoploss_price=None):
+        print(f"symbol={symbol}, amount={amount}, buy={buy}, price={limit}, stoploss_price={stoploss_price}, points={stoploss_points}")
+        if stoploss_points is not None:
+            stoploss_price = limit - stoploss_points if buy else limit + stoploss_points
         return self.base_order(symbol=symbol, 
                                amount=amount, 
                                buy=buy, 
@@ -841,63 +932,3 @@ class Trading(Saxo):
         rsp = self.post(path="/trade/v2/orders", data=__order)
         return rsp
 
-class Helper():
-    def __init__(self):
-        pass
-
-    def pretty_print_position(self, position):
-        """ Pretty print position """
-        p = position
-        pos_id = p["PositionId"]
-        entry_date = p["PositionBase"]["ExecutionTimeOpen"]
-
-        # convert entry_date to datetime object
-        entry_date = datetime.strptime(entry_date, "%Y-%m-%dT%H:%M:%S.%fZ")
-        # remove seconds from entry_date
-        entry_date = entry_date.replace(second=0, microsecond=0)
-
-        uic = p["PositionBase"]["Uic"]
-        symbol = uic_lookup(uic=uic)
-        entry = p["PositionBase"]["OpenPrice"]
-        profit = p["PositionView"]["ProfitLossOnTrade"]
-        profit_adj = p["PositionView"]["ProfitLossOnTradeAdjusted"]
-        amount = p["PositionBase"]["Amount"] * -1
-        print("ID\t\tDATE\t\t\tSYMBOL\tAMOUNT\tENTRY\t\tProfit\tprofit_adj")
-        print("{pos_id}\t{entry_date}\t{symbol}\t{amount}\t{entry}\t\t{profit}\t{profit_adj}".format(pos_id=pos_id, symbol=symbol, entry=entry, profit=profit, amount=amount, entry_date=entry_date, profit_adj=profit_adj))
-
-    def signal_to_tuple(self, signal):
-        """ 
-            Convert signal into a namedtuple
-
-            Example signal:
-                SPX_TRADE_SHORT_IN_4162_SL_10
-                NDX_FLATSTOP
-        """
-        s = signal.split("_")
-        __action = s[1]
-
-        if __action == "TRADE":
-            # NDX_TRADE_SHORT_IN_13199_SL_25
-            _entry, _sl = float(s[4]), float(s[6])
-            return namedtuple("signal", ["symbol", "action", "direction", "entry", "stoploss", "raw"])(s[0], s[1], s[2], _entry, _sl, signal)
-        
-        if __action == "SCALEOUT":
-            # SPX_SCALEOUT_IN_3809_OUT_4153_POINTS_344
-            return namedtuple("signal", ["symbol", "action", "entry", "exit", "points", "raw"])(s[0], s[1], s[3], s[5], s[7], signal)
-
-        if __action == "FLAT":
-            # SPX_FLAT
-            return namedtuple("signal", ["symbol", "action", "raw"])(s[0], s[1], signal)
-
-        if __action == "FLATSTOP":
-            # SPX_FLATSTOP
-            return namedtuple("signal", ["symbol", "action", "raw"])(s[0], s[1], signal)
-                
-        if __action == "CLOSED":
-            # NDX_CLOSED
-            return namedtuple("signal", ["symbol", "action", "raw"])(s[0], s[1], signal)
-        
-        if __action == "LIMIT":
-            # SPX_LIMIT_LONG_IN_3749_OUT_3739_SL_10
-            _entry, _exit, _sl = float(s[4]), float(s[6]), float(s[8])
-            return namedtuple("signal", ["symbol", "action", "direction", "entry", "exit", "stoploss", "raw"])(s[0], s[1], s[2], _entry, _exit, _sl, signal)

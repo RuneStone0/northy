@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
         mongodump = os.getcwd() + "\\backups\\mongodump"
         folder_name = f"{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}"
-        mongodb_conn = config["mongodb_conn"]
+        mongodb_conn = config["MONGODB_CONN"]
         cmd = f'{mongodump} --uri="{mongodb_conn}" --collection="{tweets_collection_name}" --db="{database_name}" --out="backups/{folder_name}"'
         os.system(cmd)
         logger.info("Backup complete!")

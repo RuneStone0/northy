@@ -1,15 +1,11 @@
 import time
 import click
-import logging
 from termcolor import colored
 from northy.tweets import Tweets, TweetsDB, Helper
 from northy.config import config
 from datetime import datetime
 from northy.logger_config import logger
 
-# Configure the logger
-
-logging.basicConfig(level=logging.INFO)
 helper = Helper()
 
 if __name__ == '__main__':
