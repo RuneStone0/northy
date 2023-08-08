@@ -16,7 +16,7 @@ class Utils:
             with open(filename,'r') as f:
                 return json.load(f)
         except FileNotFoundError:
-            self.logger.warning(f"File {filename} not found.")
+            self.logger.warning(f"File '{filename}' not found.")
             return None
         except Exception as e:
             self.logger.error(f"Unexpected error: {e}")
