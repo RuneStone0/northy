@@ -2,7 +2,6 @@ import click
 import logging
 from northy.logger import setup_logger
 from northy.signal2 import Signal
-from northy.config import config
 
 if __name__ == '__main__':
     setup_logger()
