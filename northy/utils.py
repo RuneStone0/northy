@@ -18,9 +18,6 @@ class Utils:
         except FileNotFoundError:
             self.logger.warning(f"File '{filename}' not found.")
             return None
-        except Exception as e:
-            self.logger.error(f"Unexpected error: {e}")
-            return None
     
     def json_to_string(self, data):
         return json.dumps(data)
