@@ -3,10 +3,11 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from northy.signal2 import Signal
 from northy.db import Database
+from northy.logger import setup_logger
+setup_logger()
 
-production = False
-db = Database(production=production)
-signal = Signal()
+db = Database(production=False)
+signal = Signal(production=False)
 
 def test_TradeSignal_get():
     """ 
