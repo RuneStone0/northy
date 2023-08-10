@@ -1,5 +1,7 @@
 import os
 import sys
+import tempfile
+import pytest
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from northy.db import Database
 from northy.logger import setup_logger
@@ -27,7 +29,23 @@ def test_db_env():
     db = Database()
     assert db.production == env_prod
 
+@pytest.fixture
+def temp_folder():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        yield temp_dir
+
+def test_backup(temp_folder):
+    from northy.config import config
+
+    # Perform the backup
+    connection_string = config["MONGODB_CONN"]
+    db = Database(connection_string=connection_string)
+    result = db.backup(output_directory=temp_folder)
+    assert result is None, "Backup should complete without errors"
+
 if __name__ == "__main__":
     test_db_mock()
     test_db_prod()
-    test_db_env()
+    #test_db_env()
+    #test_backup()  # only works by calling pytest from the command line
+    pass
