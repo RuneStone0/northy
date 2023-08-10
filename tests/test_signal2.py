@@ -1,6 +1,3 @@
-import os
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from northy.signal2 import Signal
 from northy.db import Database
 from northy.logger import setup_logger
