@@ -2,7 +2,6 @@ import os
 import logging
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
-#from .config import config
 import bson
 import mongomock
 
