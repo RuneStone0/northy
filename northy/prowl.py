@@ -35,8 +35,5 @@ class Prowl:
                     priority=priority, 
                     url=url, 
                     appName=app_name)
+        self.logger.info("Prowl notification sent: {}".format(message))
         self.logger.debug("Prowl response: {}".format(response))
-        if response["status"] == "success":
-            self.logger.info("Prowl notification sent: {}".format(message))
-        else:
-            self.logger.error("Error sending notification to Prowl: {}".format(response))
