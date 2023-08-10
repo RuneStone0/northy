@@ -1,8 +1,5 @@
-import os
-import sys
 import tempfile
 import pytest
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from northy.db import Database
 from northy.logger import setup_logger
 setup_logger()
