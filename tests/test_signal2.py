@@ -6,7 +6,7 @@ setup_logger()
 db = Database(production=False)
 signal = Signal(production=False)
 
-def test_TradeSignal_get():
+def test_signal2_get():
     """ 
         Test cases for TradeSignal.get()
     """
@@ -27,11 +27,11 @@ def test_TradeSignal_get():
     for i in db.tweets.aggregate([{"$match": {"alert": True}}]):
         assert isinstance(signal.get(i["tid"]), list)
 
-def test_TradeSignal_getall():
+def test_signal2_getall():
     # generate test cases for TradeSignal.getall()
     assert signal.getall() == None
 
-def test_TradeSignal_update():
+def test_signal2_update():
     """ generate test cases for TradeSignal.update() """
     # Invalid Twitter IDs
     assert signal.update("123") == None
@@ -46,11 +46,11 @@ def test_TradeSignal_update():
     for i in db.tweets.aggregate(pipe):
         assert isinstance(signal.update(i["tid"]), list)
 
-def test_TradeSignal_updateall():
+def test_signal2_updateall():
     # generate test cases for TradeSignal.updateall()
     assert signal.updateall() == None
 
-def test_TradeSignal_parse():
+def test_signal2_parse():
     # generate test cases for TradeSignal.parse()
     # Invalid Twitter IDs
     assert signal.parse("123") == None
@@ -73,7 +73,7 @@ def test_TradeSignal_parse():
     for i in db.tweets.aggregate(pipe):
         assert isinstance(signal.parse(i["tid"], update_db=True), list)
 
-def test_TradeSignal_parseall():
+def test_signal2_parseall():
     # generate test cases for TradeSignal.parseall()
     assert signal.parseall() == None
 
@@ -105,37 +105,37 @@ def test_is_trading_signal():
     assert signal.is_trading_signal("Market Dashboard:\n\nhttps://signal.co/baFzYOi3V7") == False
     assert signal.is_trading_signal("") == False
 
-def test_TradeSignal_export():
+def test_signal2_export():
     # generate test cases for TradeSignal.export()
     assert signal.export() == None
     assert signal.export(filename="signals", format="csv") == None
 
-def test_TradeSignal_backtest():
+def test_signal2_backtest():
     # generate test cases for TradeSignal.backtest()
     assert signal.backtest() == None
 
 """
-def test_TradeSignal_manual():
+def test_signal2_manual():
     # generate test cases for TradeSignal.manual()
     assert signal.manual("123") == []
 
-def test_TradeSignal_manualall():
+def test_signal2_manualall():
     # generate test cases for TradeSignal.manualall()
     assert signal.manualall() == []
 """
 
-test_TradeSignal_export()
+test_signal2_export()
 
 if __name__ == "__main__":
-    test_TradeSignal_get()
-    #test_TradeSignal_getall()
-    #test_TradeSignal_update()
-    #test_TradeSignal_updateall()
-    #test_TradeSignal_parse()
-    #test_TradeSignal_parseall()
+    test_signal2_get()
+    #test_signal2_getall()
+    #test_signal2_update()
+    #test_signal2_updateall()
+    #test_signal2_parse()
+    #test_signal2_parseall()
     # test_text_to_signal()
     #test_is_trading_signal()
-    #test_TradeSignal_export()
-    #test_TradeSignal_backtest()
-    # test_TradeSignal_manual()
-    # test_TradeSignal_manualall()
+    #test_signal2_export()
+    #test_signal2_backtest()
+    # test_signal2_manual()
+    # test_signal2_manualall()
