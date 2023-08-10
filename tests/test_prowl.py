@@ -1,6 +1,3 @@
-import os
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from northy.prowl import Prowl
 
 API_KEY = "9daf34de9772c59f91a8604f2e193add46253aeb"
