@@ -10,8 +10,6 @@ class Email:
         # Get the API key from the environment variable
         self.API_KEY = os.environ.get('SPARKPOST_API_KEY') if API_KEY is None else API_KEY
 
-    # Make a function that sends an email using Gmail
-
     def send(self, to_email, subject, content):
         sp = SparkPost(self.API_KEY)
         response = sp.transmissions.send(
