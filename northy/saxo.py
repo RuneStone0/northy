@@ -183,7 +183,6 @@ class Saxo:
         url = f"{auth_endpoint}?response_type=code&client_id={client_id}&state={self.state}&redirect_uri={redirect_uri}"
         self.logger.debug(f"GET {url}")
         r = self.s.get(url, allow_redirects=False)
-        #logger(r.content)
         redirect_url = r.headers["Location"]
         return redirect_url
 
@@ -200,6 +199,12 @@ class Saxo:
         self.logger.info(f"POST {redirect_url}")
         r = self.s.post(redirect_url, data=data, allow_redirects=False)
         post_login_url = r.headers["Location"]
+
+        if post_login_url == "/sim/login/ChangePassword":
+            # TODO: Add prowl notification here
+            # TODO: Use API keys instead ?
+            self.logger.critical("Password change required. Manually change the password and update the config file.")
+            raise Exception("Password change required")
 
         # Post login, fetch auth code
         self.logger.info(f"GET {post_login_url}")
