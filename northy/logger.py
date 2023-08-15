@@ -37,7 +37,8 @@ class ColoredFormatter(logging.Formatter):
             log_msg = self.COLORS['RED'] + log_msg + self.COLORS['DEFAULT']
 
         # Replace asctime with colored asctime
-        log_msg = log_msg.replace(record.asctime, self.COLORS['GREEN'] + record.asctime + self.COLORS['DEFAULT'])
+        formatted_time = record.asctime.split(",")[0]
+        log_msg = log_msg.replace(record.asctime, self.COLORS['GREEN'] + formatted_time + self.COLORS['DEFAULT'])
 
         # Apply custom color to levelname
         log_msg = log_msg.replace(record.levelname, self.LEVEL_COLORS[log_level] + record.levelname + self.COLORS['DEFAULT'])
@@ -50,7 +51,8 @@ def setup_logger():
         level=logging.DEBUG,
         format='%(asctime)s - %(levelname)s - %(message)s',
         filename='northy.log',
-        filemode='a'
+        filemode='a',
+        datefmt='%Y-%m-%d %H:%M:%S'
     )
 
     # Add a console handler for printing logs to the console
