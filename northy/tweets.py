@@ -1,18 +1,126 @@
 import os
+import sys
 import time
 import tweepy
 import logging
+from .db import Database
+from .config import config
 from termcolor import colored
-from pymongo import MongoClient, DESCENDING
+from pymongo import DESCENDING
 from pymongo.errors import DuplicateKeyError
+import pytz
+from datetime import datetime
+import time
 
+class Tweets:
+    """
+        Class handling everything Twitter related.
+    """
+    def __init__(self, config):
+        """
+            Initialize the class.
 
-class Helper:
-    def __init__(self) -> None:
+            Hardcoded UID for NTLiveStream
+        """
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
 
-        self.last_request = None
+        # Authenticate to Twitter
+        self.logger.info("Authenticating to Twitter...")
+        self.client = tweepy.Client(
+            consumer_key=config["TWITTER_CONSUMER_KEY"],
+            consumer_secret=config["TWITTER_CONSUMER_SECRET"],
+            bearer_token=config["TWITTER_BEARER_TOKEN"],
+            access_token=config["TWITTER_TOKEN_KEY"],
+            access_token_secret=config["TWITTER_TOKEN_SECRET"],
+            wait_on_rate_limit=True)
+
+        # Set the pagination_token to None
+        self.pagination_token = None
+
+        # Prepare for DB
+        self.db = None
+
+    def fetch(self, user_id="897502744298258432", max_results=5, user_auth=True, since_id=None) -> list:
+        """
+            Fetch tweet(s) from User Timeline
+
+            Args:
+                limit (int): Number of tweets to fetch
+                user_id (str): User ID to fetch tweets from (default: NTLiveStream)
+                user_auth (bool): Enable use user authentication, required for accessing private tweets
+        """
+        # Set max_results to min 5 or max 100
+        max_results = min(100, max(5, max_results))
+        uid = user_id
+
+        # Get tweets
+        self.logger.info(f"Fetching {max_results} tweets from {uid} User Timeline...")
+        if since_id != None: self.logger.info(f"since_id: {since_id}")
+        tweets = self.client.get_users_tweets(
+            id=uid, 
+            max_results=max_results,
+            user_auth=user_auth,
+            since_id=None,
+            tweet_fields=["created_at", 'entities', 'author_id'])  # Entities contains tweet URL and other metadata
+
+        return tweets
+
+    def get_user_tweets(self, user_id="897502744298258432", max_results=5):
+        # Connect to DB
+        self.db = TweetsDB(config) if self.db is None else self.db
+        
+        # Fetch a batch of tweets from the user
+        tweets = self.client.get_users_tweets(
+            id=user_id,
+            max_results=max_results,  # Adjust the batch size as needed
+            tweet_fields=["created_at", 'entities', 'author_id'],
+            user_auth=True,
+            pagination_token=self.pagination_token  # Pass the pagination_token
+        )
+
+        # Check if no more tweets are available
+        next_token = tweets.meta.get('next_token')
+        if not next_token:
+            logging.info("No more tweets available")
+            sys.exit(0)
+
+        # Process and store the tweets
+        for tweet in tweets.data:
+            # Store the tweet in the database or perform any desired actions
+            self.db.add_tweet(tweet)
+
+        # Set the pagination_token to fetch the next batch of tweets
+        self.pagination_token = tweets.meta['next_token']
+
+    def fetchall(self, user_id="897502744298258432"):
+        """
+            Fetch all tweets from User Timeline and add them into the DB.
+
+            Args:
+                user_id (str): User ID to fetch tweets from (default: NTLiveStream)
+        """
+        while True:
+            self.get_user_tweets(user_id=user_id, max_results=100)
+            self.rate_limit_handler()
+
+    def me(self):
+        me = self.client.get_me()
+        self.logger.info(f"Authenticated as: {me.data.name} (@{me.data.username})")
+        return me
+
+    def rate_limit_handler(self, sleep=None):
+        # Configure rate limit
+        rate_limit_per_app = 15 * 60 / 10  # 10 requests per 15 minutes
+        rate_limit_per_user = 15 * 60 / 5  #  5 requests per 15 minutes
+        buffer = 2
+        rate_limit_per_user = rate_limit_per_user + buffer
+        
+        # Used to avoid waiting when unit testing
+        sleep = rate_limit_per_user if sleep is None else sleep
+
+        self.logger.info(f"rate_limit_handler, waiting {sleep} seconds...")
+        time.sleep(sleep)
 
     def pprint(self, tweet, inserted=False):
         """
@@ -25,26 +133,20 @@ class Helper:
 
         if isinstance(tweet, dict):
             # Handle Tweet data dict
-            self.logger.debug("Handling Tweet data dict")
             try:
                 _tid = str(tweet["tid"])
                 _author_id = tweet["author_id"]
                 _created_at = tweet["created_at"]
                 _text = tweet["text"]
             except Exception as e:
-                print("Error:", e)
-                print(tweet)
+                self.logger.error(f"Error: {e}")
+                self.logger.error(tweet)
         else:
             # Handle tweepy.tweet.Tweet Object
-            self.logger.info("Handling tweepy.tweet.Tweet Object")
-            try:
-                _tid = tweet.id
-                _author_id = tweet.author_id
-                _created_at = tweet.created_at
-                _text = tweet.text
-            except Exception as e:
-                print("Error:", e)
-                print(tweet)
+            _tid = tweet.id
+            _author_id = tweet.author_id
+            _created_at = tweet.created_at
+            _text = tweet.text
         
         # Coloring
         inserted_indicator = colored("[+]", "green") if inserted else colored("[-]", "red")
@@ -55,35 +157,24 @@ class Helper:
 
         # Output to log
         indicator = "[+]" if inserted else "[-]"
-        self.logger.info(f"{indicator} {_tid} {_author_id} {_created_at} {_text}")
+        self.logger.debug(f"{indicator} {_tid} {_author_id} {_created_at} {_text}")
 
         # Friendly print
         print(inserted_indicator, tid_color, author_id_color, created_at_color, text_color)
 
-    def rate_limit_handler(self):
-        rate_limit_per_app = 15 * 60 / 10  # 10 requests per 15 minutes
-        rate_limit_per_user = 15 * 60 / 5  #  5 requests per 15 minutes
-        buffer = 2
-        rate_limit_per_user = rate_limit_per_user + buffer
-        print(f"rate_limit_handler, waiting {rate_limit_per_user} seconds...")
-        time.sleep(rate_limit_per_user)
-
-    def is_trading_hours(self):
+    def is_trading_hours(self, sleep=None):
         """
             Check if it's trading hours
         """
-        import pytz
-        from datetime import datetime
-        import time
-        
         # Set the timezone to US Central Time
         us_central_timezone = pytz.timezone('US/Central')
 
         # if not weekday, sleep for 1 hour
         if datetime.now(tz=us_central_timezone).weekday() >= 5:
             sleep_minutes = 60
-            self.logger.info(f"It's the weekend. Sleeping for {sleep_minutes} minutes..")
-            time.sleep(sleep_minutes)
+            sleep = sleep_minutes if sleep is None else sleep  # Used to avoid waiting when unit testing
+            self.logger.info(f"It's the weekend. Sleeping for {sleep} minutes..")
+            time.sleep(sleep)
             return False
 
         # if time is not between 8:30 and 15:00 Central Time, sleep for 15 minutes
@@ -93,157 +184,23 @@ class Helper:
 
         if now < trading_start_time or now > trading_end_time:
             sleep_minutes = 15
-            self.logger.info(f"It's not trading hours. Sleeping for {sleep_minutes} minutes..")
-            time.sleep(sleep_minutes * 60)
+            sleep = sleep_minutes * 60 if sleep is None else sleep  # Used to avoid waiting when unit testing
+            self.logger.info(f"It's not trading hours. Sleeping for {sleep} minutes..")
+            time.sleep(sleep)
             return False
         
         return True
         
-class Tweets:
-    """
-        Class handling everything Twitter related.
-    """
-    def __init__(self, config):
-        # Create a logger instance for the class
-        self.logger = logging.getLogger(__name__)
-
-        # Hardcoded UID for NTLiveStream
-        self.uid = "897502744298258432"
-
-        # Authenticate to Twitter
-        self.logger.info("Authenticating to Twitter...")
-        self.client = tweepy.Client(
-            consumer_key=config["TWITTER_CONSUMER_KEY"],
-            consumer_secret=config["TWITTER_CONSUMER_SECRET"],
-            bearer_token=config["TWITTER_BEARER_TOKEN"],
-            access_token=config["TWITTER_TOKEN_KEY"],
-            access_token_secret=config["TWITTER_TOKEN_SECRET"],
-            wait_on_rate_limit=True)
-
-    def search(self, query="from:BarackObama", tweet_fields=['author_id', 'created_at'], max_results=100):
-        """
-            Search for tweets matching a query and return them as a list of dicts.
-        """
-        tweets = self.client.search_recent_tweets(
-            query=query, 
-            tweet_fields=tweet_fields,
-            max_results=max_results)
-
-        if tweets.data == None:
-            self.logger.info(f"No data found matching query '{query}'")
-            return []
-        
-        return tweets.data
-
-    def prepare_data(self, tweet):
-        """
-            Prepare Tweet data for DB insertion
-        """
-        tid = str(tweet.id)
-        data = {
-            "tid": tid,
-            "created_at": tweet.created_at, 
-            "text": tweet.text,
-        }
-        return data
-
-    def fetch(self, max_results=5, user_auth=True, since_id=None) -> list:
-        """
-            Fetch tweet(s) from User Timeline and add them into the DB.
-
-            Args:
-                limit (int): Number of tweets to fetch
-                user_auth (bool): Enable use user authentication, required for accessing private tweets
-                rate_limit (bool): Pause after each request to avoid rate limit
-        """
-        # Set max_results to min 5 or max 100
-        max_results = min(100, max(5, max_results))
-        uid = self.uid
-
-        # Get tweets
-        self.logger.info(f"Fetching {max_results} tweets from {uid} User Timeline...")
-        if since_id != None: self.logger.info(f"since_id: {since_id}")
-        tweets = self.client.get_users_tweets(
-            id=uid, 
-            max_results=max_results,
-            user_auth=user_auth,
-            since_id=None,
-            tweet_fields=["created_at", 'entities', 'author_id'])  # Entities contains tweet URL and other metadata
-        
-        return tweets
-
-    def fetchall(self):
-        from .config import config
-        db = TweetsDB(config)
-        helper = Helper()
-        
-        pagination_token = None  # Set the initial pagination_token to None
-        
-        while True:
-            # Fetch a batch of tweets from the user
-            tweets = self.client.get_users_tweets(
-                id=self.uid,
-                max_results=100,  # Adjust the batch size as needed
-                tweet_fields=["created_at", 'entities', 'author_id'],
-                user_auth=True,
-                pagination_token=pagination_token  # Pass the pagination_token
-            )
-            print(tweets)
-
-            # Check if no more tweets are available
-            next_token = tweets.meta.get('next_token')
-            print("next_token:", next_token)
-            if not next_token:
-                break
-
-            # Process and store the tweets
-            for tweet in tweets.data:
-                print(tweet)
-                # Store the tweet in the database or perform any desired actions
-                db.add_tweet(tweet)
-
-            # Set the pagination_token to fetch the next batch of tweets
-            pagination_token = tweets.meta['next_token']
-            helper.rate_limit_handler()
-
-    def me(self):
-        me = self.client.get_me()
-        self.logger.info(f"Authenticated as: {me.data.name} (@{me.data.username})")
-        return me
-
-    def test(self):
-        c = tweepy.Client(
-            consumer_key=self.consumer_key,
-            consumer_secret=self.consumer_secret,
-            access_token=self.access_key,
-            access_token_secret=self.access_secret,
-            wait_on_rate_limit=True
-        )
-        print(c)
-        data = c.get_users_tweets(id="897502744298258432", max_results=5, user_auth=True)
-        print(data)
-
-        rate_limit = 15 * 60 / 10  # 10 requests per 15 minutes, per user
-        self.logger.info(f"Wainting {rate_limit} seconds...")
-        time.sleep(rate_limit)
-
-    def print(tweet, inserted=False):
-        """
-            Print Tweet Objects nicely
-        """
-        tid_color = colored(tweet.id, "green")
-        created_at_color = colored(tweet.created_at, "red")
-        author_id = colored(tweet.author_id, "blue")
-        inserted_indicator = colored("[+]", "green") if inserted else colored("[-]", "red")
-        print(inserted_indicator, tid_color, author_id, created_at_color, tweet.text)
-
 class TweetsDB:
     def __init__(self, config):
         self.logger = logging.getLogger(__name__)
 
-        self.client = MongoClient(config["MONGODB_CONN"])
-        self.db = self.client["northy"]
-        self.collection = self.db["tweets"]
+        # Connect to MongoDB
+        self.logger.info("Connecting to MongoDB...")
+        self.db = Database(connection_string=config["MONGODB_CONN"], production=config["PRODUCTION"])
+        self.collection = self.db.tweets
+
+        self.pprint = Tweets(config).pprint
 
     def get_tweet(self, tid:str):
         """
@@ -262,7 +219,6 @@ class TweetsDB:
         """
             Add a tweet to the database.
         """
-        helper = Helper()
         _data = None
 
         if isinstance(data, dict):
@@ -281,11 +237,10 @@ class TweetsDB:
             }
 
         try:
-            r = self.collection.insert_one(_data)
-            helper.pprint(_data, inserted=True)
+            self.collection.insert_one(_data)
+            self.pprint(_data, inserted=True)
         except DuplicateKeyError:
             self.logger.debug("Tweet already exists")
-            helper.pprint(_data, inserted=False)
+            self.pprint(_data)
         except Exception as e:
             self.logger.error(e)
-
