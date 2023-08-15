@@ -14,3 +14,11 @@ elif production.lower() == "false":
     config["PRODUCTION"] = False
 else:
     raise ValueError("Invalid string representation.")
+
+
+def set_env():
+    """
+        Set environment variables from config.
+    """
+    for key, value in config.items():
+        os.environ[key] = str(value)
