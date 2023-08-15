@@ -18,8 +18,3 @@ def test_prowl_send():
         "Test message from northy.prowl.py",
         priority=0,
         url="https://www.google.com/")
-
-if __name__ == "__main__":
-    test_prowl_invalid_key()
-    test_prowl_valid_key()
-    test_prowl_send()
