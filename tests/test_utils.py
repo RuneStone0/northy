@@ -1,4 +1,5 @@
 import os
+import pytest
 from northy.utils import Utils
 
 u = Utils()
@@ -17,6 +18,15 @@ def test_file_rw():
     # Cleanup
     os.remove(filename)
 
-if __name__ == "__main__":
-    test_json_to_string()
-    test_file_rw()
+def test_utils_str2bool():
+    # Test False values
+    for i in ["false", "0", "no", "f"]:
+        assert u.str2bool(i) == False
+    
+    # Test True values
+    for i in ["true", "1", "yes", "t"]:
+        assert u.str2bool(i) == True
+
+def test_utils_str2bool_invalid():
+    with pytest.raises(ValueError):
+        u.str2bool("invalid")
