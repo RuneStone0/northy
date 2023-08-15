@@ -81,7 +81,7 @@ if __name__ == '__main__':
         def loop_controller(skip=False):
             if datetime.now().weekday() < 5 and datetime.now().hour == 17 or skip:
                 # Generate report for all positions
-                report = generate_report(positions)
+                report = generate_report()
 
                 # Send report to Email
                 email = Email()
