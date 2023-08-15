@@ -92,7 +92,11 @@ if __name__ == '__main__':
             else:
                 # sleep until next full hour
                 now = datetime.now()
-                next_hour = now.replace(hour=now.hour+1, minute=0, second=0, microsecond=0)
+                # TODO
+                # test when now hour is 23
+                # test when now hour is 0
+                # test when now hour is 17
+                next_hour = now.replace(hour=(now.hour + 1) % 24, minute=0, second=0, microsecond=0)
                 sleep_time = (next_hour - now).seconds
                 logger.info(f"Sleeping for {sleep_time} seconds")
                 time.sleep(sleep_time)
@@ -100,9 +104,6 @@ if __name__ == '__main__':
         while True:
             loop_controller()
         
-        # For testing only
-        #loop_controller(skip=True)
-
 
     @click.command()
     def orders():
