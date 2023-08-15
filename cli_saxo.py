@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 from northy.logger import setup_logger
 from northy.saxo import Saxo
-from northy.config import config
+from northy.config import config, set_env
 from northy.tweets import TweetsDB
 from northy.email import Email
 
@@ -27,9 +27,12 @@ if __name__ == '__main__':
     @click.command()
     def report_closed_positions():
         """ Report Closed Positions """
-        positions = saxo.positions(status_open=False, profit_only=False)
+        # Set environment variables
+        set_env()
 
-        def generate_report(positions):
+        def generate_report():
+            positions = saxo.positions(status_open=False, profit_only=False)
+
             # Report values
             total_profit_loss = 0
             trades_profit_loss = []
@@ -80,22 +83,20 @@ if __name__ == '__main__':
                 # Generate report for all positions
                 report = generate_report(positions)
 
-                def email_report():
-                    # Send report to Email
-                    email = Email(API_KEY=config["SPARKPOST_API_KEY"])
-                    # TODO: remove hardcoded email
-                    email.send(to_email="rtk@rtk-cv.dk",
-                            subject=f"Trading Report {report['date']}",
-                            content=report["summary"])
-                email_report()
+                # Send report to Email
+                email = Email()
+                # TODO: remove hardcoded email
+                email.send(to_email="rtk@rtk-cv.dk",
+                        subject=f"Trading Report {report['date']}",
+                        content=report["summary"])
+                
+                # Sleep for 1 hour
+                logger.info("Sleeping for 1 hour")
+                time.sleep(3600)
 
             else:
                 # sleep until next full hour
                 now = datetime.now()
-                # TODO
-                # test when now hour is 23
-                # test when now hour is 0
-                # test when now hour is 17
                 next_hour = now.replace(hour=(now.hour + 1) % 24, minute=0, second=0, microsecond=0)
                 sleep_time = (next_hour - now).seconds
                 logger.info(f"Sleeping for {sleep_time} seconds")
@@ -104,7 +105,6 @@ if __name__ == '__main__':
         while True:
             loop_controller()
         
-
     @click.command()
     def orders():
         """ List orders """
