@@ -81,12 +81,6 @@ class Saxo:
         self.token = self.__get_bearer()
         self.client = API(access_token=self.token)
 
-    def load_config(self, filename):
-        """ Read config from file """
-        with open(filename, "r") as file:
-            config = json.load(file)
-        self.config = config
-
     def set_profile(self, profile_name):
         """ Set profile """
         self.profile_name = profile_name
