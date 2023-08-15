@@ -1,9 +1,12 @@
+import time
 import click
 import logging
+from datetime import datetime
 from northy.logger import setup_logger
 from northy.saxo import Saxo
 from northy.config import config
 from northy.tweets import TweetsDB
+from northy.email import Email
 
 if __name__ == '__main__':
     setup_logger()
@@ -20,6 +23,86 @@ if __name__ == '__main__':
         """ List positions """
         positions = saxo.positions()
         print(positions)
+
+    @click.command()
+    def report_closed_positions():
+        """ Report Closed Positions """
+        positions = saxo.positions(status_open=False, profit_only=False)
+
+        def generate_report(positions):
+            # Report values
+            total_profit_loss = 0
+            trades_profit_loss = []
+            count_closed_trades = 0
+
+            # Loop over all positions
+            for p in positions["Data"]:
+                # Extract values
+                base = p["PositionBase"]
+                uic = base["Uic"]
+                amount = base["Amount"]
+                status = base["Status"]
+                ProfitLossOnTrade = p["PositionView"]["ProfitLossOnTrade"]
+
+                # only report closed positions
+                if status == "Closed":
+                    # filter away the parent positions
+                    if "CorrelationTypes" not in base.keys():
+                        logger.info(f"Uic:{uic} Amount:{amount} P&L:{ProfitLossOnTrade}")
+                        total_profit_loss += ProfitLossOnTrade
+                        trades_profit_loss.append(ProfitLossOnTrade)
+                        count_closed_trades += 1
+
+            # Convert "2023-07-31T00:00:00.000000Z" to "2023-07-31"
+            date = positions["Data"][0]["PositionBase"]["ValueDate"].split("T")[0]
+
+            avg_profit_loss = total_profit_loss / count_closed_trades
+            sheet = ",".join(map(str, trades_profit_loss))
+            summary = """
+            <p>Trading Date: %s</p>
+            <p>Total Profit/Loss: %s</p>
+            <p>Total Number of Trades: %s</p>
+            <p>Average P&L/Trade: %s</p>
+            <p>Sheet: %s</p>
+            """ % (date, total_profit_loss, count_closed_trades, avg_profit_loss, sheet)
+            
+            return {
+                "summary": summary,
+                "total_profit_loss": total_profit_loss,
+                "count_closed_trades": count_closed_trades,
+                "trades_profit_loss": trades_profit_loss,
+                "date": date
+            }
+
+        # Loop Controller
+        def loop_controller(skip=False):
+            if datetime.now().weekday() < 5 and datetime.now().hour == 17 or skip:
+                # Generate report for all positions
+                report = generate_report(positions)
+
+                def email_report():
+                    # Send report to Email
+                    email = Email(API_KEY=config["SPARKPOST_API_KEY"])
+                    # TODO: remove hardcoded email
+                    email.send(to_email="rtk@rtk-cv.dk",
+                            subject=f"Trading Report {report['date']}",
+                            content=report["summary"])
+                email_report()
+
+            else:
+                # sleep until next full hour
+                now = datetime.now()
+                next_hour = now.replace(hour=now.hour+1, minute=0, second=0, microsecond=0)
+                sleep_time = (next_hour - now).seconds
+                logger.info(f"Sleeping for {sleep_time} seconds")
+                time.sleep(sleep_time)
+
+        while True:
+            loop_controller()
+        
+        # For testing only
+        #loop_controller(skip=True)
+
 
     @click.command()
     def orders():
@@ -110,7 +193,7 @@ if __name__ == '__main__':
                     logger.info("Initiating trade for %s", tid)
                     #ctx.invoke(trade, tweet=tid)
 
-
+    cli.add_command(report_closed_positions)
     cli.add_command(positions)
     cli.add_command(market)
     cli.add_command(limit)

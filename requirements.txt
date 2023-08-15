@@ -23,3 +23,6 @@ saxo_openapi
 pytest
 tox
 pytest-cov
+
+# Email
+sparkpost
