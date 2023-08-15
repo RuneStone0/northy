@@ -99,6 +99,7 @@ if __name__ == '__main__':
                 now = datetime.now()
                 next_hour = now.replace(hour=(now.hour + 1) % 24, minute=0, second=0, microsecond=0)
                 sleep_time = (next_hour - now).seconds
+                if sleep_time == 0: sleep_time = 1
                 logger.info(f"Sleeping for {sleep_time} seconds")
                 time.sleep(sleep_time)
 
