@@ -35,13 +35,39 @@ TraderConfig = {
 }
 """
 
+class SaxoConfig:
+    def __init__(self, config_file="saxo_config.json"):
+        # Create a logger instance for the class
+        self.logger = logging.getLogger(__name__)
+
+        self.load_config(filename=config_file)
+
+    def load_config(self, filename):
+        """ Read config from file """
+        with open(filename, "r") as file:
+            config = json.load(file)
+        self.config = config
+    
+    def get_stoploss(self, symbol):
+        """
+            Lookup default stoploss points for a symbol.
+        """
+        symbol = symbol.upper()
+        try:
+            stoploss_points = self.config["tickers"][symbol]["stoploss_points"]
+            return stoploss_points
+        except Exception as e:
+            # Setting arbitrary SL for unknown symbols
+            self.logger.warning(f"Unknown symbol '{symbol}'. Setting SL to 9.")
+            return 9
+
 class Saxo:
     def __init__(self, config_file="saxo_config.json", profile_name="default"):
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
 
         # Set trade account config
-        self.load_config(filename=config_file)
+        self.config = SaxoConfig().config
         self.set_profile(profile_name)
         self.tickers = self.config["tickers"]
 
