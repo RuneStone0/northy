@@ -39,10 +39,3 @@ def test_backup(temp_folder):
     db = Database(connection_string=connection_string)
     result = db.backup(output_directory=temp_folder)
     assert result is None, "Backup should complete without errors"
-
-if __name__ == "__main__":
-    test_db_mock()
-    test_db_prod()
-    #test_db_env()
-    #test_backup()  # only works by calling pytest from the command line
-    pass

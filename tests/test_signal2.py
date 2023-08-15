@@ -123,19 +123,3 @@ def test_signal2_manualall():
     # generate test cases for TradeSignal.manualall()
     assert signal.manualall() == []
 """
-
-test_signal2_export()
-
-if __name__ == "__main__":
-    test_signal2_get()
-    #test_signal2_getall()
-    #test_signal2_update()
-    #test_signal2_updateall()
-    #test_signal2_parse()
-    #test_signal2_parseall()
-    # test_text_to_signal()
-    #test_is_trading_signal()
-    #test_signal2_export()
-    #test_signal2_backtest()
-    # test_signal2_manual()
-    # test_signal2_manualall()

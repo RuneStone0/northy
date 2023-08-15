@@ -9,6 +9,3 @@ def test_():
     logger.warning("Test logger")
     logger.error("Test logger")
     logger.critical("Test logger")
-
-if __name__ == "__main__":
-    test_()
