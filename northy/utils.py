@@ -21,3 +21,20 @@ class Utils:
     
     def json_to_string(self, data):
         return json.dumps(data)
+
+    def str2bool(self, value):
+        """
+            Convert string to boolean.
+        """
+        v = str(value)
+        true_values = ("yes", "true", "t", "1")
+        false_values = ("no", "false", "f", "0")
+        
+        lower_v = v.lower()
+        
+        if lower_v in true_values:
+            return True
+        elif lower_v in false_values:
+            return False
+        else:
+            raise ValueError("Invalid boolean string representation.")

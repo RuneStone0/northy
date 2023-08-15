@@ -1,7 +1,6 @@
-from northy.config import config
+from northy.config import config, set_env
 
-def test_():
-    assert config
-
-if __name__ == "__main__":
-    test_()
+def test_config():
+    assert isinstance(config, dict)
+    config["PRODUCTION"]
+    assert set_env() == None
