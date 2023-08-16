@@ -1042,13 +1042,13 @@ class SaxoHelper(Saxo):
                     content=summary)
             
             # Sleep for 1 hour
-            self.logger.info("Sleeping for 1 hour")
+            self.logger.info("Sleeping for 1 seconds")
             time.sleep(1)
 
         else:
             # sleep until next full hour
             now = datetime.now()
-            next_hour = now.replace(hour=(now.hour + 1) % 24, minute=0, second=0, microsecond=0)
+            next_hour = now.replace(hour=(now.hour + 1) % 24, minute=0, second=1)
             sleep_time = (next_hour - now).seconds
             self.logger.info(f"Sleeping for {sleep_time} seconds")
             time.sleep(sleep_time)
