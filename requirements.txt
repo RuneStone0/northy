@@ -21,8 +21,8 @@ saxo_openapi
 
 # Unit testing
 pytest
-tox
 pytest-cov
+pytest-xdist
 
 # Email
 sparkpost

@@ -3,9 +3,8 @@ import click
 import logging
 from northy.config import config
 from northy.logger import setup_logger
-from northy.tweets import Tweets, TweetsDB, Helper
-
-helper = Helper()
+from northy.tweets import Tweets, TweetsDB
+tweets = Tweets(config)
 
 if __name__ == '__main__':
     setup_logger()
@@ -25,7 +24,7 @@ if __name__ == '__main__':
         tweets = Tweets(config)
         data = tweets.search(max_results=10)
         for tweet in data:
-            helper.pprint(tweet)
+            tweets.pprint(tweet)
 
     @click.command()
     @click.option('--limit', default=5, help='Number of tweets to return')
@@ -42,7 +41,7 @@ if __name__ == '__main__':
             db.add_tweet(tweet)
 
         # wait for rate limit
-        helper.rate_limit_handler()
+        tweets.rate_limit_handler()
 
     @click.command()
     def fetchall():
@@ -55,14 +54,13 @@ if __name__ == '__main__':
             Watch for new tweets and add them into the DB.
         """
         tweets = Tweets(config)
-        helper = Helper()
 
         tweetsdb = TweetsDB(config)
         latest_twitter_id = tweetsdb.get_latest()['tid']
 
         while True:
             # only fetch tweets during trading hours
-            if helper.is_trading_hours():
+            if tweets.is_trading_hours():
                 try:
                     data = tweets.fetch(since_id=latest_twitter_id).data
                 except Exception as e:
@@ -71,10 +69,11 @@ if __name__ == '__main__':
                     continue
 
                 for tweet in data:
-                    tweetsdb.add_tweet(tweet)
+                    inserted = tweetsdb.add_tweet(tweet)
+                    tweets.pprint(tweet=tweet, inserted=inserted)
 
                 latest_twitter_id = tweetsdb.get_latest()['tid']
-                helper.rate_limit_handler()
+                tweets.rate_limit_handler()
 
     cli.add_command(me)
     cli.add_command(search)
