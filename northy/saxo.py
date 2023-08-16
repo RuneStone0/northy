@@ -17,24 +17,6 @@ utils = Utils()
 ContextId = ''.join(random.choice(string.ascii_letters + string.digits + '-_') for i in range(50))
 ReferenceId = ''.join(random.choice(string.ascii_letters + string.digits + '-_') for i in range(50))
 
-"""
-TraderConfig = {
-    "SAXO_DEMO": {
-        # Saxo Demo Account
-        'AccountId': '17470793',
-        'AccountKey': 'wlgQxI5-JzdhnV4s6BsDiA==',
-        'ContextId': ContextId,
-        "ReferenceId": ReferenceId,
-
-
-        # Set preferred order type
-        # Market, will be executed immediately
-        # Limit, will be executed when price is reached (you might risk missing the trade)
-        'OrderType': 'Market',
-    }
-}
-"""
-
 class SaxoConfig:
     def __init__(self, config_file="saxo_config.json"):
         # Create a logger instance for the class
@@ -94,6 +76,7 @@ class Saxo:
 
     ### Helper functions ###
     def pretty_print_position(self, position):
+        # TODO: Move to SaxoHelper
         """ Pretty print position """
         p = position
         pos_id = p["PositionId"]
@@ -169,7 +152,7 @@ class Saxo:
                 uic = int(uic)
                 for symbol, v in TABLE.items():
                     if v["Uic"] == uic:
-                        print(f"{uic} --> {symbol}")
+                        self.logger.info(f"{uic} --> {symbol}")
                         return symbol
                 return None
 
@@ -896,7 +879,7 @@ class Saxo:
         order = {
             "PositionId": PositionId,
             "Orders": [{
-                "AccountKey": self.accountKey,
+                "AccountKey": self.profile["AccountKey"],
                 "Uic": pb["Uic"],
                 "AssetType": pb["AssetType"],
                 "OrderType": "Market",
@@ -957,3 +940,115 @@ class Saxo:
         rsp = self.post(path="/trade/v2/orders", data=__order)
         return rsp
 
+# Create a SaxoHelper class that inherits from Saxo
+class SaxoHelper(Saxo):
+    def __init__(self, config_file="saxo_config.json", profile_name="default"):
+        super().__init__(config_file, profile_name)
+        self.logger = self.logger
+        self.saxo = Saxo(config_file="saxo_config.json", profile_name="default")
+
+    def generate_closed_positions_report(self, positions):
+        """
+            Generate a report of closed positions
+
+            Args:
+                positions (dict): Positions object
+
+            Returns:
+                dict: Report
+
+            Example:
+                >>> positions = saxo.positions(status_open=False, profit_only=False)
+                >>> report = saxo.generate_closed_positions_report(positions)
+                >>> print(report)
+                >>> {
+                >>>     "summary": "...",
+                >>>     "date": "2023-07-31",
+                >>>     "total_profit_loss": 725,
+                >>>     "trades_profit_loss": "100,-12,678,-41",
+                >>>     "count_closed_trades": 4
+                >>> }
+        """
+        # Report values
+        total_profit_loss = 0
+        trades_profit_loss = []
+        count_closed_trades = 0
+
+        # Loop over all positions
+        for p in positions["Data"]:
+            # Extract values
+            base = p["PositionBase"]
+            uic = base["Uic"]
+            amount = base["Amount"]
+            status = base["Status"]
+            ProfitLossOnTrade = p["PositionView"]["ProfitLossOnTrade"]
+
+            # only report closed positions
+            if status == "Closed":
+                # filter away the parent positions
+                if "CorrelationTypes" not in base.keys():
+                    self.logger.info(f"Uic:{uic} Amount:{amount} P&L:{ProfitLossOnTrade}")
+                    total_profit_loss += ProfitLossOnTrade
+                    trades_profit_loss.append(ProfitLossOnTrade)
+                    count_closed_trades += 1
+
+        # Convert "2023-07-31T00:00:00.000000Z" to "2023-07-31"
+        date = positions["Data"][0]["PositionBase"]["ValueDate"].split("T")[0]
+
+        # Handle cases where no closed positions were found
+        try:
+            avg_profit_loss = total_profit_loss / count_closed_trades
+        except ZeroDivisionError:
+            avg_profit_loss = "N/A"
+        
+        return {
+            "total_profit_loss": total_profit_loss,
+            "count_closed_trades": count_closed_trades,
+            "trades_profit_loss": trades_profit_loss,
+            "avg_profit_loss": avg_profit_loss,
+            "date": date
+        }
+
+    def job_generate_closed_positions_report(self, skip=False):
+        """
+            Generate a report of closed positions and send it via email.
+            Report will only be generated at 17:00 on weekdays.
+        """
+        from .email import Email
+        if datetime.now().weekday() < 5 and datetime.now().hour == 17 and datetime.now().second <= 5 or skip:
+            # Get positions and generate report
+            positions = self.saxo.positions(status_open=False, profit_only=False)
+            report = self.generate_closed_positions_report(positions)
+
+            # Create summary
+            sheet = ",".join(map(str, report["trades_profit_loss"]))
+            summary = """
+            <p>Trading Date: %s</p>
+            <p>Total Profit/Loss: %s</p>
+            <p>Total Number of Trades: %s</p>
+            <p>Average P&L/Trade: %s</p>
+            <p>Sheet: %s</p>
+            """ % (report["date"],
+                    report["total_profit_loss"],
+                    report["count_closed_trades"],
+                    report["avg_profit_loss"],
+                    sheet)
+
+            # Send report to Email
+            # TODO: remove hardcoded email
+            email = Email()
+            email.send(to_email="rtk@rtk-cv.dk",
+                    subject=f"Trading Report {report['date']}",
+                    content=summary)
+            
+            # Sleep for 1 hour
+            self.logger.info("Sleeping for 1 hour")
+            time.sleep(1)
+
+        else:
+            # sleep until next full hour
+            now = datetime.now()
+            next_hour = now.replace(hour=(now.hour + 1) % 24, minute=0, second=0, microsecond=0)
+            sleep_time = (next_hour - now).seconds
+            self.logger.info(f"Sleeping for {sleep_time} seconds")
+            time.sleep(sleep_time)
