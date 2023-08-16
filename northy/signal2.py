@@ -1,16 +1,15 @@
-import os
 import re
 import sys
 import json
 import time
 from termcolor import colored
-from .utils import Utils
 from .db import Database
 from datetime import datetime
 from .prowl import Prowl
+from .config import config
+from .saxo import SaxoConfig
 import logging
 
-u = Utils()
 ignore_tweets = [
     "1557516667357380608", # FLAT STOPPED $SPX | RE-ENTRY SHORT | IN 4211 - 10 PT STOP. | ADJUSTED $NDX STOP TO -25. |  | TAKING THE STOP RISK OVERNIGHT
     "1565311603251232768", # Moved $RUT stop to -10 again.\nI'm have to step away from the desk for a bit, but generally keep an eye on things via mobile.
@@ -38,8 +37,12 @@ class Signal:
         self.prowl = Prowl()
 
         # MongoDB
-        self.db = Database()
+        self.production = config["PRODUCTION"] if production is None else production
+        self.db = Database(production=self.production)
         self.db_tweets = self.db.tweets
+
+        # SaxoConfig
+        self.saxo_config = SaxoConfig()
 
     def __ticker_config(self):
         """
@@ -205,7 +208,7 @@ class Signal:
         for tweet in results:
             tid = tweet["tid"]
             self.parse(tid)
-        
+
     def text_to_signal(self, tweet:dict) -> list:
         """
             Parse raw tweet to an array of trading signal.
@@ -237,28 +240,6 @@ class Signal:
         #############################
 
         text = self.__normalize_text(tweet)
-
-        def find_SL_POINTS(symbol):
-            """
-                Set SL points.
-
-                Input:
-                    `LIMIT ORDER $SPX LONG |IN 3673 - 10 PT STOP`
-                    `LIMIT BUY $SPX |IN 4000 - 15 POINT STOP`
-                    `SHORT $SPX  | IN 4160 - 10PT STOP`
-                    1635261970990661632 - `STOPPED $SPX  $NDX | RE-ENTRY LONG | IN 3809 - 10 PT STOP | IN 11680 - 25 PT STOP`
-                Output:
-                    `[10]`
-                    `[15]`
-                    `[10]`
-                    `[10,25]` 
-            """
-            if symbol == "SPX" or symbol == "RUT":
-                return 10
-            elif symbol == "NDX":
-                return 25
-            else:
-                return "UNKNOWN"
 
         def find_INOUT(text, inout="IN"):
             """
@@ -355,14 +336,14 @@ class Signal:
             __ACTION_CODE += f"_TRADE_{direction}"
 
             # Find entry
-            print(symbol)
-            print(text)
+            #print(symbol)
+            #print(text)
             print(find_INOUT(text, "IN"))
             try:
                 __IN = get_closest_symbols(find_INOUT(text, "IN"))[symbol]
-                print(__IN)
+                #print(__IN)
                 __ACTION_CODE += f"_IN_{__IN}"
-                print(__ACTION_CODE)
+                #print(__ACTION_CODE)
             except Exception as e:
                 # Sometimes parsing fail. We fall back to "UNKNOWN". We can later on decide, 
                 # if we want to ignore this and put a market order in or skip the trade.
@@ -373,7 +354,7 @@ class Signal:
             # Find stop loss
             # We don't care to parse the SL from the text. Its always the same anyway
             # TODO: Above is not true. 1641890973302116358 is an example where we have different SL
-            POINTS = find_SL_POINTS(symbol)
+            POINTS = self.saxo_config.get_stoploss(symbol)
 
             __ACTION_CODE += f"_SL_{POINTS}"
             return __ACTION_CODE
@@ -441,7 +422,7 @@ class Signal:
                 IN = get_closest_symbols(find_INOUT(text, "IN"))[symbol]
 
                 # Set stop loss
-                POINTS = find_SL_POINTS(symbol)
+                POINTS = self.saxo_config.get_stoploss(symbol)
                 CALC_OUT = int(IN) - int(POINTS)
 
                 ACTION_CODE += f"_IN_{IN}_OUT_{CALC_OUT}_SL_{POINTS}"
@@ -491,7 +472,7 @@ class Signal:
                 tid = tweet["tid"]
                 msg = f"Unknown action when parsing tweet {tid}"
                 self.logger.error(msg)
-                if self.config["PRODUCTION"] == "True":
+                if self.production:
                     self.prowl.send(message=msg, priority=1)
                 
             element += 1
