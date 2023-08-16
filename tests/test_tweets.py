@@ -1,6 +1,3 @@
-import os
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from northy.tweets import Tweets
 from northy.config import config
 
@@ -12,8 +9,13 @@ def test_me():
     assert me.data.username == "52544B"
 
 def test_fetch():
-    # Un-authenticated fetch for WallStreetSilv, to avoid rate limiting
+    # Simple fetch
     data = tweets.fetch(user_auth=False, user_id="1366565625401909249")
+    assert isinstance(data, tuple)
+
+def test_fetch_with_since_id():
+    # Fetch with since_id
+    data = tweets.fetch(user_auth=False, user_id="1366565625401909249", since_id="1679125392462864384")
     assert isinstance(data, tuple)
 
 def test_print():
@@ -33,13 +35,20 @@ def test_print():
     assert tweets.pprint(tweet=data) == None
     assert tweets.pprint(tweet=data, inserted=True) == None
 
-"""
-def test_is_trading_hours():
-    assert isinstance(tweets.is_trading_hours(), bool)
-"""
+def test_print_errors():
+    data = {
+      "tid": "1234",
+	  "text": "ALERT: Flat stopped $NDX\nRe-entry short    \nIN 15305- 25 pt stop",
+      "author_id": "unittest",
+      "created_at": "2023-07-12T13:47:44.000Z"
+	}
+    assert tweets.pprint(tweet=data) == None
 
-if __name__ == "__main__":
-    test_me()
-    test_fetch()
-    test_print()
-    pass
+def test_rate_limit_handler():
+    assert tweets.rate_limit_handler(sleep=1) == None, "rate_limit_handler should complete without errors"
+
+def test_is_trading_hours():
+    tweets.is_trading_hours(sleep=1)
+
+def test_get_user_tweets():
+    tweets.get_user_tweets(user_id="897502744298258432", max_results=5)

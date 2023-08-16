@@ -77,27 +77,25 @@ def test_signal2_parseall():
     # generate test cases for TradeSignal.parseall()
     assert signal.parseall() == None
 
-"""
 def test_text_to_signal():
     # generate test cases for TradeSignal.text_to_signal()
     assert signal.text_to_signal(tweet="invalid") == []
     assert signal.text_to_signal(tweet={"empty": "dict"}) == []
 
-    tweet_no_alert = db_tweets.find_one({"tid": "1646974851037405190"})  # Tweet without alert
+    tweet_no_alert = db.tweets.find_one({"tid": "1646974851037405190"})  # Tweet without alert
     assert isinstance(signal.text_to_signal(tweet=tweet_no_alert), list) == True
 
-    ignored_tweet = db_tweets.find_one({"tid": "1645367498823352320"})  # Tweet on ignore list
+    ignored_tweet = db.tweets.find_one({"tid": "1645367498823352320"})  # Tweet on ignore list
     assert signal.text_to_signal(tweet=ignored_tweet) == []
 
     # Tweet with alert
-    valid_tweet = db_tweets.find_one({"tid": "1646877915961782274"})
+    valid_tweet = db.tweets.find_one({"tid": "1646877915961782274"})
     assert isinstance(signal.text_to_signal(tweet=valid_tweet), list) == True
     assert signal.text_to_signal(tweet=valid_tweet), list == ["SPX_SCALEOUT_IN_3809_OUT_4153_POINTS_344"]
 
     # Loop through all alert Tweets
-    for i in db_tweets.find({"alert": True}):
+    for i in db.tweets.find({"alert": True}):
         assert isinstance(signal.text_to_signal(tweet=i), list) == True
-"""
 
 def test_is_trading_signal():
     # generate test cases for TradeSignal.is_trading_signal()
@@ -114,6 +112,22 @@ def test_signal2_backtest():
     # generate test cases for TradeSignal.backtest()
     assert signal.backtest() == None
 
+def test_get_closest_symbols():
+    ndx_numbers = [3713]
+    spx_numbers = [11348]
+    rut_numbers = [1703]
+    dija_numbers = [30932]
+
+    for i in ndx_numbers:
+        print(signal.get_closest_symbols(i))
+        print(signal.get_closest_symbols(i).index("NDX"))
+        
+        assert signal.get_closest_symbols(i) == ["NDX"]
+    
+    # generate test cases for TradeSignal.get_closest_symbols()
+    assert signal.get_closest_symbols("SPX") == ["SPX"]
+    assert signal.get_closest_symb
+   
 """
 def test_signal2_manual():
     # generate test cases for TradeSignal.manual()
