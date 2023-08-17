@@ -1,10 +1,11 @@
-from northy.signal2 import Signal
+from northy.signal2 import Signal, SignalHelper
 from northy.db import Database
 from northy.logger import setup_logger
 setup_logger()
 
 db = Database(production=False)
 signal = Signal(production=False)
+signal_helper = SignalHelper()
 
 def test_signal2_get():
     """ 
@@ -112,28 +113,51 @@ def test_signal2_backtest():
     # generate test cases for TradeSignal.backtest()
     assert signal.backtest() == None
 
+def test_find_INOUT():
+    # Get all alerts, where text contains "IN" more than 2 times
+    pipeline = [
+        {
+            '$match': {
+                'alert': True,
+                'text': {
+                    '$regex': 'IN',
+                    '$options': 'i'
+                }
+            }
+        },
+        {
+            '$addFields': {
+                'in_count': {
+                    '$size': {
+                        '$split': ['$text', 'IN']
+                    }
+                }
+            }
+        },
+        {
+            '$match': {
+                'in_count': {
+                    '$gt': 2
+                }
+            }
+        },
+        {
+            '$project': {
+                'text': 1
+            }
+        }
+    ]
+    for doc in db.tweets.aggregate(pipeline):
+        res = signal_helper.find_INOUT(doc["text"])
+        assert isinstance(res, list) == True
+
 def test_get_closest_symbols():
-    ndx_numbers = [3713]
-    spx_numbers = [11348]
-    rut_numbers = [1703]
-    dija_numbers = [30932]
-
-    for i in ndx_numbers:
-        print(signal.get_closest_symbols(i))
-        print(signal.get_closest_symbols(i).index("NDX"))
-        
-        assert signal.get_closest_symbols(i) == ["NDX"]
-    
-    # generate test cases for TradeSignal.get_closest_symbols()
-    assert signal.get_closest_symbols("SPX") == ["SPX"]
-    assert signal.get_closest_symb
-   
-"""
-def test_signal2_manual():
-    # generate test cases for TradeSignal.manual()
-    assert signal.manual("123") == []
-
-def test_signal2_manualall():
-    # generate test cases for TradeSignal.manualall()
-    assert signal.manualall() == []
-"""
+    numbers = [
+        [3713,11348],
+        [1703,30932],
+        [3713,11348,1703,30932]
+    ]
+    for num in numbers:
+        out = signal_helper.get_closest_symbols(num)
+        print(out)
+        assert isinstance(out, dict) == True
