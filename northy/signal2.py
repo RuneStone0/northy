@@ -32,8 +32,7 @@ class Signal:
     def __init__(self, production=None):
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
-
-        self.ticker_config = self.__ticker_config()
+        
         self.prowl = Prowl()
 
         # MongoDB
@@ -42,28 +41,7 @@ class Signal:
         self.db_tweets = self.db.tweets
 
         # SaxoConfig
-        self.saxo_config = SaxoConfig()
-
-    def __ticker_config(self):
-        """
-            Returns the signal configuration.
-        """
-        # TODO: Store this in a .signal file and generate it dynamically, if old that one month
-        signal_config = {
-            "SPX": {
-                "200ma": 3946,
-            },
-            "NDX": {
-                "200ma": 11946,
-            },
-            "DIJA": {
-                "200ma": 35435,
-            },
-            "RUT": {
-                "200ma": 2015,
-            }
-        }
-        return signal_config
+        self.saxo_config = SaxoConfig().config
 
     def __unique(self, sequence):
         """
@@ -219,6 +197,8 @@ class Signal:
             Output:
                 `["SPX_TRADE_LONG_IN_3609_SL_10"]`
         """
+        signal_helper = SignalHelper()
+
         #### INPUT VALIDATION ####
         if not isinstance(tweet, dict):
             self.logger.error("Tweet input is not dict")
@@ -241,77 +221,7 @@ class Signal:
 
         text = self.__normalize_text(tweet)
 
-        def find_INOUT(text, inout="IN"):
-            """
-                Find entry in points.
-
-                Input:
-                    `CLOSED FINAL SCALE $NDX LONG |IN 11060 OUT 13250 +2190`
-                    `CLOSED 1 SCALE $SPX SHORT |  |IN 4193 OUT 4045 +148`
-                    `CLOSED 3RD SCALE $NDX ADD-ON | IN 11818 OUT 12760 + 942`
-                    `LONG $NDX $SPX  $RUT |  |IN 3713 - 10 PT STOP |IN 11348 - 25 PT STOP |IN 1703 - 10 PT STOP`
-                    `Closed 1 scale $SPX add-on\n\nIN 3722 OUT OUT 3824 +102`
-                    `CLOSED 2ND SCALE $NDX | IN 13720 OUT: 12484 +1236 NDX`
-            """
-            # get all IN numbers from text
-            # Normalize
-            text = text.replace(":", " ") # replace : with space
-            text = text.replace("  ", " ") #remove double spaces
-
-            out = re.findall(f'({inout}[\s|:])(\d+)', text) # --> IN:1234
-            out = [int(i[1]) for i in out] # --> [1234]
-            return out
-        
-        def get_closest_symbols(numbers):
-            """
-                Given a list of numbers, return a dictionary of the closest symbols to the average price.
-                If there is a tie, return the symbols in alphabetical order.
-
-                Example:
-                    numbers = [3713, 11348, 1703]
-                    get_closest_symbols(numbers) -> {"NDX": 11348, "SPX": 3713, "RUT": 1703}
-
-                    numbers = [3713]
-                    get_closest_symbols(numbers) -> {"SPX": 3713}
-
-            """
-            # 200ma for each symbol
-            ndx = self.ticker_config["NDX"]["200ma"]
-            spx = self.ticker_config["SPX"]["200ma"]
-            rut = self.ticker_config["RUT"]["200ma"]
-            dija = self.ticker_config["DIJA"]["200ma"]
-
-            avg_price = (ndx + spx + rut) / 3
-            symbols = [key for key in self.ticker_config]
-
-            # Handle a list of multiple numbers
-            if len(numbers) > 1:
-                closest_numbers = {symbol: 0 for symbol in symbols}  # initialize with default value
-                for num in numbers:
-                    if abs(num - dija) <= abs(num - ndx) and abs(num - dija) <= abs(num - rut):
-                        closest_numbers["DIJA"] = num
-                    elif abs(num - ndx) <= abs(num - spx) and abs(num - ndx) <= abs(num - rut):
-                        closest_numbers["NDX"] = num
-                    elif abs(num - spx) <= abs(num - ndx) and abs(num - spx) <= abs(num - rut):
-                        closest_numbers["SPX"] = num
-                    else:
-                        closest_numbers["RUT"] = num
-                
-                sorted_symbols = sorted(symbols, key=lambda x: abs(closest_numbers[x] - avg_price))
-                return {symbol: closest_numbers[symbol] for symbol in sorted_symbols}
-            
-            # Handle a single number
-            else:
-                num = numbers[0]
-                if abs(num - dija) <= abs(num - ndx) and abs(num - dija) <= abs(num - rut):
-                    return {"DIJA": num}
-                elif abs(num - ndx) <= abs(num - spx) and abs(num - ndx) <= abs(num - rut):
-                    return {"NDX": num}
-                elif abs(num - spx) <= abs(num - ndx) and abs(num - spx) <= abs(num - rut):
-                    return {"SPX": num}
-                else:
-                    return {"RUT": num}
-
+       
         def find_SCALE_POINTS(text):
             """
                 Find scale in points.
@@ -338,9 +248,9 @@ class Signal:
             # Find entry
             #print(symbol)
             #print(text)
-            print(find_INOUT(text, "IN"))
+            print(signal_helper.find_INOUT(text, "IN"))
             try:
-                __IN = get_closest_symbols(find_INOUT(text, "IN"))[symbol]
+                __IN = signal_helper.get_closest_symbols(signal_helper.find_INOUT(text, "IN"))[symbol]
                 #print(__IN)
                 __ACTION_CODE += f"_IN_{__IN}"
                 #print(__ACTION_CODE)
@@ -419,7 +329,7 @@ class Signal:
                     raise Exception("Unknown action")
 
                 # Set entry price
-                IN = get_closest_symbols(find_INOUT(text, "IN"))[symbol]
+                IN = signal_helper.get_closest_symbols(signal_helper.find_INOUT(text, "IN"))[symbol]
 
                 # Set stop loss
                 POINTS = self.saxo_config.get_stoploss(symbol)
@@ -443,8 +353,8 @@ class Signal:
 
                 # SCALEOUT
                 if "OUT" in text:
-                    IN = get_closest_symbols(find_INOUT(text, "IN"))[symbol]
-                    OUT = get_closest_symbols(find_INOUT(text, "OUT"))[symbol]
+                    IN = signal_helper.get_closest_symbols(signal_helper.find_INOUT(text, "IN"))[symbol]
+                    OUT = signal_helper.get_closest_symbols(signal_helper.find_INOUT(text, "OUT"))[symbol]
                     POINTS = find_SCALE_POINTS(text)
                     ACTION_CODE += f"_SCALEOUT_IN_{IN}_OUT_{OUT}_POINTS_{POINTS}"
                     ACTIONS.append(ACTION_CODE)
@@ -737,3 +647,89 @@ class Signal:
 
                 # Pause for 60 seconds before resuming
                 time.sleep(60)
+
+class SignalHelper:
+    def __init__(self) -> None:
+        self.ticker_config = SaxoConfig().config["tickers"]
+        pass
+
+    def find_INOUT(self, text, inout="IN"):
+        """
+            Find entry/exit price in text.
+
+            Input:
+                `CLOSED FINAL SCALE $NDX LONG |IN 11060 OUT 13250 +2190`
+                `CLOSED 1 SCALE $SPX SHORT |  |IN 4193 OUT 4045 +148`
+                `CLOSED 3RD SCALE $NDX ADD-ON | IN 11818 OUT 12760 + 942`
+                `LONG $NDX $SPX  $RUT |  |IN 3713 - 10 PT STOP |IN 11348 - 25 PT STOP |IN 1703 - 10 PT STOP`
+                `Closed 1 scale $SPX add-on\n\nIN 3722 OUT OUT 3824 +102`
+                `CLOSED 2ND SCALE $NDX | IN 13720 OUT: 12484 +1236 NDX`
+
+            Output:
+                [11060, 13250]
+                [4193, 4045]
+                [11818, 12760]
+        """
+        # get all IN numbers from text
+        # Normalize
+        text = text.replace(":", " ") # replace : with space
+        text = text.replace("  ", " ") #remove double spaces
+
+        out = re.findall(f'({inout}[\s|:])(\d+)', text) # --> IN:1234
+        out = [int(i[1]) for i in out] # --> [1234]
+        return out
+
+    def get_closest_symbols(self, numbers:list) -> dict:
+        """
+            Given a list of numbers, return a dictionary of the closest symbols to the average price.
+            If there is a tie, return the symbols in alphabetical order.
+
+            This function is needed to handle this:
+                1. find_INOUT() analyze e.g.: `flat stopped $NDX stopped $RUT Re-entry long IN: 14885 - 25 pt stop IN 1880 - 10pt stop` and return: `[14885,1880]`
+                2. get_closest_symbols() will guess the symbol based on the numbers and returned by find_INOUT()
+                3. get_closest_symbols() will return a dictionary of the closest symbols to the average price.
+
+            Example:
+                numbers = [3713, 11348, 1703]
+                get_closest_symbols(numbers) -> {"NDX": 11348, "SPX": 3713, "RUT": 1703}
+
+                numbers = [3713]
+                get_closest_symbols(numbers) -> {"SPX": 3713}
+        """
+        
+        # 200ma for each symbol
+        ndx = self.ticker_config["NDX"]["200ma"]
+        spx = self.ticker_config["SPX"]["200ma"]
+        rut = self.ticker_config["RUT"]["200ma"]
+        dija = self.ticker_config["DIJA"]["200ma"]
+
+        avg_price = (ndx + spx + rut) / 3
+        symbols = [key for key in self.ticker_config]
+
+        # Handle a list of multiple numbers
+        if len(numbers) > 1:
+            closest_numbers = {symbol: 0 for symbol in symbols}  # initialize with default value
+            for num in numbers:
+                if abs(num - dija) <= abs(num - ndx) and abs(num - dija) <= abs(num - rut):
+                    closest_numbers["DIJA"] = num
+                elif abs(num - ndx) <= abs(num - spx) and abs(num - ndx) <= abs(num - rut):
+                    closest_numbers["NDX"] = num
+                elif abs(num - spx) <= abs(num - ndx) and abs(num - spx) <= abs(num - rut):
+                    closest_numbers["SPX"] = num
+                else:
+                    closest_numbers["RUT"] = num
+            
+            sorted_symbols = sorted(symbols, key=lambda x: abs(closest_numbers[x] - avg_price))
+            return {symbol: closest_numbers[symbol] for symbol in sorted_symbols}
+        
+        # Handle a single number
+        else:
+            num = numbers[0]
+            if abs(num - dija) <= abs(num - ndx) and abs(num - dija) <= abs(num - rut):
+                return {"DIJA": num}
+            elif abs(num - ndx) <= abs(num - spx) and abs(num - ndx) <= abs(num - rut):
+                return {"NDX": num}
+            elif abs(num - spx) <= abs(num - ndx) and abs(num - spx) <= abs(num - rut):
+                return {"SPX": num}
+            else:
+                return {"RUT": num}
