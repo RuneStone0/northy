@@ -58,21 +58,23 @@ def test_signal2_parse():
     assert signal.parse(123) == None
     assert signal.parse("") == None
 
+def test_signal2_parse_update_false():
     # Run parse() without update_db (False)
     pipe = [
         {"$match": {"alert": True}},
         {"$sample": {"size": 5}}
     ]
     for i in db.tweets.aggregate(pipe):
-        assert isinstance(signal.parse(i["tid"]), list)
+        assert isinstance(signal.parse(i["tid"]), dict)
 
+def test_signal2_parse_update_true():
     # Run parse() with update_db=True
     pipe = [
         {"$match": {"alert": True}},
         {"$sample": {"size": 5}}
     ]
     for i in db.tweets.aggregate(pipe):
-        assert isinstance(signal.parse(i["tid"], update_db=True), list)
+        assert isinstance(signal.parse(i["tid"], update_db=True), dict)
 
 def test_signal2_parseall():
     # generate test cases for TradeSignal.parseall()
@@ -161,3 +163,23 @@ def test_get_closest_symbols():
         out = signal_helper.get_closest_symbols(num)
         print(out)
         assert isinstance(out, dict) == True
+
+def test_parseall():
+    signal.parseall()
+
+def test_watch_log():
+    # Get a sample of tweets without alerts
+    pipeline = [
+        { "$match": { "alert": { "$exists": False } } }, # Get tweets where "alerts" it not set (yet)
+        { "$sort": { "created_at": 1 } }, # Sort, oldest first
+        { "$sample": { "size": 30 } } # Get 10 random tweets
+    ]
+    db = Database(production=False)
+    for doc in db.tweets.aggregate(pipeline):
+        data = signal.parse(tid=doc["tid"], update_db=False)
+        assert signal.watch_log(doc=doc, data=data) == None 
+
+def test_refresh_backlog():
+    s = Signal(production=False)
+    s.refresh_backlog()
+
