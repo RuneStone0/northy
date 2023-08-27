@@ -42,6 +42,7 @@ class Signal:
 
         # SaxoConfig
         self.saxo_config = SaxoConfig()
+        self.signal_helper = SignalHelper()
 
     def __unique(self, sequence):
         """
@@ -50,36 +51,11 @@ class Signal:
         seen = set()
         return [x for x in sequence if not (x in seen or seen.add(x))]
 
-    def __normalize_text(self, tweet):
-        """
-            Takes twitter text and cleans it up and normalize the format.
-
-            Input:
-                ALERT: stopped $SPX (add-on) Re-entry long IN: 3609 - 10 pt stop
-                Weekly 200MA still holding. https://t.co/5rFaGhZuo8
-            
-            Output:
-                ["SPX_TRADE_LONG_IN_3609_SL_10"]
-                [""]
-        """
-        # Clean up string
-        text = tweet["text"].replace("\n", " | ")
-        text = text.replace("ALERT: ", "")
-        text = text.upper() # normalize
-
-        # Fix bug with `| LONG $SPX $NDX | IN 3580 - 10 PT STOP |IN 10900 - 25 PT STOP`   1576847187740266496
-        if text.startswith("| "):
-            text = text[2:]
-
-        # Fix bug with ("FLAT STOPPED $RUT | RE-ENTRY LONG | IN: 1795 - 10 PT STOP") where "IN:" contains a colon, all other tweets doesn't
-        text = text.replace(" IN: ", "IN ")
-        return text
-
     def __pretty_print_signal(self, tweet):
         """
             Print signal in color.
         """
-        text = self.__normalize_text(tweet)
+        text = self.signal_helper.normalize_text(tweet["text"])
         signals = self.text_to_signal(tweet)
         signal_text = ", ".join(signals)
 
@@ -174,7 +150,7 @@ class Signal:
             data["signals"] = signals
 
         # Only for console output
-        #text = self.__normalize_text(tweet)
+        #text = self.signal_helper.normalize_text(tweet["text"])
         #print(colored(f"Input:\t\t{text}", "yellow"))
         #print(colored("Signals:", "green"))
         #[print(colored(f"\t\t{s}", "green")) for s in signals]  # Using list comprehension
@@ -228,25 +204,7 @@ class Signal:
             return []
         #############################
 
-        text = self.__normalize_text(tweet)
-
-       
-        def find_SCALE_POINTS(text):
-            """
-                Find scale in points.
-
-                Input:
-                    `CLOSED FINAL SCALE $NDX LONG |IN 11060 OUT 13250 +2190`
-                    `CLOSED 1 SCALE $SPX SHORT |  |IN 4193 OUT 4045 +148`
-                    1621173564325117955 `CLOSED 3RD SCALE $NDX ADD-ON | IN 11818 OUT 12760 + 942`
-                Output:
-                    `2190`
-                    `148`
-            """
-            POINTS = re.findall(r'\+\s?(\d+)', text)[0]
-            POINTS = POINTS.replace("+", "")
-            POINTS = POINTS.replace("", "")
-            return POINTS
+        text = self.signal_helper.normalize_text(tweet["text"])
         
         def find_trade(text, symbol):
             __ACTION_CODE = ""
@@ -255,15 +213,8 @@ class Signal:
             __ACTION_CODE += f"_TRADE_{direction}"
 
             # Find entry
-            try:
-                __IN = signal_helper.get_closest_symbols(signal_helper.find_INOUT(text, "IN"))[symbol]
-                __ACTION_CODE += f"_IN_{__IN}"
-            except Exception as e:
-                # Sometimes parsing fail. We fall back to "UNKNOWN". We can later on decide, 
-                # if we want to ignore this and put a market order in or skip the trade.
-                self.logger.warning("Failed to parse IN", e)
-                __ACTION_CODE += f"_IN_UNKNOWN"
-                raise Exception("Failed to parse IN")
+            __IN = signal_helper.get_closest_symbols(signal_helper.find_INOUT(text, "IN"))[symbol]
+            __ACTION_CODE += f"_IN_{__IN}"
         
             # Find stop loss
             # We don't care to parse the SL from the text. Its always the same anyway
@@ -360,7 +311,7 @@ class Signal:
                 if "OUT" in text:
                     IN = signal_helper.get_closest_symbols(signal_helper.find_INOUT(text, "IN"))[symbol]
                     OUT = signal_helper.get_closest_symbols(signal_helper.find_INOUT(text, "OUT"))[symbol]
-                    POINTS = find_SCALE_POINTS(text)
+                    POINTS = str(signal_helper.find_SCALE_POINTS(text))
                     ACTION_CODE += f"_SCALEOUT_IN_{IN}_OUT_{OUT}_POINTS_{POINTS}"
                     ACTIONS.append(ACTION_CODE)
                 else:
@@ -377,17 +328,13 @@ class Signal:
                 trade = find_trade(text, symbol)
                 ACTIONS.append(f"{symbol}{trade}")
 
-            # Ignore tweets
-            elif tweet["tid"] in ["1565311603251232768", "1565311603251232768", "1557516667357380608"]:
-                # TODO: 1565311603251232768  `MOVED $RUT STOP TO -10 AGAIN. | I'M HAVE TO STEP AWAY FROM THE DESK FOR A BIT, BUT GENERALLY KEEP AN EYE ON THINGS VIA MOBILE.`
-                continue
-
             # Unknown Action
             else:
                 tid = tweet["tid"]
                 msg = f"Unknown action when parsing tweet {tid}"
                 self.logger.error(msg)
                 if self.production:
+                    # TODO: Move prowl notifications to logger logic
                     self.prowl.send(message=msg, priority=1)
                 
             element += 1
@@ -447,7 +394,7 @@ class Signal:
                     #print(t)
                     tid = t["tid"]
                     dt = t["created_at"]
-                    text = self.__normalize_text(t)
+                    text = self.signal_helper.normalize_text(t["text"])
                     try:
                         sig = ','.join(t["signals"])
                     except KeyError:
@@ -466,7 +413,7 @@ class Signal:
                     line = f"{tid};{dt};{text};{sig};{sig_man}\n"
                     outfile.writelines(line)
 
-    def backtest(self):
+    def backtest(self, manual_review=True):
         """
             FOR VALIDATION PURPOSES ONLY
 
@@ -482,7 +429,7 @@ class Signal:
         count_failed = list()
         for tweet in result:
             tid = tweet["tid"]
-            text = self.__normalize_text(tweet)
+            text = self.signal_helper.normalize_text(tweet["text"])
             try:
                 signals = tweet["signals"]
             except KeyError:
@@ -490,7 +437,8 @@ class Signal:
                 continue
 
             if tid in ignore_tweets:
-                print(tid, "Backtest", colored(f"IGNORED", "yellow"), self.__normalize_text(tweet))
+                print(tid, "Backtest", colored(f"IGNORED", "yellow"), 
+                      self.signal_helper.normalize_text(tweet["text"]))
                 continue
 
             try:
@@ -500,25 +448,26 @@ class Signal:
                 continue
 
             # compare two lists
-            signals_match = self.__compare_lists(tweet["signals"], tweet["signals_manual"])
-            if not signals_match:
+            signals_match = self.compare_lists(tweet["signals"], tweet["signals_manual"])
+            if signals_match:
+                #print(colored(f"{tid} OK", "green"))
+                count_success.append(tid)
+            else:
                 diff = list(set(sorted(signals)) - set(sorted(signals_manual)))
-                print(colored(f"{tid} FAILED", "red"), text, "difference:", colored(diff, "yellow"))
+                print(colored(f"{tid} FAILED", "red"), text, "difference:", 
+                      colored(diff, "yellow"))
                 count_failed.append(tid)
                 #print("Signal\t\t", signals)
                 #print("Expected\t", signals_manual)
-            else:
-                #print(colored(f"{tid} OK", "green"))
-                count_success.append(tid)
         
-        print("-------")
         print(colored(f"Success: {len(count_success)}", "green"))
         print(colored(f"Ignored: {len(ignore_tweets)}", "yellow"))
         print(colored(f"Failed: {len(count_failed)}", "red"))
-        for i in count_failed:
-            self.manual(i)
+        if manual_review:
+            for i in count_failed:
+                self.manual(i)
 
-    def __compare_lists(self, list1, list2):
+    def compare_lists(self, list1, list2):
         if len(list1) != len(list2):
             return False
         sorted_list1 = sorted(list1)
@@ -535,7 +484,8 @@ class Signal:
         tweet = self.db.tweets.find_one({"tid": tid})
         tid = tweet["tid"]
         if tid in ignore_tweets:
-            print(tid, "Backtest", colored(f"IGNORED", "yellow"), self.__normalize_text(tweet))
+            print(tid, "Backtest", colored(f"IGNORED", "yellow"),
+                  self.signal_helper.normalize_text(tweet["text"]))
             return
         signals = tweet["signals"]
 
@@ -544,18 +494,22 @@ class Signal:
             if tweet["signals"] and tweet["signals_manual"]:
                 pass
         except KeyError:
-            print(tid, "Backtest", colored(f"FAILED", "red"), "signals or signals_manual doesn't exist")
+            print(tid, "Backtest", colored(f"FAILED", "red"), 
+                  "signals or signals_manual doesn't exist")
             return
         
         # Check if signals and signals_manual are the same
-        signals_match = self.__compare_lists(tweet["signals"], tweet["signals_manual"])
+        signals_match = self.compare_lists(tweet["signals"], tweet["signals_manual"])
 
         # If signals don't match, prompt user to confirm or manually enter signals
         if not signals_match:
             # signals_manual doesn't exist yet
             # generate signals from text and suggest to use it
             generated_signal = self.text_to_signal(tweet)
-            print(tid, "Backtest", colored(f"FAILED", "red"), self.__normalize_text(tweet), colored("new suggested value:", "green"), colored(generated_signal, "yellow"))
+            print(tid, "Backtest", colored(f"FAILED", "red"),
+                  self.signal_helper.normalize_text(tweet["text"]),
+                  colored("new suggested value:", "green"),
+                  colored(generated_signal, "yellow"))
 
             # add prompt asking to confirm signals (c) or manually enter signals (m)
             print("Confirm generated signals (c) or manually enter signals (m) or skip (s)?")                
@@ -627,7 +581,7 @@ class Signal:
         else:
             self.logger.info(f"No trading signal found in {tid} - {text}")
 
-    def refresh_backlog(self):
+    def refresh_backlog(self, limit=1000):
         """
             Parse old tweets and make sure alert flag is setRefresh 
             backlog to make sure we're up-to-date before starting change stream.
@@ -636,11 +590,21 @@ class Signal:
             TODO: If above is implemented, .limit(1000) below can be removed
         """
         query = {"alert": {"$exists": False}}
-        cursor = self.db.tweets.find(query).sort("created_at", -1).limit(1000)
+        
+        # Performance optimization, only return data needed
+        projection = {"tid": 1, "text": 1}
 
-        for doc in cursor:
-            data = self.parse(tid=doc["tid"], update_db=True)
-            self.watch_log(doc, data, prowl_notification=False)
+        # Performance optimization, sort by tid and limit to 1000
+        cursor = self.db.tweets.find(query, projection).sort("tid", -1).limit(limit)
+        documents = [doc for doc in cursor]
+
+        # Preload the signal helper function for better performance
+        parse = self.parse
+        watch_log = self.watch_log
+
+        for doc in documents:
+            data = parse(tid=doc["tid"], update_db=True)
+            watch_log(doc, data, prowl_notification=False)
 
     def watch_stream(self):
         # Watch for new documents (tweets) where "alert" is not set
@@ -678,6 +642,37 @@ class SignalHelper:
         self.ticker_config = SaxoConfig().config["tickers"]
         pass
 
+    def normalize_text(self, tweet_text:str) -> str:
+        """
+            Takes twitter text and cleans it up and normalize the format.
+
+            Input:
+                ALERT: Closed 2nd scale $NDX add-on\n\nIN 11818 OUT 12360 +542
+            
+            Output:
+                Closed 2nd scale $NDX add-on | IN 11818 OUT 12360 +542
+        """
+        # print(repr(tweet_text))
+
+        # Clean up string
+        text = tweet_text
+        text = text.replace("\n", " | ")
+        text = text.replace("ALERT: ", "")
+        text = text.replace("  ", "")
+        text = text.upper()
+
+        # Fix bug with `| LONG $SPX $NDX | IN 3580 - 10 PT STOP |IN 10900 - 25 PT STOP`   1576847187740266496
+        if text.startswith("| "):
+            text = text[2:]
+
+        # Fix bug with ("FLAT STOPPED $RUT | RE-ENTRY LONG | IN: 1795 - 10 PT STOP") where "IN:" contains a colon, all other tweets doesn't
+        text = text.replace(" IN: ", "IN ")
+
+        # Prettify
+        text = text.replace("|IN", "| IN")
+
+        return text
+
     def find_INOUT(self, text, inout="IN"):
         """
             Find entry/exit price in text.
@@ -696,13 +691,35 @@ class SignalHelper:
                 [11818, 12760]
         """
         # get all IN numbers from text
-        # Normalize
+        text = self.normalize_text(text)
         text = text.replace(":", " ") # replace : with space
         text = text.replace("  ", " ") #remove double spaces
 
         out = re.findall(f'({inout}[\s|:])(\d+)', text) # --> IN:1234
         out = [int(i[1]) for i in out] # --> [1234]
         return out
+
+    def find_SCALE_POINTS(self, text) -> int:
+        """
+            Find scale in points.
+
+            Input:
+                `CLOSED FINAL SCALE $NDX LONG |IN 11060 OUT 13250 +2190`
+                `CLOSED 1 SCALE $SPX SHORT |  |IN 4193 OUT 4045 +148`
+                1621173564325117955 `CLOSED 3RD SCALE $NDX ADD-ON | IN 11818 OUT 12760 + 942`
+            Output:
+                `2190`
+                `148`
+        """
+        # Make sure text is normalized
+        text = self.normalize_text(text)
+
+        # Find points
+        POINTS = re.findall(r'\+\s?(\d+)', text)[0]
+        POINTS = POINTS.replace("+", "")
+        POINTS = POINTS.replace("", "")
+
+        return int(POINTS)
 
     def get_closest_symbols(self, numbers:list) -> dict:
         """

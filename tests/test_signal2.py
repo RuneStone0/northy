@@ -100,6 +100,15 @@ def test_text_to_signal():
     for i in db.tweets.find({"alert": True}):
         assert isinstance(signal.text_to_signal(tweet=i), list) == True
 
+    # Invalid action in tweet
+    invalid_tweet = {
+        "tid": "1577295787616264194",
+        "text": "ALERT: 2nd $SPX\nIN 3576 OUT 3766 +190",
+        "alert": True,
+    }
+    out = signal.text_to_signal(tweet=invalid_tweet)
+    assert out == []
+
 def test_is_trading_signal():
     # generate test cases for TradeSignal.is_trading_signal()
     assert signal.is_trading_signal("ALERT: Closed 3rd scale $SPX long\nIN: 3809 OUT 4153+344") == True
@@ -112,8 +121,24 @@ def test_signal2_export():
     assert signal.export(filename="signals", format="csv") == None
 
 def test_signal2_backtest():
-    # generate test cases for TradeSignal.backtest()
-    assert signal.backtest() == None
+    # Create new instance of Signal class (and copy of DB)
+    __signal = Signal(production=False)
+
+    # Insert tweet with mis-matching signals into DB
+    tweet = {
+        "tid": "123456",
+        "text": "ALERT: 2nd $SPX\nIN 3576 OUT 3766 +190",
+        "alert": True,
+        "signals":        [ "SPX_SCALEOUT_IN_3576_OUT_0000_POINTS_190" ],
+        "signals_manual": ["SPX_SCALEOUT_IN_3576_OUT_3766_POINTS_190" ]
+    }
+    __signal.db.tweets.insert_one(tweet)
+
+    # Run all backtests
+    assert __signal.backtest(manual_review=False) == None
+
+    # Clean up
+    __signal.db.tweets.delete_one({"tid": "123456"})
 
 def test_find_INOUT():
     # Get all alerts, where text contains "IN" more than 2 times
@@ -153,6 +178,56 @@ def test_find_INOUT():
         res = signal_helper.find_INOUT(doc["text"])
         assert isinstance(res, list) == True
 
+def test_normalize_text():
+    # Preload helper function for better performance
+    normalize_text = signal_helper.normalize_text
+
+    # Fetch only the necessary fields to reduce data transfer
+    projection = {"text": 1}
+
+    # Attempt to normalize all alerts
+    for doc in db.tweets.find({"alert": True}, projection):
+        text = doc["text"]
+        out = normalize_text(text)
+        assert isinstance(out, str) == True
+
+def test_find_SCALE_POINTS():
+    # Get all alerts, where text contains "SCALE" more than 2 times
+    query = {
+        'alert': True,
+        'text': { '$regex': 'SCALE', '$options': 'i' }
+    }
+
+    # Fetch only the necessary fields to reduce data transfer
+    projection = {"text": 1}
+
+    # Preload the signal helper function for better performance
+    find_SCALE_POINTS = signal_helper.find_SCALE_POINTS
+
+    # Test all scales in DB
+    for doc in db.tweets.find(query, projection):
+        text = doc["text"]
+        res = find_SCALE_POINTS(text)
+        assert isinstance(res, int) == True
+
+    # Test specific cases
+    cases = [
+        {
+            "in": "CLOSED FINAL SCALE $NDX LONG |IN 11060 OUT 13250 +2190",
+            "expected": 2190
+        },
+        {
+            "in": "CLOSED 1 SCALE $SPX SHORT |  |IN 4193 OUT 4045 +148",
+            "expected": 148
+        },
+        {
+            "in": "CLOSED 3RD SCALE $NDX ADD-ON | IN 11818 OUT 12760 + 942",
+            "expected": 942
+        },
+    ]
+    for case in cases:
+        assert signal_helper.find_SCALE_POINTS(case["in"]) == case["expected"]
+
 def test_get_closest_symbols():
     numbers = [
         [3713,11348],
@@ -180,6 +255,5 @@ def test_watch_log():
         assert signal.watch_log(doc=doc, data=data) == None 
 
 def test_refresh_backlog():
-    s = Signal(production=False)
-    s.refresh_backlog()
+    signal.refresh_backlog(limit=100)
 
