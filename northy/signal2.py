@@ -19,8 +19,8 @@ ignore_tweets = [
     "1645367498823352320", # REMOVED $SPX 4000 LIMIT BUY ORDER. |  | #HOUSEKEEPING |  | NARRATOR: HA HA HTTPS://T.CO/ZR5COSFEX9
 
     "1639263064758312965", # ALERT: Flat stopped $SPX (add-on)\n\nRe-entry long\nIN 397 - 10 pt stop
-    "1660904073049038848"
-    ""
+    "1660904073049038848",
+    "1688913062991216644", # TYPO in symbol --> "CLOSED FINAL SCALE $DJIA | IN 35675 OUT: 35100 +575"
 ]
 
 class Signal:
@@ -579,7 +579,7 @@ class Signal:
             if prowl_notification:
                 self.prowl.send(text, url)
         else:
-            self.logger.info(f"No trading signal found in {tid} - {text}")
+            self.logger.debug(f"No trading signal found in {tid} - {text}")
 
     def refresh_backlog(self, limit=1000):
         """
