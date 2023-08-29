@@ -271,7 +271,7 @@ class Saxo:
             self.refresh_token()
             return False
         except Exception as e:
-            self.logger.error(f"Something else went wrong {e}")
+            self.logger.error(f"Error in valid_token(): {e}")
             self.refresh_token()
             return False
 
@@ -684,7 +684,7 @@ class Saxo:
         }]
         self.logger.info("{} was converted to a limit order at ~{} with stop loss at {}".format(s.raw, s.entry, _SL_price))
 
-    def price(self, uic=None):
+    def price(self, uic):
         """ 
             Get price for uic
 
@@ -722,9 +722,11 @@ class Saxo:
         # TODO: Implement caching, when running e.g. "SXP_FLATSTOP", 
         # we will need to fetch prices for all positions
         path = f"/trade/v1/infoprices/?Uic={uic}&AssetType=CfdOnIndex"
-        rsp = self.get(path=path).json
+        rsp = self.get(path=path)
+        if rsp.status_code != 200:
+            return None
         time.sleep(1)  # Lame way to avoid rate limiting
-        return rsp
+        return rsp.json
 
     ####### TRADING #######
     def stoploss_order(self, uic, stoploss_price, BuySell, amount):
@@ -805,7 +807,7 @@ class Saxo:
             
             # When adding SL to a market order, we don't know the entry price of the trade yet.
             # We therefore estimate the entry price by looking at the current bid price.
-            bid = self.bid(symbol=symbol)  # estimated entry price
+            bid = self.bid(self.order["Uic"])  # estimated entry price
             #print("Estimated entry price: {}".format(bid))
 
             stoploss_points = 25 if symbol == "NDX" else 10 # TODO: Make this dynamic
@@ -881,8 +883,8 @@ class Saxo:
                                limit=limit, 
                                stoploss_price=stoploss_price)
 
-    def bid(self, symbol):
-        return self.price(symbol=symbol)["Quote"]["Bid"]
+    def bid(self, uic):
+        return self.price(uic)["Quote"]["Bid"]
 
     def set_stoploss(self, position, points=0):
         """
@@ -946,7 +948,6 @@ class SaxoHelper(Saxo):
         super().__init__(config_file, profile_name)
         self.logger = self.logger
         self.config = self.config
-        self.saxo = Saxo(config_file="saxo_config.json", profile_name="default")
 
     def pprint_positions(self, positions:dict) -> None:
         """
@@ -1116,7 +1117,6 @@ class SaxoHelper(Saxo):
                 dict: Report
 
             Example:
-                >>> positions = saxo.positions(status_open=False, profit_only=False)
                 >>> report = saxo.generate_closed_positions_report(positions)
                 >>> print(report)
                 >>> {
@@ -1167,15 +1167,13 @@ class SaxoHelper(Saxo):
             "date": date
         }
 
-    def job_generate_closed_positions_report(self, skip=False):
+    def job_generate_closed_positions_report(self, positions, skip=False):
         """
             Generate a report of closed positions and send it via email.
             Report will only be generated at 17:00 on weekdays.
         """
         from .email import Email
         if datetime.now().weekday() < 5 and datetime.now().hour == 17 and datetime.now().second <= 5 or skip:
-            # Get positions and generate report
-            positions = self.saxo.positions(status_open=False, profit_only=False)
             report = self.generate_closed_positions_report(positions)
 
             # Create summary
