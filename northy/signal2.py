@@ -587,6 +587,7 @@ class Signal:
             TODO: This could be optimized by storing Tweet ID in DB and only refresh since $tid
             TODO: If above is implemented, .limit(1000) below can be removed
         """
+        self.logger.info("Refreshing backlog...")
         query = {"alert": {"$exists": False}}
         
         # Performance optimization, only return data needed
