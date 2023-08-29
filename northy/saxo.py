@@ -1,5 +1,6 @@
 import jwt
 import requests
+import pandas as pd
 import random, string
 import time, uuid, json
 from .utils import Utils
@@ -74,28 +75,6 @@ class Saxo:
 
         self.logger.info(f"Using profile: {self.profile_name} ({self.environment_name})")
 
-    ### Helper functions ###
-    def pretty_print_position(self, position):
-        # TODO: Move to SaxoHelper
-        """ Pretty print position """
-        p = position
-        pos_id = p["PositionId"]
-        entry_date = p["PositionBase"]["ExecutionTimeOpen"]
-
-        # convert entry_date to datetime object
-        entry_date = datetime.strptime(entry_date, "%Y-%m-%dT%H:%M:%S.%fZ")
-        # remove seconds from entry_date
-        entry_date = entry_date.replace(second=0, microsecond=0)
-
-        uic = p["PositionBase"]["Uic"]
-        symbol = self.uic_lookup(uic=uic)
-        entry = p["PositionBase"]["OpenPrice"]
-        profit = p["PositionView"]["ProfitLossOnTrade"]
-        profit_adj = p["PositionView"]["ProfitLossOnTradeAdjusted"]
-        amount = p["PositionBase"]["Amount"] * -1
-        print("ID\t\tDATE\t\t\tSYMBOL\tAMOUNT\tENTRY\t\tProfit\tprofit_adj")
-        print("{pos_id}\t{entry_date}\t{symbol}\t{amount}\t{entry}\t\t{profit}\t{profit_adj}".format(pos_id=pos_id, symbol=symbol, entry=entry, profit=profit, amount=amount, entry_date=entry_date, profit_adj=profit_adj))
-
     def signal_to_tuple(self, signal):
         """ 
             Convert signal into a namedtuple
@@ -132,29 +111,6 @@ class Saxo:
             # SPX_LIMIT_LONG_IN_3749_OUT_3739_SL_10
             _entry, _exit, _sl = float(s[4]), float(s[6]), float(s[8])
             return namedtuple("signal", ["symbol", "action", "direction", "entry", "exit", "stoploss", "raw"])(s[0], s[1], s[2], _entry, _exit, _sl, signal)
-
-    def uic_lookup(self, symbol=None, uic=None):
-            """
-                Lookup Uic and AssetType for a given symbol
-            """
-            TABLE = self.config["tickers"]
-
-            if symbol is not None:
-                symbol = symbol.upper()
-                try:
-                    res = TABLE[symbol]
-                    self.logger.info(f"{symbol} --> {res}")
-                    return res
-                except KeyError:
-                    return None
-            
-            if uic is not None:
-                uic = int(uic)
-                for symbol, v in TABLE.items():
-                    if v["Uic"] == uic:
-                        self.logger.info(f"{uic} --> {symbol}")
-                        return symbol
-                return None
 
     ### Auth ###
     def __auth_request(self):
@@ -281,20 +237,29 @@ class Saxo:
 
         return access_obj
 
-    def __refresh_token(self):
-        # Read refresh token from file
+    def refresh_token(self) -> str:
+        """
+            Refresh token using OAuth 2.0 Refresh Token Grant
+            
+            Reference: https://www.developer.saxo/openapi/learn/oauth-refresh-token-grant
+
+            Returns:
+                str: Access token (e.g. `eyJhbGciOiJFUzI1NiIsI...`)
+        """
+
+        self.logger.info("Refreshing token..")
         self.access_obj = utils.read_json(filename=self.session_filename)
-
-        # Attempt to refresh token
-        _token = self.__access_token(self.access_obj["refresh_token"], grant_type="refresh_token")
-        if _token is None:
-            self.logger.error("Unable to refresh token. Attempting to re-authenticate.")
-            self.__authenticate()
-        else:
+        _token = self.__access_token(self.access_obj["refresh_token"],
+                                     grant_type="refresh_token")
+        
+        if _token:
             self.logger.info("Token refreshed.")
-            return self.token
-
-    def __valid_token(self, token):
+            return _token
+        else:
+            self.logger.error("Unable to refresh token. Attempting to re-authenticate.")
+            return self.__authenticate()
+        
+    def valid_token(self, token) -> bool:
         """
             Check if token is valid. If not, refresh token.
         """
@@ -303,11 +268,11 @@ class Saxo:
             return True
         except ExpiredSignatureError:
             self.logger.error("Token has expired")
-            self.__refresh_token()
+            self.refresh_token()
             return False
         except Exception as e:
-            self.logger.error("Something else went wrong", e)
-            self.__refresh_token()
+            self.logger.error(f"Something else went wrong {e}")
+            self.refresh_token()
             return False
 
     def get(self, path) -> tuple:
@@ -323,7 +288,7 @@ class Saxo:
                 tuple: (status_code, json)
         """
         # Check if token is valid (passive check)
-        self.__valid_token(self.token)
+        self.valid_token(self.token)
 
         # Make request
         url = self.base_url + path
@@ -341,7 +306,7 @@ class Saxo:
         self.logger.debug("{} {}".format(response.status_code, response.json))
         return response
 
-    def post(self, path, data) -> tuple:
+    def post(self, path, data, method_override="POST") -> tuple:
         """
             Make POST request to SaxoBank API.
 
@@ -354,12 +319,15 @@ class Saxo:
                 tuple: (status_code, json)
         """
         # Check if token is valid (passive check)
-        self.__valid_token(self.token)
+        self.valid_token(self.token)
+
+        # Method Override
+        # https://www.developer.saxo/openapi/learn/openapi-request-response?phrase=405
+        self.s.headers.update({"X-HTTP-Method-Override": method_override})
 
         # Make request
         url = self.base_url + path
         self.logger.debug("POST {}".format(url))
-
         rsp = self.s.post(url, json=data)
 
         if rsp.status_code == 401:
@@ -376,8 +344,19 @@ class Saxo:
             self.logger.error("{} {}".format(response.status_code, json.dumps(response.json)))
         return response
 
-    def trade(self, signal):
-        """ Execute Trade based on signal """
+    def trade(self, signal) -> dict:
+        """ 
+            Execute Trade based on signal
+
+            Args:
+                signal (str): Signal to execute. (e.g. `SPX_TRADE_SHORT_IN_4162_SL_10`)
+
+            Returns:
+                dict: Order response
+
+            Example response:
+                `{'OrderId': '5014824029', 'Orders': [{'OrderId': '5014824030'}]}`
+        """
         self.logger.debug("Executing trade({signal})")
         s = self.signal_to_tuple(signal)
         self.logger.info(s)
@@ -388,20 +367,23 @@ class Saxo:
             buy = True if s.direction == "LONG" else False
             if self.profile["OrderPreference"].upper() == "MARKET":
                 self.logger.info("Profile OrderPreference is set to MARKET")
-                self.market(symbol=s.symbol, amount=self.profile["TradeSize"][s.symbol], buy=buy, stoploss_points=s.stoploss)
+                order = self.market(symbol=s.symbol, 
+                                   amount=self.profile["TradeSize"][s.symbol],
+                                   buy=buy, stoploss_points=s.stoploss)
+                return order
             elif self.profile["OrderPreference"].upper() == "LIMIT":
                 self.logger.info("Profile OrderPreference is set to LIMIT")
-                self.limit(symbol=s.symbol, amount=self.profile["TradeSize"][s.symbol], buy=buy, stoploss_points=s.stoploss)
+                order = self.limit(symbol=s.symbol, 
+                                  amount=self.profile["TradeSize"][s.symbol],
+                                  buy=buy, stoploss_points=s.stoploss)
+                return order
             else:
                 self.logger.error("Profile OrderPreference is not set")
         if s.action == "FLAT":
-            # Set all profitable positions to flat
-            positions = self.positions(cfd_only=True, profit_only=True)
-            for i in positions["Data"]: 
-                self.set_stoploss(position=i, points=0)
+            self.action_flat(symbol=s.symbol)
         if s.action == "SCALEOUT":
             # TODO
-            self.logger.info("FLATSTOP not implemented yet")
+            self.logger.info("SCALEOUT not implemented yet")
             pass
         if s.action == "CLOSED":
             # Close latest positions that are not flat
@@ -424,7 +406,8 @@ class Saxo:
                 return delta_in_minutes
             
             for p in positions["Data"]:
-                self.pretty_print_position(p)
+                saxo_helper = SaxoHelper()
+                saxo_helper.pprint_positions(p)
 
                 # Don't close positions without stoploss
                 # Northy positions always have a stoploss, so this should be OK to skip
@@ -448,44 +431,26 @@ class Saxo:
             self.logger.info("FLATSTOP not implemented yet")
             pass
   
-    def positions(self, cfd_only=True, profit_only=True, symbol=None, status_open=True):
+    def positions(self, cfd_only=True, profit_only=True, symbol=None, 
+                  status_open=True) -> dict:
         """
             Get all positions
 
             Example output:
                 See `tests/mock_data/SaxoTrader_Saxo_positions.json`
+                {
+                    '__count': 5,
+                    'Data': [..]
+                }
         """
+        # Get all positions
         pos = self.get(f"/port/v1/positions/me").json
 
         # Filter positions
-        if cfd_only:
-            self.logger.info("Filtering positions, showing CFDs only")
-            pos["Data"] = [p for p in pos["Data"] if p["PositionBase"]["AssetType"] == "CfdOnIndex"]
-        
-        if profit_only:
-            self.logger.info("Filtering positions, showing positions in profit only")
-            pos["Data"] = [p for p in pos["Data"] if p["PositionView"]["ProfitLossOnTrade"] > 0]
-        
-        if symbol is not None:
-            self.logger.info(f"Filtering positions, showing positions for {symbol} only")
-            pos["Data"] = [p for p in pos["Data"] if symbol == self.uic_lookup(uic=p["PositionBase"]["Uic"])]
+        saxo_helper = SaxoHelper()
+        pos = saxo_helper.filter_positions(pos, cfd_only=cfd_only, profit_only=profit_only,
+                                            symbol=symbol, status_open=status_open)
 
-        if status_open:
-            status = "Open" if status_open else "Closed"
-            self.logger.info(f"Filtering positions, showing positions with status {status} only")
-            pos["Data"] = [p for p in pos["Data"] if p["PositionBase"]["Status"] == status]
-
-        # Inject adjusted ProfitLossOnTrade based on real-time price
-        # TODO: Asked Saxo Team if this is possible to do server-side
-        # TODO: Only do this when needed ()
-        for p in pos["Data"]:
-            entry = p["PositionBase"]["OpenPrice"]
-            uic = p["PositionBase"]["Uic"]
-            real_price = self.price(uic)["Quote"]["Mid"]
-            amount = p["PositionBase"]["Amount"]
-            profit_adj = round((real_price - entry) * amount, 2)
-            p["PositionView"]["ProfitLossOnTradeAdjusted"] = profit_adj
-        
         return pos
 
     def orders(self, status_open=True):
@@ -553,81 +518,24 @@ class Saxo:
         rsp = self.__post(path="/trade/v2/orders", data=order)
         time.sleep(2)
 
-    def __action_flat(self, signal, order):
+    def action_flat(self, symbol):
         """ Execute FLATSTOP signal """
-        s = signal
+        # Set all profitable positions to flat
+        positions = self.positions(cfd_only=True, 
+                                    profit_only=True,
+                                    symbol=symbol)
+        saxo_helper = SaxoHelper()
+        for position in positions["Data"]:
+            position_id = position["PositionId"]
 
-        __positions = self.positions()
-        for _p in __positions["Data"]:
-            
-            #self.logger.debug("Position: {}".format(_p))
-            __pos_base = _p["PositionBase"]
-            __pos_view = _p["PositionView"]
-            __pos_id = _p["PositionId"]
-            
-            # Only touch CFDs
-            __AssetType = __pos_base["AssetType"]
-            if __AssetType != "CfdOnIndex":
-                self.logger.debug("Skipping position with AssetType: {}".format(__AssetType))
+            stop_details = saxo_helper.get_position_stop_details(position)
+            if stop_details["stop_points"] == 0 and stop_details["stop"]:
+                # Stop loss is enable and set to flat (0 points from entry)
+                self.logger.debug(f"Position ({position_id}) is already flat. Skipping..")
                 continue
-
-            # Only touch open positions
-            __status = __pos_base["Status"]  # Open, Closed, Pending, Rejected, Cancelled
-            if __status != "Open":
-                self.logger.debug("Skipping position with status: {}".format(__status))
-                continue
-
-            # Only touch positions in profit
-            __PL = __pos_view["ProfitLossOnTrade"]
-            if __PL < 0:
-                self.logger.debug("Skipping position with ProfitLossOnTrade < 0: {}".format(__PL))
-                continue
-
-            # TODO
-            # Position might already have a stop loss
-            # If SL is far away we set it to break even
-            # If SL is close we do nothing
-            """
-            related_orders = __pos_base["RelatedOpenOrders"]
-            print(related_orders)
-            if len(related_orders) > 0:
-                for o in related_orders:
-                    print(o)
-                    _orderType = o["OrderType"]
-                    pass
-            """
-
-            # Only touch positions with specific ticker??
-            # TODO: Implement this
-
-            # Set stop loss to break even
-            self.logger.info("Setting stop loss to break even for position: {}".format(__pos_id))
-            
-            _amount = __pos_base["Amount"] * -1  # Reverse of the position amount
-            _BuySell = "Buy" if _amount > 0 else "Sell"
-            _orderPrice = __pos_base["OpenPrice"]  # TODO: Currently, we set the stop loss at break even, which might be different from Sven's entry price
-            order = {
-                "PositionId": __pos_id,
-                "Orders":[{
-                    "ManualOrder": False,
-                    "AccountKey": self.profile["AccountKey"],
-                    "Uic": self.tickers[s.symbol]["Uic"],
-                    "AssetType": "CfdOnIndex",
-                    "Amount": _amount,
-                    "BuySell": _BuySell,
-                    "OrderDuration": { "DurationType":"GoodTillCancel" },
-                    "OrderPrice": _orderPrice,
-                    "OrderType": "StopIfTraded",
-                }]
-            }
-            r = self.s.post(f"{self.base_url}/trade/v2/orders", json=order)
-            if r.status_code != 200:
-                self.logger.error("Failed to set stop loss for position: {}".format(__pos_id))
-                self.logger.error("Response: {}".format(r.json()))
             else:
-                self.logger.info("Successfully set stop loss for position: {}".format(__pos_id))
-
-            return None
+                self.logger.info(f"Position ({position_id}) stop loss set to flat")
+                self.set_stoploss(position=position, points=0)
 
     def __action_scaleout(self, signal, order):
         """ 
@@ -776,18 +684,57 @@ class Saxo:
         }]
         self.logger.info("{} was converted to a limit order at ~{} with stop loss at {}".format(s.raw, s.entry, _SL_price))
 
-    def price(self, uic=None, symbol=None):
-        """ Get price for one or more UICs """
-        assetType = "CfdOnIndex"
-        uic = uic if uic is not None else self.uic_lookup(symbol)["Uic"]
-        path = f"/trade/v1/infoprices/?Uic={uic}&AssetType={assetType}"
+    def price(self, uic=None):
+        """ 
+            Get price for uic
+
+            Args:
+                uic (int): Uic
+
+            Returns:
+                dict: Price response
+
+            Example response:
+            ```json
+                {
+                    'Uic': 4912
+                    'AssetType': 'CfdOnIndex',
+                    'LastUpdated': '2023-08-28T18:55:40.454000Z',
+                    'PriceSource': 'NASDAQ',
+                    'Quote': {
+                        'Amount': 0,
+                        'Ask': 15014.92,
+                        'AskSize': 20.0,
+                        'Bid': 15013.92,
+                        'BidSize': 20.0,
+                        'DelayedByMinutes': 0,
+                        'ErrorCode': 'None',
+                        'MarketState': 'Open',
+                        'Mid': 15014.42,
+                        'PriceSource': 'NASDAQ',
+                        'PriceSourceType': 'Firm',
+                        'PriceTypeAsk': 'Tradable',
+                        'PriceTypeBid': 'Tradable'
+                    }
+                }
+            ```
+        """
+        # TODO: Implement caching, when running e.g. "SXP_FLATSTOP", 
+        # we will need to fetch prices for all positions
+        path = f"/trade/v1/infoprices/?Uic={uic}&AssetType=CfdOnIndex"
+        rsp = self.get(path=path).json
         time.sleep(1)  # Lame way to avoid rate limiting
-        return self.get(path=path).json
+        return rsp
 
     ####### TRADING #######
-    def stoploss_order(self, uic, stoploss_price, BuySell):
-        """ Create stop loss order """
-        _SL_BuySell_Direction = "Sell" if BuySell == "Buy" else "Buy"  # Invert BuySell value
+    def stoploss_order(self, uic, stoploss_price, BuySell, amount):
+        """ 
+            Create stop loss order
+        """
+        # Invert BuySell value
+        _SL_BuySell_Direction = "Sell" if BuySell == "Buy" else "Buy"  
+
+        # Construct stop loss order
         stoploss_order = {
             "Uic": uic,
             "AccountKey": self.profile["AccountKey"],
@@ -795,7 +742,7 @@ class Saxo:
             "OrderType": "StopIfTraded",
             "ManualOrder": False,
             "BuySell": _SL_BuySell_Direction,
-            "Amount": self.order["Amount"],
+            "Amount": amount,
             "OrderDuration": { "DurationType": "GoodTillCancel" },
             "OrderPrice": stoploss_price,
         }
@@ -804,15 +751,33 @@ class Saxo:
     def base_order(self, symbol, amount, buy=True, 
                    limit=None, stoploss_points=None, stoploss_price=None, OrderType="Market"):
         """
-            Handle Trade Orders 
+            Handles placing new orders
 
-            Example signal:
-                SPX_TRADE_SHORT_IN_4162_SL_10
+            Args:
+                symbol (str): Symbol
+                amount (int): Amount of contracts
+                buy (bool): Buy or Sell
+                limit (float): Limit price
+                stoploss_points (int): Stop loss in points
+                stoploss_price (float): Stop loss price
+                OrderType (str): Market or Limit
+
+            Returns:
+                dict: Response from SaxoBank API
+
+            Example response:
+                {
+                    "Orders": [
+                        { "OrderId": "12345" },
+                        { "OrderId": "12346" }
+                    ]
+                }
         """
         # Base order parameters
+        saxo_helper = SaxoHelper()
         self.order = dict()
-        self.order["Uic"] = self.uic_lookup(symbol)["Uic"]
-        self.order["AssetType"] = self.uic_lookup(symbol)["AssetType"]
+        self.order["Uic"] = saxo_helper.symbol_to_uic(symbol)
+        self.order["AssetType"] = "CfdOnIndex"
         self.order["OrderType"] = OrderType
         self.order["ManualOrder"] = False
 
@@ -830,7 +795,10 @@ class Saxo:
         # Stop Loss
         if stoploss_price is not None:
             # Set fixed Stop Loss
-            order = self.stoploss_order(uic=self.order["Uic"], stoploss_price=stoploss_price, BuySell=self.order["BuySell"])
+            order = self.stoploss_order(uic=self.order["Uic"], 
+                                        stoploss_price=stoploss_price, 
+                                        BuySell=self.order["BuySell"],
+                                        amount=self.order["Amount"])
             self.order["Orders"] = order
         elif stoploss_points is not None:
             # Set Stop Loss on Market Order
@@ -846,7 +814,10 @@ class Saxo:
             stoploss_price = self.get_stoploss_price(entry=bid, stoploss=stoploss_points, BuySell=self.order["BuySell"])
             #print("Stop loss price: {}".format(stoploss_price))
 
-            order = self.stoploss_order(uic=self.order["Uic"], stoploss_price=stoploss_price, BuySell=self.order["BuySell"])
+            order = self.stoploss_order(uic=self.order["Uic"], 
+                                        stoploss_price=stoploss_price, 
+                                        BuySell=self.order["BuySell"],
+                                        amount=self.order["Amount"])
 
             self.order["Orders"] = order
         else:
@@ -855,7 +826,7 @@ class Saxo:
 
         # Execute order
         self.logger.info(self.order)
-        rsp = self.post(path="/trade/v2/orders", data=self.order)
+        rsp = self.post(path="/trade/v2/orders", data=self.order).json
         
         # Sleep to avoid rate limiting
         time.sleep(2)
@@ -921,23 +892,52 @@ class Saxo:
                 position (dict): Position object
                 price (float): Stop loss price
         """
-        p = position
-
-        pos_id = p["PositionId"]
-        uic = p["PositionBase"]["Uic"]
-        entry = p["PositionBase"]["OpenPrice"]
-        self.order["Amount"] = p["PositionBase"]["Amount"] * -1
-        BuySell = "Buy" if self.order["Amount"] < 0 else "Sell"
+        pos_id = position["PositionId"]
+        position_base = position["PositionBase"]
+        uic = position_base["Uic"]
+        entry = position_base["OpenPrice"]
+        amount = position_base["Amount"]
+        # When setting stop loss on a long position (amount > 0), we need to sell
+        # When setting stop loss on a short position (amount < 0), we need to buy
+        BuySell = "Buy" if amount > 0 else "Sell"
         
-        stoploss_price = self.get_stoploss_price(entry=entry, stoploss=points, BuySell=BuySell)
-        print("Stoploss set {points} away from entry {entry} @ {stoploss_price}".format(stoploss_price=stoploss_price, entry=entry, points=points))
+        stoploss_price = self.get_stoploss_price(entry=entry, 
+                                                 stoploss=points, 
+                                                 BuySell=BuySell)
+        
+        msg = f"Stoploss set {points} points away from entry {entry} @ {stoploss_price}"
+        self.logger.info(msg)
 
+        orders = self.stoploss_order(uic=uic,
+                                    stoploss_price=stoploss_price, 
+                                    BuySell=BuySell,
+                                    amount=amount)
         __order = {
             "PositionId": pos_id,
-            "Orders": self.stoploss_order(uic=uic, stoploss_price=stoploss_price, BuySell=BuySell)
+            "Orders": orders
         }
         
         rsp = self.post(path="/trade/v2/orders", data=__order)
+        if rsp.status_code != 200:
+            self.logger.error("Failed to set stop loss for position: {pos_id}")
+            self.logger.error("Response: {}".format(rsp.json))
+
+        time.sleep(1) # Sleep to avoid rate limiting
+        return rsp
+
+    def cancel_order(self, orders:str):
+        """
+            Cancel order(s)
+
+            Args:
+                orders (str): Comma separated list of order IDs
+        """
+        self.logger.info("Cancelling orders: {}".format(orders))
+        
+        AccountKey = self.profile["AccountKey"]
+        path = f"/trade/v2/orders/{orders}/?AccountKey={AccountKey}"
+        rsp = self.post(path=path, data=None, method_override="DELETE")
+        
         return rsp
 
 # Create a SaxoHelper class that inherits from Saxo
@@ -945,7 +945,165 @@ class SaxoHelper(Saxo):
     def __init__(self, config_file="saxo_config.json", profile_name="default"):
         super().__init__(config_file, profile_name)
         self.logger = self.logger
+        self.config = self.config
         self.saxo = Saxo(config_file="saxo_config.json", profile_name="default")
+
+    def pprint_positions(self, positions:dict) -> None:
+        """
+            Pretty print position(s)
+
+            Args:
+                position (dict): Dictionary of positions
+        """
+        data = []
+        for p in positions["Data"]:
+            pos_id = p["PositionId"]
+            entry_date = p["PositionBase"]["ExecutionTimeOpen"]
+            entry_date = datetime.strptime(entry_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+            entry_date = entry_date.replace(second=0, microsecond=0)
+
+            uic = p["PositionBase"]["Uic"]
+            symbol = self.uic_to_symbol(uic)
+            entry = p["PositionBase"]["OpenPrice"]
+            profit = p["PositionView"]["ProfitLossOnTrade"]
+            sl_details = self.get_position_stop_details(p)
+            sl_set = sl_details["stop"]
+            amount = p["PositionBase"]["Amount"]
+            
+            data.append({
+                "Pos. ID": pos_id,
+                "Date": entry_date,
+                "Symbol": symbol,
+                "Amount": amount,
+                "Entry": entry,
+                "Profit": profit,
+                "Stop Set": sl_set
+            })
+        df = pd.DataFrame(data)
+        #print(df)
+        print(df.to_string(index=False))
+
+    def get_position_stop_details(self, position) -> dict:
+        """
+            Get stop loss details for position
+
+            Args:
+                position (dict): Position object
+
+            Returns:
+                dict: Stop loss details
+
+            Example:
+                `{"stop": False, "stop_price": 0, "stop_points": 0 }`
+        """
+        # Default values
+        ret = { "stop": False, "stop_price": 0, "stop_points": 0 }
+        
+        # Check if stop loss order is set
+        related_open_orders = position["PositionBase"].get("RelatedOpenOrders", [])
+        for order in related_open_orders:
+            if order["OpenOrderType"] == "StopIfTraded":
+                ret["stop"] = True
+                ret["stop_price"] = order["OrderPrice"]
+                break
+
+        # Find stop loss points
+        if ret["stop"]:
+            entry = position["PositionBase"]["OpenPrice"]
+            ret["stop_points"] = entry - ret["stop_price"]
+
+        return ret
+
+    def filter_positions(self, positions, 
+                         cfd_only=True, profit_only=True, symbol=None, status_open=True) -> dict:
+        """
+            Filter positions
+
+            Args:
+                positions (dict): Positions object
+                cfd_only (bool): Show CFDs only
+                profit_only (bool): Show positions in profit only
+                symbol (str): Show positions for symbol only
+                status_open (bool): Show open positions only
+
+            Returns:
+                dict: Filtered positions object
+
+            Example:
+                `{'__count': len(new_positions), 'Data': [..]}`
+        """
+        pos = positions["Data"]
+
+        idx_to_remove = []
+        idx = 0
+        for p in pos:
+            # CFD only
+            if cfd_only and p["PositionBase"]["AssetType"] != "CfdOnIndex":
+                idx_to_remove.append(idx)
+            
+            # Profit only
+            if profit_only and p["PositionView"]["ProfitLossOnTrade"] <= 0:
+                #print(p["PositionView"]["ProfitLossOnTrade"])
+                idx_to_remove.append(idx)
+
+            # Symbol only
+            if symbol is not None and symbol != self.uic_to_symbol(p["PositionBase"]["Uic"]):
+                idx_to_remove.append(idx)
+
+            # Status open only
+            # Statuses: Open, Closed, Working
+            if status_open and p["PositionBase"]["Status"] == "Closed":
+                idx_to_remove.append(idx)
+            
+            idx += 1
+            
+        # Filter away positions
+        new_positions = [p for i, p in enumerate(pos) if i not in idx_to_remove]
+        return {'__count': len(new_positions), 'Data': new_positions}
+
+    def uic_to_symbol(self, uic) -> str:
+        """
+            Lookup Uic and return symbol
+
+            Args:
+                uic (int): Uic to lookup (e.g. `4162`)
+
+            Returns:
+                uic (int): Uic (e.g. `4162`)
+
+            Example:
+                saxo.uic_to_symbol(4162) --> SPX
+        """
+        # TODO: Split this into two separate functions
+        TABLE = self.config["tickers"]
+
+        uic = int(uic)
+        for symbol, v in TABLE.items():
+            if v["Uic"] == uic:
+                return symbol
+        
+        return f"N/A"
+
+    def symbol_to_uic(self, symbol) -> int:
+        """
+            Lookup symbol and return uic
+
+            Args:
+                symbol (str): Symbol to lookup (e.g. `SPX`)
+
+            Returns:
+                uic (int): Uic (e.g. `4162`)
+
+            Example:
+                saxo.symbol_to_uic("SPX") --> 4162
+        """
+        TABLE = self.config["tickers"]
+        symbol = symbol.upper()
+        try:
+            ret = TABLE[symbol]["Uic"]
+            return ret
+        except Exception:
+            self.logger.error(f"symbol_to_uic failed for {symbol}")
 
     def generate_closed_positions_report(self, positions):
         """

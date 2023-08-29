@@ -197,8 +197,7 @@ class TweetsDB:
 
         # Connect to MongoDB
         self.logger.info("Connecting to MongoDB...")
-        self.db = Database(connection_string=config["MONGODB_CONN"], production=config["PRODUCTION"])
-        self.collection = self.db.tweets
+        self.db = Database()
 
         self.pprint = Tweets(config).pprint
 
@@ -206,13 +205,13 @@ class TweetsDB:
         """
             Get a tweet from the database.
         """
-        return self.collection.find_one({"tid": tid})
+        return  self.db.tweets.find_one({"tid": tid})
 
     def get_latest(self):
         """
             Get a tweet from the database.
         """
-        doc = self.collection.find_one({}, sort=[("created_at", DESCENDING)])
+        doc =  self.db.tweets.find_one({}, sort=[("created_at", DESCENDING)])
         return doc
     
     def add_tweet(self, data):
@@ -237,7 +236,7 @@ class TweetsDB:
             }
 
         try:
-            self.collection.insert_one(_data)
+            self.db.tweets.insert_one(_data)
             self.pprint(_data, inserted=True)
         except DuplicateKeyError:
             self.logger.debug("Tweet already exists")
