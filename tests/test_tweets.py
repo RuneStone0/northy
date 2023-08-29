@@ -1,5 +1,6 @@
-from northy.tweets import Tweets
+from northy.tweets import Tweets, TweetsDB
 from northy.config import config
+from northy.db import Database
 
 tweets = Tweets(config=config)
 
@@ -52,3 +53,10 @@ def test_is_trading_hours():
 
 def test_get_user_tweets():
     tweets.get_user_tweets(user_id="897502744298258432", max_results=5)
+
+def test_test_latest():
+    # Use mock DB
+    config["PRODUCTION"] = False
+    tdb = TweetsDB(config)
+    out = tdb.get_latest()
+    assert isinstance(out, dict)
