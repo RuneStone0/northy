@@ -886,6 +886,32 @@ class Saxo:
     def bid(self, uic):
         return self.price(uic)["Quote"]["Bid"]
 
+    def watch(self):
+        from northy.db import Database
+        db = Database().db
+
+        self.logger.info("Starting change stream....")
+        while True:
+            from datetime import datetime, timedelta
+            # Watch for new documents (tweets) where "alert" is not set
+            created_before = datetime.now() - timedelta(minutes=5)
+            pipeline = [
+                # 'insert', 'update', 'replace', 'delete'
+                { "$match": { "operationType": { "$in": ["update"] } } },
+
+                # Only watch for "alert" Tweets
+                { "$match": { "fullDocument.alert": True } },
+
+                # Only process tweets younger than 5 minutes
+                { "$match": { "createdAt": { "$lt": created_before } } }
+            ]
+
+            # Create a change stream
+            stream = db.tweets.watch(pipeline, full_document='updateLookup')
+            for change in stream:
+                for signal in change["fullDocument"]["signals"]:
+                    self.trade(signal)
+
     def set_stoploss(self, position, points=0):
         """
             Set stop loss for position

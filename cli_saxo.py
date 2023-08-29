@@ -1,12 +1,10 @@
-import time
 import click
 import logging
-from datetime import datetime
 from northy.logger import setup_logger
 from northy.saxo import Saxo, SaxoHelper
 from northy.config import config, set_env
 from northy.tweets import TweetsDB
-from northy.email import Email
+from northy.prowl import Prowl
 
 if __name__ == '__main__':
     setup_logger()
@@ -21,8 +19,26 @@ if __name__ == '__main__':
     @click.command()
     def positions():
         """ List positions """
-        positions = saxo.positions()
-        print(positions)
+        positions = saxo.positions(cfd_only=False, profit_only=False)
+        saxo_helper = SaxoHelper()
+        saxo_helper.pprint_positions(positions)
+
+    @click.command()
+    @click.option('--id', required=True, type=str, help='Position ID')
+    def close_position(id):
+        """ Close position """
+
+        # Find position object by looping through all positions
+        positions = saxo.positions(cfd_only=False, profit_only=False)
+        for position in positions["Data"]:
+            pos_id = position["PositionId"]
+            if pos_id == id:
+                # Close position
+                logger.info("Closing position %s" % pos_id)
+                saxo.close(position)
+                return
+
+        logger.info("Position not found")
 
     @click.command()
     def report_closed_positions():
@@ -32,7 +48,8 @@ if __name__ == '__main__':
 
         saxo_helper = SaxoHelper()
         while True:
-            saxo_helper.job_generate_closed_positions_report()
+            positions = saxo.positions(status_open=False, profit_only=False)
+            saxo_helper.job_generate_closed_positions_report(positions=positions)
         
     @click.command()
     def orders():
@@ -40,6 +57,12 @@ if __name__ == '__main__':
         orders = saxo.orders()
         for o in orders["Data"]:
             print(o["BuySell"], o["Uic"], o["Amount"], o["Status"])
+
+    @click.command()
+    @click.option('--orders', required=True, type=str, help='Comma separated list of Order IDs')
+    def cancel_orders(orders):
+        """ Cancel Orders """
+        saxo.cancel_order(orders)
 
     @click.command()
     @click.option('--symbol', required=True, type=str, help='Symbol to trade')
@@ -85,46 +108,19 @@ if __name__ == '__main__':
             print("Something is not right..")
 
     @click.command()
-    @click.pass_context
-    def watch(ctx):
+    def watch():
         """
-            Watch for new signals
+            Watch for alerts and execute trades
         """
-        from northy.db import Database
-        db = Database().db
-
-        logger.info("Starting change stream...")
-        while True:
-            # Watch for new documents (tweets) where "alert" is not set
-            pipeline = [
-                { "$match": { "operationType": { "$in": ["update"] } } }, # 'insert', 'update', 'replace', 'delete'
-            ]
-
-            # Only process tweets younger than 5 minutes
-            #now = datetime.now()
-            #pipeline.append({ "$match": { "createdAt": { "$lt": now - datetime.timedelta(minutes=5) } } })
-
-            # Create a change stream
-            change_stream = db["tweets"].watch(pipeline, full_document='updateLookup')
-
-            # Iterate over the change stream
-            for change in change_stream:
-                doc = change["fullDocument"]
-                tid = doc["tid"]
-                logger.info("Detected change for %s", tid)
-
-                # Make sure its an alert
-                # TODO: Move this check to pipeline
-                if not doc["alert"]:
-                    logger.info("No alert found. Skipping..")
-                    continue
-                else:
-                    # Initiate trade for signals
-                    logger.info("Initiating trade for %s", tid)
-                    #ctx.invoke(trade, tweet=tid)
+        try:
+            saxo.watch()
+        except Exception as e:
+            p = Prowl(API_KEY=config["PROWL_API_KEY"])
+            p.send("Error: cli_saxo.py crashed!!")
 
     cli.add_command(report_closed_positions)
     cli.add_command(positions)
+    cli.add_command(close_position)
     cli.add_command(market)
     cli.add_command(limit)
     cli.add_command(orders)
