@@ -612,7 +612,7 @@ class Signal:
             { "$match": { "alert": { "$exists": False } } }, # Get tweets where "alerts" it not set (yet)
         ]
         # Create a change stream
-        change_stream = self.db["tweets"].watch(pipeline)
+        change_stream = self.db_tweets.watch(pipeline)
 
         # Iterate over the change stream
         for change in change_stream:
