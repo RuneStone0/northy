@@ -1,0 +1,47 @@
+{
+    "NetPositionId": "4912__CfdOnIndex",
+    "PositionBase": {
+      "AccountId": "17470793",
+      "AccountKey": "wlgQxI5-JzdhnV4s6BsDiA==",
+      "Amount": -10.0,
+      "AssetType": "CfdOnIndex",
+      "CanBeClosed": true,
+      "ClientId": "17470793",
+      "CloseConversionRateSettled": false,
+      "CorrelationKey": "05d350a0-59dd-4a3f-9e13-70f6c661dd10",
+      "ExecutionTimeOpen": "2023-08-28T00:17:01.025587Z",
+      "IsForceOpen": false,
+      "IsMarketOpen": true,
+      "LockedByBackOffice": false,
+      "OpenPrice": 14944.18,
+      "OpenPriceIncludingCosts": 14944.18,
+      "RelatedOpenOrders": [
+        
+      ],
+      "SourceOrderId": "5014822496",
+      "Status": "Open",
+      "Uic": 4912,
+      "ValueDate": "2023-08-28T00:00:00.000000Z"
+    },
+    "PositionId": "5016641442",
+    "PositionView": {
+      "CalculationReliability": "ApproximatedPrice",
+      "ConversionRateCurrent": 0.925885,
+      "ConversionRateOpen": 0.925885,
+      "CurrentPrice": 0.0,
+      "CurrentPriceDelayMinutes": 15,
+      "CurrentPriceType": "None",
+      "Exposure": 0.0,
+      "ExposureCurrency": "USD",
+      "ExposureInBaseCurrency": 0.0,
+      "InstrumentPriceDayPercentChange": 0.0,
+      "MarketState": "Open",
+      "MarketValue": 0.0,
+      "MarketValueInBaseCurrency": 0.0,
+      "ProfitLossOnTrade": 10.7,
+      "ProfitLossOnTradeInBaseCurrency": 9.91,
+      "TradeCostsTotal": 0.0,
+      "TradeCostsTotalInBaseCurrency": 0.0,
+      "UnderlyingCurrentPrice": 0.0
+    }
+  }
