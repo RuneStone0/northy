@@ -232,7 +232,8 @@ def test_get_closest_symbols():
     numbers = [
         [3713,11348],
         [1703,30932],
-        [3713,11348,1703,30932]
+        [3713,11348,1703,30932],
+        [35675] # DJIA
     ]
     for num in numbers:
         out = signal_helper.get_closest_symbols(num)
