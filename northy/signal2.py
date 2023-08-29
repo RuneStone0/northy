@@ -17,10 +17,8 @@ ignore_tweets = [
     "1633926383146618880", # stopped add-on $SPX &amp; flat stopped remainder original $SPX | Long $SPX | IN: 3908 - 10 pt stop
     "1641890973302116358", # ALERT: Limit buy $SPX | IN: 4000 - 15 point stop
     "1645367498823352320", # REMOVED $SPX 4000 LIMIT BUY ORDER. |  | #HOUSEKEEPING |  | NARRATOR: HA HA HTTPS://T.CO/ZR5COSFEX9
-
     "1639263064758312965", # ALERT: Flat stopped $SPX (add-on)\n\nRe-entry long\nIN 397 - 10 pt stop
     "1660904073049038848",
-    "1688913062991216644", # TYPO in symbol --> "CLOSED FINAL SCALE $DJIA | IN 35675 OUT: 35100 +575"
 ]
 
 class Signal:
@@ -743,7 +741,7 @@ class SignalHelper:
         ndx = self.ticker_config["NDX"]["200ma"]
         spx = self.ticker_config["SPX"]["200ma"]
         rut = self.ticker_config["RUT"]["200ma"]
-        dija = self.ticker_config["DIJA"]["200ma"]
+        djia = self.ticker_config["DJIA"]["200ma"]
 
         avg_price = (ndx + spx + rut) / 3
         symbols = [key for key in self.ticker_config]
@@ -752,8 +750,8 @@ class SignalHelper:
         if len(numbers) > 1:
             closest_numbers = {symbol: 0 for symbol in symbols}  # initialize with default value
             for num in numbers:
-                if abs(num - dija) <= abs(num - ndx) and abs(num - dija) <= abs(num - rut):
-                    closest_numbers["DIJA"] = num
+                if abs(num - djia) <= abs(num - ndx) and abs(num - djia) <= abs(num - rut):
+                    closest_numbers["DJIA"] = num
                 elif abs(num - ndx) <= abs(num - spx) and abs(num - ndx) <= abs(num - rut):
                     closest_numbers["NDX"] = num
                 elif abs(num - spx) <= abs(num - ndx) and abs(num - spx) <= abs(num - rut):
@@ -767,8 +765,8 @@ class SignalHelper:
         # Handle a single number
         else:
             num = numbers[0]
-            if abs(num - dija) <= abs(num - ndx) and abs(num - dija) <= abs(num - rut):
-                return {"DIJA": num}
+            if abs(num - djia) <= abs(num - ndx) and abs(num - djia) <= abs(num - rut):
+                return {"DJIA": num}
             elif abs(num - ndx) <= abs(num - spx) and abs(num - ndx) <= abs(num - rut):
                 return {"NDX": num}
             elif abs(num - spx) <= abs(num - ndx) and abs(num - spx) <= abs(num - rut):

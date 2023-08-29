@@ -50,7 +50,7 @@ def test_get_stoploss():
     assert saxo_config.get_stoploss("SPX") == 10
     assert saxo_config.get_stoploss("RUT") == 10
     assert saxo_config.get_stoploss("NDX") == 25
-    assert saxo_config.get_stoploss("DIJA") == 25
+    assert saxo_config.get_stoploss("DJIA") == 25
     assert saxo_config.get_stoploss("INVALID") == 9
 
 def test_signal_to_tuple():
