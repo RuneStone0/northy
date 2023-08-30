@@ -889,27 +889,30 @@ class Saxo:
     def watch(self):
         from northy.db import Database
         db = Database().db
+        saxo_helper = SaxoHelper()
 
         self.logger.info("Starting change stream....")
         while True:
-            from datetime import datetime, timedelta
             # Watch for new documents (tweets) where "alert" is not set
-            created_before = datetime.now() - timedelta(minutes=5)
             pipeline = [
                 # 'insert', 'update', 'replace', 'delete'
                 { "$match": { "operationType": { "$in": ["update"] } } },
 
                 # Only watch for "alert" Tweets
                 { "$match": { "fullDocument.alert": True } },
-
-                # Only process tweets younger than 5 minutes
-                { "$match": { "createdAt": { "$lt": created_before } } }
             ]
 
             # Create a change stream
             stream = db.tweets.watch(pipeline, full_document='updateLookup')
             for change in stream:
-                for signal in change["fullDocument"]["signals"]:
+                doc = change["fullDocument"]
+
+                # Skip tweets older than 15 minutes
+                if saxo_helper.doc_older_than(doc, max_age=15):
+                    continue
+
+                # Execute trades for signals in tweet
+                for signal in doc["signals"]:
                     self.trade(signal)
 
     def set_stoploss(self, position, points=0):
@@ -975,6 +978,31 @@ class SaxoHelper(Saxo):
         self.logger = self.logger
         self.config = self.config
 
+    def doc_older_than(self, document, max_age=15):
+        """
+            Check if document is older than max_age 
+
+            Args:
+                document (dict): Document from MongoDB
+                max_age (int): Max age in minutes
+
+            Returns:
+                bool: True if document is older than max_age
+        """
+        created_at = document["created_at"]
+        tid = document["tid"]
+
+        min_since_post = (created_at - datetime.now()).total_seconds() / 60
+        min_since_post = round(min_since_post)
+
+        if min_since_post > max_age:
+            msg = f"Tweet {tid} from {created_at} is {min_since_post} " \
+                    "min. old.."
+            self.logger.info(msg)
+            return True
+        else:
+            return False
+    
     def pprint_positions(self, positions:dict) -> None:
         """
             Pretty print position(s)
