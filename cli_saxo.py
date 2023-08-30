@@ -117,6 +117,7 @@ if __name__ == '__main__':
         except Exception as e:
             p = Prowl(API_KEY=config["PROWL_API_KEY"])
             p.send("Error: cli_saxo.py crashed!!")
+            logger.error(e)
 
     cli.add_command(report_closed_positions)
     cli.add_command(positions)
