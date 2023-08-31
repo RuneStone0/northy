@@ -17,10 +17,11 @@ class ColoredFormatter(logging.Formatter):
         'GREEN': '\033[32m',        # Green color for asctime
         'YELLOW': '\033[33m',       # Yellow color for warning level
         'RED': '\033[31m',          # Red color for error and critical levels
+        'CYAN': '\033[35m',         # Cyan color for debug level
     }
 
     LEVEL_COLORS = {
-        'DEBUG': COLORS['DEFAULT'],        # Default color for DEBUG level
+        'DEBUG': COLORS['CYAN'],        # Default color for DEBUG level
         'INFO': '\033[36m',                 # Default color for INFO level
         'WARNING': COLORS['YELLOW'],       # Yellow color for WARNING level
         'ERROR': COLORS['RED'],            # Red color for ERROR level
@@ -57,7 +58,7 @@ def setup_logger():
 
     # Add a console handler for printing logs to the console
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
+    console_handler.setLevel(logging.DEBUG)
     console_formatter = ColoredFormatter('%(asctime)s %(levelname)s %(message)s')
     console_handler.setFormatter(console_formatter)
     logging.getLogger('').addHandler(console_handler)
