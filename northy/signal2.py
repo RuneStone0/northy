@@ -76,7 +76,7 @@ class Signal:
         self.__pretty_print_signal(tweet)
         return signals
 
-    def getall(self):
+    def getall(self) -> None:
         """
             Get all tweets and return trading signal.
         """

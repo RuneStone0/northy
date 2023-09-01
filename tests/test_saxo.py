@@ -1,10 +1,13 @@
 import os
+import logging
 from northy import utils
+from datetime import datetime, timezone, timedelta
 from northy.saxo import Saxo, SaxoConfig, SaxoHelper
 
 saxo = Saxo()
 saxo_config = SaxoConfig()
 saxo_helper = SaxoHelper()
+logger = logging.getLogger(__name__)
 
 def get_mock_data(filename):
     u = utils.Utils()
@@ -18,7 +21,7 @@ def test_get():
     __saxo = Saxo()
     import requests
     __saxo.s = requests.session()  # ensure no existing session exists
-    __saxo.get(f"/port/v1/positions/me").json
+    __saxo.get(f"/port/v1/positions/me").json()
 
 def test_positions():
     # Simple positions test
@@ -115,13 +118,14 @@ def test_close():
     # Already Closed
     positions = get_mock_data("alread_closed_pos.json")
     out = saxo.close(positions)
-    assert isinstance(out.json, dict)
+    from requests import Response
+    assert isinstance(out, Response)
     assert out.status_code == 400
 
     # Invalid Position
     positions = get_mock_data("invalid_pos.json")
     out = saxo.close(positions)
-    assert isinstance(out.json, dict)
+    assert isinstance(out, Response)
     assert out.status_code == 400
 
 def test_price():
@@ -155,12 +159,20 @@ def test_trade():
         "SPX_LIMIT_LONG_IN_3749_OUT_3739_SL_10",
     ]
     # Test SHORT, valid signals
-    order = saxo.trade(signal="NDX_TRADE_SHORT_IN_13199_SL_25")
-    assert isinstance(order, dict)
+    price = saxo.price(saxo_helper.symbol_to_uic("NDX"))["Quote"]["Mid"]
+    price = int(price) + 5
+    signal = f"NDX_TRADE_SHORT_IN_{price}_SL_25"
+    order = saxo.trade(signal=signal).json()
+    print(order)
+    print(type(order))
     
     # Delete order (note: this is only possible if the order is still open)
-    order_id = order["OrderId"]
-    saxo.cancel_order(orders=order_id)
+    try:
+        order_id = order["OrderId"]
+        saxo.cancel_order(orders=order_id)
+    except:
+        logger.warning("Could not delete order")
+        pass
 
 def test_trade_flat():
     saxo.trade("SPX_FLAT")

@@ -1,10 +1,11 @@
 import jwt
 import requests
+from requests import Response
 import pandas as pd
 import random, string
 import time, uuid, json
 from .utils import Utils
-from datetime import datetime
+from datetime import datetime, timezone
 from collections import namedtuple
 from saxo_openapi import API
 from requests.auth import HTTPBasicAuth
@@ -275,7 +276,7 @@ class Saxo:
             self.refresh_token()
             return False
 
-    def get(self, path) -> tuple:
+    def get(self, path) -> Response:
         """
             Make GET request to SaxoBank API.
 
@@ -301,12 +302,9 @@ class Saxo:
             self.logger.debug("GET {} (retry)".format(url))
             rsp = self.s.get(url)
 
-        # Return response        
-        response = namedtuple("Response", ["status_code", "json"])(rsp.status_code, rsp.json())
-        self.logger.debug("{} {}".format(response.status_code, response.json))
-        return response
+        return rsp
 
-    def post(self, path, data, method_override="POST") -> tuple:
+    def post(self, path, data, method_override="POST") -> Response:
         """
             Make POST request to SaxoBank API.
 
@@ -330,19 +328,19 @@ class Saxo:
         self.logger.debug("POST {}".format(url))
         rsp = self.s.post(url, json=data)
 
+        # If 401, re-authenticate and retry
         if rsp.status_code == 401:
             self.logger.warning("401 Unauthorized")
             self.__authenticate()
             self.logger.debug("POST {} (retry)".format(url))
             rsp = self.s.post(url, json=data)
+        
+        if rsp.status_code != 200:
+            self.logger.error(f"POST {url} failed with status code {rsp.status_code}")
+            self.logger.error(rsp.json())
+            return rsp
 
-        # Return response        
-        response = namedtuple("Response", ["status_code", "json"])(rsp.status_code, rsp.json())
-        if response.status_code == 200:
-            self.logger.debug("{} {}".format(response.status_code, json.dumps(response.json)))
-        else:
-            self.logger.error("{} {}".format(response.status_code, json.dumps(response.json)))
-        return response
+        return rsp
 
     def trade(self, signal) -> dict:
         """ 
@@ -357,11 +355,13 @@ class Saxo:
             Example response:
                 `{'OrderId': '5014824029', 'Orders': [{'OrderId': '5014824030'}]}`
         """
-        self.logger.debug("Executing trade({signal})")
-        s = self.signal_to_tuple(signal)
-        self.logger.info(s)
+        self.logger.debug(f"Processing signal: {signal}")
 
-        # Determine order action
+        # Convert signal to namedtuple
+        s = self.signal_to_tuple(signal)
+        self.logger.debug(s)
+
+        # Determine action
         if s.action == "TRADE":
             self.logger.info("Placing trade for {signal}")
             buy = True if s.direction == "LONG" else False
@@ -380,6 +380,7 @@ class Saxo:
             else:
                 self.logger.error("Profile OrderPreference is not set")
         if s.action == "FLAT":
+            """ Set positions stop loss to flat"""
             self.action_flat(symbol=s.symbol)
         if s.action == "SCALEOUT":
             # TODO
@@ -423,14 +424,35 @@ class Saxo:
 
                 self.close(position=p)
         if s.action == "FLATSTOP":
-            # TODO
-            self.logger.info("FLATSTOP nothing to do here..")
-            pass
+            """ 
+                Position hit its stop loss. Depending on the signal, 
+                we might re-enter the position (handled by "TRADE" action)
+            """
+            msg = f"Tweet indicated that {s.symbol} hit its stop loss.."
+            self.logger.info(msg)
         if s.action == "LIMIT":
             # TODO
             self.logger.info("FLATSTOP not implemented yet")
             pass
-  
+
+    def enable_real_time_prices(self):
+        """
+            Enable real-time prices
+
+            https://openapi.help.saxo/hc/en-us/articles/4405160701085-How-do-I-choose-between-receiving-delayed-and-live-prices-
+        """
+        # TODO: Never got this working..
+        # Enable real-time data
+        data = { "TradeLevel": "FullTradingAndChat" }
+        rsp = self.post(f"/root/v1/sessions/capabilities", method_override="PATCH", data=data)
+        if rsp.status_code == 202:
+            self.logger.info("Real-time data is being enabled (might take a while)")
+        if rsp.status_code == 200:
+            self.logger.info("Real-time data is enabled")
+        print(rsp)
+        time.sleep(10)
+
+
     def positions(self, cfd_only=True, profit_only=True, symbol=None, 
                   status_open=True) -> dict:
         """
@@ -443,13 +465,15 @@ class Saxo:
                     'Data': [..]
                 }
         """
+        self.logger.warning("Prices are delayed by 15 minutes.")
+
         # Get all positions
-        pos = self.get(f"/port/v1/positions/me").json
+        pos = self.get(f"/port/v1/positions/me").json()
 
         # Filter positions
         saxo_helper = SaxoHelper()
-        pos = saxo_helper.filter_positions(pos, cfd_only=cfd_only, profit_only=profit_only,
-                                            symbol=symbol, status_open=status_open)
+        pos = saxo_helper.filter_positions(pos, cfd_only=cfd_only, 
+            profit_only=profit_only, symbol=symbol, status_open=status_open)
 
         return pos
 
@@ -460,7 +484,7 @@ class Saxo:
             Example output:
                 See `tests/mock_data/SaxoTrader_Saxo_orders.json`
         """
-        orders = self.get(f"/port/v1/orders?ClientKey=" + self.profile["AccountKey"]).json
+        orders = self.get(f"/port/v1/orders?ClientKey=" + self.profile["AccountKey"]).json()
 
         # Filter orders
         """
@@ -520,15 +544,31 @@ class Saxo:
 
     def action_flat(self, symbol):
         """ Execute FLATSTOP signal """
-        # Set all profitable positions to flat
+        # Get all profitable positions
+        
+        # TODO:Get real-time pricing working for positions(). Meanwhile,
+        # set profit_only=False until we can get real-time prices
+
         positions = self.positions(cfd_only=True, 
-                                    profit_only=True,
+                                    profit_only=False,
                                     symbol=symbol)
+        
         saxo_helper = SaxoHelper()
+        saxo_helper.pprint_positions(positions)
+
         for position in positions["Data"]:
             position_id = position["PositionId"]
 
             stop_details = saxo_helper.get_position_stop_details(position)
+
+            if stop_details["stop"]:
+                stop_points = stop_details["stop_points"]
+                self.logger.info(f"Position ({position_id}) already have stop set to {stop_points} points.")
+            else:
+                self.set_stoploss(position=position, points=0)
+
+            """
+            print(stop_details)
             if stop_details["stop_points"] == 0 and stop_details["stop"]:
                 # Stop loss is enable and set to flat (0 points from entry)
                 self.logger.debug(f"Position ({position_id}) is already flat. Skipping..")
@@ -536,6 +576,7 @@ class Saxo:
             else:
                 self.logger.info(f"Position ({position_id}) stop loss set to flat")
                 self.set_stoploss(position=position, points=0)
+            """
 
     def __action_scaleout(self, signal, order):
         """ 
@@ -726,15 +767,31 @@ class Saxo:
         if rsp.status_code != 200:
             return None
         time.sleep(1)  # Lame way to avoid rate limiting
-        return rsp.json
+        return rsp.json()
 
     ####### TRADING #######
     def stoploss_order(self, uic, stoploss_price, BuySell, amount):
         """ 
-            Create stop loss order
+            Creates stop loss order based on current order details.
+            This method will create and invert details accordingly.
+
+            For example, if you have an existing Buy order of 10 contracts,
+            this method will create a Sell order of 10 contracts.
         """
+        current_BuySell = BuySell
+        current_amount = amount
+        print(f"Current position amount: {current_amount}")
+        print(f"Current position BuySell: {current_BuySell}")
+        
         # Invert BuySell value
-        _SL_BuySell_Direction = "Sell" if BuySell == "Buy" else "Buy"  
+        BuySell = "Sell" if current_BuySell == "Buy" else "Buy"
+
+        # Invert amount, but only for short positions
+        if current_BuySell == "Sell":
+            amount = amount * -1
+
+        #print(f"Stop loss amount: {amount}")
+        #print(f"Stop loss BuySell: {BuySell}")
 
         # Construct stop loss order
         stoploss_order = {
@@ -743,15 +800,16 @@ class Saxo:
             "AssetType": "CfdOnIndex",
             "OrderType": "StopIfTraded",
             "ManualOrder": False,
-            "BuySell": _SL_BuySell_Direction,
+            "BuySell": BuySell,
             "Amount": amount,
             "OrderDuration": { "DurationType": "GoodTillCancel" },
             "OrderPrice": stoploss_price,
         }
         return [stoploss_order]
 
-    def base_order(self, symbol, amount, buy=True, 
-                   limit=None, stoploss_points=None, stoploss_price=None, OrderType="Market"):
+    def base_order(self, symbol, amount, buy=True, limit=None, 
+                   stoploss_points=None, stoploss_price=None, 
+                   OrderType="Market") -> Response:
         """
             Handles placing new orders
 
@@ -828,7 +886,7 @@ class Saxo:
 
         # Execute order
         self.logger.info(self.order)
-        rsp = self.post(path="/trade/v2/orders", data=self.order).json
+        rsp = self.post(path="/trade/v2/orders", data=self.order)
         
         # Sleep to avoid rate limiting
         time.sleep(2)
@@ -842,7 +900,7 @@ class Saxo:
                                stoploss_points=stoploss_points,
                                stoploss_price=stoploss_price)
 
-    def close(self, position):
+    def close(self, position) -> Response:
         """ Close position """
         PositionId = position["PositionId"]
         pb = position["PositionBase"]
@@ -908,14 +966,15 @@ class Saxo:
                 doc = change["fullDocument"]
 
                 # Skip tweets older than 15 minutes
-                if saxo_helper.doc_older_than(doc, max_age=15):
+                # Safe guard to avoid executing trades on old tweets
+                if saxo_helper.doc_older_than(doc, max_age=20):
                     continue
 
                 # Execute trades for signals in tweet
                 for signal in doc["signals"]:
                     self.trade(signal)
 
-    def set_stoploss(self, position, points=0):
+    def set_stoploss(self, position, points=0) -> bool:
         """
             Set stop loss for position
 
@@ -923,22 +982,18 @@ class Saxo:
                 position (dict): Position object
                 price (float): Stop loss price
         """
+        # Current position details
         pos_id = position["PositionId"]
         position_base = position["PositionBase"]
         uic = position_base["Uic"]
         entry = position_base["OpenPrice"]
         amount = position_base["Amount"]
-        # When setting stop loss on a long position (amount > 0), we need to sell
-        # When setting stop loss on a short position (amount < 0), we need to buy
         BuySell = "Buy" if amount > 0 else "Sell"
-        
+
+        # Prepare stop loss order (oppoiste of current position)
         stoploss_price = self.get_stoploss_price(entry=entry, 
                                                  stoploss=points, 
                                                  BuySell=BuySell)
-        
-        msg = f"Stoploss set {points} points away from entry {entry} @ {stoploss_price}"
-        self.logger.info(msg)
-
         orders = self.stoploss_order(uic=uic,
                                     stoploss_price=stoploss_price, 
                                     BuySell=BuySell,
@@ -947,14 +1002,23 @@ class Saxo:
             "PositionId": pos_id,
             "Orders": orders
         }
+        print(__order)
         
+        msg = f"Stop loss set to {stoploss_price} ({points} points) on {pos_id}"
+        self.logger.info(msg)
         rsp = self.post(path="/trade/v2/orders", data=__order)
-        if rsp.status_code != 200:
-            self.logger.error("Failed to set stop loss for position: {pos_id}")
-            self.logger.error("Response: {}".format(rsp.json))
-
         time.sleep(1) # Sleep to avoid rate limiting
-        return rsp
+
+        if rsp.status_code != 200:
+            # Cases
+            # 1. Happens when saxo.positions() return positions that aren't in positive. The positions() method is not 100% accurate
+            # {'Orders': [{'ErrorInfo': {'ErrorCode': 'OnWrongSideOfMarket', 'Message': 'Price is on wrong side of market'}}]}
+            # 2. ???
+            # {'Message': 'One or more properties of the request are invalid!', 'ModelState': {'Orders[0].Amount': ["'Amount' must be greater than '0'."]}, 'ErrorCode': 'InvalidModelState'}
+            self.logger.error(f"Failed to set stop loss for position: {pos_id}. Response: {rsp.json()}")
+            return False
+
+        return True
 
     def cancel_order(self, orders:str):
         """
@@ -980,7 +1044,8 @@ class SaxoHelper(Saxo):
 
     def doc_older_than(self, document, max_age=15):
         """
-            Check if document is older than max_age 
+            Check if document is older than max_age. `created_at` from db is
+            converted to UTC, and compared against now()
 
             Args:
                 document (dict): Document from MongoDB
@@ -1078,8 +1143,8 @@ class SaxoHelper(Saxo):
 
         return ret
 
-    def filter_positions(self, positions, 
-                         cfd_only=True, profit_only=True, symbol=None, status_open=True) -> dict:
+    def filter_positions(self, positions, cfd_only=True, profit_only=True, 
+                         symbol=None, status_open=True) -> dict:
         """
             Filter positions
 
@@ -1111,7 +1176,8 @@ class SaxoHelper(Saxo):
                 idx_to_remove.append(idx)
 
             # Symbol only
-            if symbol is not None and symbol != self.uic_to_symbol(p["PositionBase"]["Uic"]):
+            sym = self.uic_to_symbol(p["PositionBase"]["Uic"])
+            if symbol is not None and symbol != sym:
                 idx_to_remove.append(idx)
 
             # Status open only
