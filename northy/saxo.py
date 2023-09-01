@@ -989,19 +989,28 @@ class SaxoHelper(Saxo):
             Returns:
                 bool: True if document is older than max_age
         """
+        # Get current time in UTC
+        now = datetime.now(timezone.utc)
+
+        # Get created_at in UTC
         created_at = document["created_at"]
-        tid = document["tid"]
+        created_at = created_at.replace(tzinfo=timezone.utc)
 
-        min_since_post = (created_at - datetime.now()).total_seconds() / 60
+        # Calculate minutes since post
+        min_since_post = (now - created_at).total_seconds() / 60
         min_since_post = round(min_since_post)
+        self.logger.info(min_since_post)
 
+        # Check if min_since_post is greater than max_age
         if min_since_post > max_age:
-            msg = f"Tweet {tid} from {created_at} is {min_since_post} " \
-                    "min. old.."
+            tid = document["tid"]
+            msg = f"Tweet {tid} from is {min_since_post} min. old. " \
+                  f"Created at {created_at} compared to now ({now})."
             self.logger.info(msg)
             return True
-        else:
-            return False
+
+        self.logger.info(f"Tweet is not older than {max_age} minutes")
+        return False
     
     def pprint_positions(self, positions:dict) -> None:
         """
