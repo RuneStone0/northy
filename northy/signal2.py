@@ -475,36 +475,43 @@ class Signal:
                 return False
         return True
 
-    def manual(self, tid):
+    def manual(self, tid) -> None:
         """
             Prompt for manually reviewing signals and confirm them.
         """
+        # Get tweet by ID
         tweet = self.db.tweets.find_one({"tid": tid})
-        tid = tweet["tid"]
+
+        # Check if tweet exists
+        if tweet is None:
+            self.logger.error(f"Failed getting Tweet by ID '{tid}'.")
+            return None
+
+        # Check if tweet is on ignore list
         if tid in ignore_tweets:
-            print(tid, "Backtest", colored(f"IGNORED", "yellow"),
-                  self.signal_helper.normalize_text(tweet["text"]))
-            return
-        signals = tweet["signals"]
+            ignored = colored(f"IGNORED", "yellow")
+            text = self.signal_helper.normalize_text(tweet["text"])
+            msg = f"{tid} Backtest {ignored} {text}"
+            self.logger.warning(msg)
+            return None
 
-        # Check if signals and signals_manual exists
-        try:
-            if tweet["signals"] and tweet["signals_manual"]:
-                pass
-        except KeyError:
-            print(tid, "Backtest", colored(f"FAILED", "red"), 
-                  "signals or signals_manual doesn't exist")
-            return
-        
+        # Check if signals and signals_manual exist
+        if "signals" not in tweet and "signals_manual" not in tweet:
+            msg = f"{tid} Backtest {colored(f'FAILED', 'red')} signals or " \
+                  f"signals_manual doesn't exist"
+            self.logger.warning(msg)
+            return None
+
         # Check if signals and signals_manual are the same
-        signals_match = self.compare_lists(tweet["signals"], tweet["signals_manual"])
+        signals_match = self.compare_lists(tweet["signals"], 
+                                           tweet["signals_manual"])
 
-        # If signals don't match, prompt user to confirm or manually enter signals
+        # If signals mismatch, prompt user to confirm or manually enter signals
         if not signals_match:
             # signals_manual doesn't exist yet
             # generate signals from text and suggest to use it
             generated_signal = self.text_to_signal(tweet)
-            print(tid, "Backtest", colored(f"FAILED", "red"),
+            self.logger.info(tid, "Backtest", colored(f"FAILED", "red"),
                   self.signal_helper.normalize_text(tweet["text"]),
                   colored("new suggested value:", "green"),
                   colored(generated_signal, "yellow"))
