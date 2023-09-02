@@ -126,11 +126,6 @@ class Tweets:
         """
             Print tweet nicely
         """
-        _tid = str
-        _author_id = None
-        _created_at = None
-        _text = None
-
         if isinstance(tweet, dict):
             # Handle Tweet data dict
             try:
@@ -139,14 +134,14 @@ class Tweets:
                 _created_at = tweet["created_at"]
                 _text = tweet["text"]
             except Exception as e:
-                self.logger.error(f"Error: {e}")
+                self.logger.error(f"Error parsing {e} from {tweet}")
                 self.logger.error(tweet)
+                return None
         else:
             # Handle tweepy.tweet.Tweet Object
-            _tid = tweet.id
-            _author_id = tweet.author_id
-            _created_at = tweet.created_at
-            _text = tweet.text
+            msg = "Parsing Tweet Objects are deprecated. Use dict instead."
+            self.logger.warning(msg)
+            return None
         
         # Coloring
         inserted_indicator = colored("[+]", "green") if inserted else colored("[-]", "red")
