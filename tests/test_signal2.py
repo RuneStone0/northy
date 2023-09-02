@@ -230,10 +230,16 @@ def test_find_SCALE_POINTS():
 
 def test_get_closest_symbols():
     numbers = [
+        # Multiple numbers
         [3713,11348],
         [1703,30932],
         [3713,11348,1703,30932],
-        [35675] # DJIA
+        
+        # Single numbers
+        [3713], # SPX
+        [11348], # NDX
+        [35675], # DJIA
+        [1703] # RUT
     ]
     for num in numbers:
         out = signal_helper.get_closest_symbols(num)
@@ -257,4 +263,14 @@ def test_watch_log():
 
 def test_refresh_backlog():
     signal.refresh_backlog(limit=100)
+
+def test_manual():
+    # Non-existing tweet
+    assert signal.manual(tid="1234567890") == None
+
+    # Tweet on ignore list
+    assert signal.manual(tid="1557516667357380608") == None
+
+    # Tweet with no `signal`and `signal_manual` fields
+    assert signal.manual(tid="1548003680191844355") == None
 
