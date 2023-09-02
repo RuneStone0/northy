@@ -1,8 +1,16 @@
+import os
+from northy import utils
 from northy.tweets import Tweets, TweetsDB
 from northy.config import config
-from northy.db import Database
 
 tweets = Tweets(config=config)
+
+def get_mock_data(filename):
+    u = utils.Utils()
+    dir = os.path.dirname(__file__)
+    file_path = f"mock_data/tweets/{filename}"
+    path = os.path.join(dir, file_path)
+    return u.read_json(path)
 
 def test_me():
     me = tweets.me()
@@ -16,34 +24,24 @@ def test_fetch():
 
 def test_fetch_with_since_id():
     # Fetch with since_id
-    data = tweets.fetch(user_auth=False, user_id="1366565625401909249", since_id="1679125392462864384")
+    data = tweets.fetch(user_auth=False,
+                        user_id="1366565625401909249", 
+                        since_id="1679125392462864384")
     assert isinstance(data, tuple)
 
-def test_print():
-    # Handling tweepy.tweet.Tweet Object
-    # Un-authenticated fetch for WallStreetSilv, to avoid rate limiting
-    response = tweets.fetch(user_auth=False, user_id="1366565625401909249")
-    for tweet in response.data:
-        assert tweets.pprint(tweet=tweet) == None
+def test_pprint():
+    # Invalid tweet data
+    doc = get_mock_data("pprint1.json")
+    tweets.pprint(tweet=doc)
 
     # Handling Tweet data dict
-    data = {
-	  "tid": "1679125392462864384",
-	  "author_id": "897502744298258432",
-	  "created_at": "2023-07-12T13:47:44.000Z",
-	  "text": "ALERT: Flat stopped $NDX\nRe-entry short    \nIN 15305- 25 pt stop"
-	}
-    assert tweets.pprint(tweet=data) == None
-    assert tweets.pprint(tweet=data, inserted=True) == None
+    doc = get_mock_data("pprint2.json")
+    assert tweets.pprint(tweet=doc) == None
+    assert tweets.pprint(tweet=doc, inserted=True) == None
 
 def test_print_errors():
-    data = {
-      "tid": "1234",
-	  "text": "ALERT: Flat stopped $NDX\nRe-entry short    \nIN 15305- 25 pt stop",
-      "author_id": "unittest",
-      "created_at": "2023-07-12T13:47:44.000Z"
-	}
-    assert tweets.pprint(tweet=data) == None
+    doc = get_mock_data("pprint3.json")
+    assert tweets.pprint(tweet=doc) == None
 
 def test_rate_limit_handler():
     assert tweets.rate_limit_handler(sleep=1) == None, "rate_limit_handler should complete without errors"
