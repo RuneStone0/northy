@@ -6,6 +6,8 @@ termcolor
 pyprowl
 PyJWT
 flask
+pytz
+pandas
 
 # Logging
 colorlog
@@ -25,4 +27,4 @@ pytest-cov
 pytest-xdist
 
 # Email
-sparkpost
+postmarker
