@@ -380,7 +380,7 @@ class Saxo:
             else:
                 self.logger.error("Profile OrderPreference is not set")
         if s.action == "FLAT":
-            """ Set positions stop loss to flat"""
+            """ Set positions stop loss to flat """
             self.action_flat(symbol=s.symbol)
         if s.action == "SCALEOUT":
             # TODO
@@ -1090,6 +1090,7 @@ class SaxoHelper(Saxo):
             entry_date = p["PositionBase"]["ExecutionTimeOpen"]
             entry_date = datetime.strptime(entry_date, "%Y-%m-%dT%H:%M:%S.%fZ")
             entry_date = entry_date.replace(second=0, microsecond=0)
+            print(p)
 
             uic = p["PositionBase"]["Uic"]
             symbol = self.uic_to_symbol(uic)
@@ -1098,6 +1099,7 @@ class SaxoHelper(Saxo):
             sl_details = self.get_position_stop_details(p)
             sl_set = sl_details["stop"]
             amount = p["PositionBase"]["Amount"]
+            status = p["PositionBase"]["Status"]
             
             data.append({
                 "Pos. ID": pos_id,
@@ -1106,7 +1108,8 @@ class SaxoHelper(Saxo):
                 "Amount": amount,
                 "Entry": entry,
                 "Profit": profit,
-                "Stop Set": sl_set
+                "Status": status,
+                "Stoploss Set": sl_set
             })
         df = pd.DataFrame(data)
         #print(df)
@@ -1296,13 +1299,25 @@ class SaxoHelper(Saxo):
             "date": date
         }
 
-    def job_generate_closed_positions_report(self, positions, skip=False):
+    def job_generate_closed_positions_report(self, positions, force=False):
         """
             Generate a report of closed positions and send it via email.
             Report will only be generated at 17:00 on weekdays.
+
+            Args:
+                positions (dict): Positions object
+                force (bool): Force report to sent via email
         """
         from .email import Email
-        if datetime.now().weekday() < 5 and datetime.now().hour == 17 and datetime.now().second <= 5 or skip:
+
+        import pytz
+        from datetime import datetime
+
+        central = pytz.timezone('US/Central')
+        now = datetime.now(central)
+        is_reporting_time = now.weekday() < 5 and now.hour == 17 and now.second <= 5
+
+        if is_reporting_time or force:
             report = self.generate_closed_positions_report(positions)
 
             # Create summary
@@ -1322,18 +1337,21 @@ class SaxoHelper(Saxo):
             # Send report to Email
             # TODO: remove hardcoded email
             email = Email()
-            email.send(to_email="rtk@rtk-cv.dk",
+            email.send(
+                    to="rtk@rtk-cv.dk",
                     subject=f"Trading Report {report['date']}",
                     content=summary)
             
-            # Sleep for 1 hour
-            self.logger.info("Sleeping for 1 seconds")
-            time.sleep(1)
-
+            if force:
+                import sys
+                sys.exit()
         else:
             # sleep until next full hour
             now = datetime.now()
             next_hour = now.replace(hour=(now.hour + 1) % 24, minute=0, second=1)
             sleep_time = (next_hour - now).seconds
-            self.logger.info(f"Sleeping for {sleep_time} seconds")
+            self.logger.info(f"Not time to report yet. Sleeping {sleep_time} seconds")
             time.sleep(sleep_time)
+
+
+
