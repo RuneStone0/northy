@@ -1,6 +1,6 @@
-import pytz
+from zoneinfo import ZoneInfo
+import dateutil.parser
 from datetime import datetime
-import sys
 import jwt
 import requests
 from requests import Response
@@ -393,9 +393,8 @@ class Saxo:
         if s.action == "CLOSED":
             # Close latest positions that are not flat
             positions = self.positions(cfd_only=True, profit_only=False)
-            import pytz
-            import dateutil.parser
-            TZ = pytz.timezone('America/Chicago')
+            TZ = ZoneInfo('America/Chicago')
+            
             def __position_age(position):
                 """
                     Return the age of a position in minutes
@@ -1335,7 +1334,7 @@ class SaxoHelper(Saxo):
                 positions (dict): Positions object
         """
         # Only send report at 17:00 on weekdays
-        now = datetime.now(pytz.timezone('US/Central'))
+        now = datetime.now(ZoneInfo('US/Central'))
 
         if now.weekday() < 5 and now.hour == 17 and now.second <= 5:
             report = self.generate_closed_positions_report(positions)

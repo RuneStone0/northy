@@ -6,7 +6,6 @@ termcolor
 pyprowl
 PyJWT
 flask
-pytz
 pandas
 
 # Logging
