@@ -3,7 +3,7 @@ from northy import utils
 from northy.config import set_env
 from northy.saxo import SaxoHelper
 from datetime import datetime
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 saxo_helper = SaxoHelper()
 u = utils.Utils()
