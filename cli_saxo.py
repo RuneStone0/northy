@@ -54,14 +54,15 @@ if __name__ == '__main__':
 
             The report will be sent daily at a specific (hardcoded) time.
         """
-        saxo_helper = SaxoHelper()
         if force:
+            saxo_helper = SaxoHelper()
             positions = saxo.positions(status_open=False, profit_only=False)
             report = saxo_helper.generate_closed_positions_report(positions)
             saxo_helper.deliver_positions_report(report)
             return
 
         while True:
+            saxo_helper = SaxoHelper()
             positions = saxo.positions(status_open=False, profit_only=False)
             saxo_helper.job_generate_closed_positions_report(positions=positions)
         
