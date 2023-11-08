@@ -8,8 +8,8 @@ from .config import config
 from termcolor import colored
 from pymongo import DESCENDING
 from pymongo.errors import DuplicateKeyError
-import pytz
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import time
 
 class Tweets:
@@ -162,7 +162,9 @@ class Tweets:
             Check if it's trading hours
         """
         # Set the timezone to US Central Time
-        us_central_timezone = pytz.timezone('US/Central')
+        
+
+        us_central_timezone = ZoneInfo('America/Chicago')
 
         # if not weekday, sleep for 1 hour
         if datetime.now(tz=us_central_timezone).weekday() >= 5:
