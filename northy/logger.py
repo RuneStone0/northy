@@ -1,28 +1,32 @@
 import logging
+from colorama import Fore, Style, init
+
+init(autoreset=True)
 
 class ColoredFormatter(logging.Formatter):
     """
         Color Options:
-            Black: \033[30m
-            Red: \033[31m
-            Green: \033[32m
-            Yellow: \033[33m
-            Blue: \033[34m
-            Magenta: \033[35m
-            Cyan: \033[36m
-            White: \033[37m
+            Black: Fore.BLACK
+            Red: Fore.RED
+            Green: Fore.GREEN
+            Yellow: Fore.YELLOW
+            Blue: Fore.BLUE
+            Magenta: Fore.MAGENTA
+            Cyan: Fore.CYAN
+            White: Fore.WHITE
     """
     COLORS = {
-        'DEFAULT': '\033[0m',       # Reset to default color
-        'GREEN': '\033[32m',        # Green color for asctime
-        'YELLOW': '\033[33m',       # Yellow color for warning level
-        'RED': '\033[31m',          # Red color for error and critical levels
-        'CYAN': '\033[35m',         # Cyan color for debug level
+        'DEFAULT': Style.RESET_ALL,       # Reset to default color
+        'GREEN': Fore.GREEN,        # Green color for asctime
+        'YELLOW': Fore.YELLOW,       # Yellow color for warning level
+        'RED': Fore.RED,          # Red color for error and critical levels
+        'CYAN': Fore.CYAN,         # Cyan color for debug level
+        'MAGENTA': Fore.MAGENTA,
     }
 
     LEVEL_COLORS = {
-        'DEBUG': COLORS['CYAN'],        # Default color for DEBUG level
-        'INFO': '\033[36m',                 # Default color for INFO level
+        'DEBUG': COLORS['MAGENTA'],        # Default color for DEBUG level
+        'INFO': Fore.BLUE,                 # Default color for INFO level
         'WARNING': COLORS['YELLOW'],       # Yellow color for WARNING level
         'ERROR': COLORS['RED'],            # Red color for ERROR level
         'CRITICAL': COLORS['RED'],         # Red color for CRITICAL level
