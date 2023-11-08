@@ -41,7 +41,8 @@ if __name__ == '__main__':
         logger.info("Position not found")
 
     @click.command()
-    @click.option('--force', required=False, default=False, type=str, help='Force an email repor to be sent')
+    @click.option('--force', required=False, is_flag=True, default=False, 
+                  type=bool, help='Force an email repor to be sent')
     def report_closed_positions(force):
         """ 
             Report Closed Positions 
@@ -53,15 +54,16 @@ if __name__ == '__main__':
 
             The report will be sent daily at a specific (hardcoded) time.
         """
-        # Set environment variables
-        set_env()
-
         saxo_helper = SaxoHelper()
+        if force:
+            positions = saxo.positions(status_open=False, profit_only=False)
+            report = saxo_helper.generate_closed_positions_report(positions)
+            saxo_helper.deliver_positions_report(report)
+            return
+
         while True:
             positions = saxo.positions(status_open=False, profit_only=False)
-            #saxo_helper.pprint_positions(positions)
-            saxo_helper.job_generate_closed_positions_report(positions=positions,
-                                                             force=force)
+            saxo_helper.job_generate_closed_positions_report(positions=positions)
         
     @click.command()
     def orders():
