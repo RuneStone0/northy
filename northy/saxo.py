@@ -1339,6 +1339,7 @@ class SaxoHelper(Saxo):
         if now.weekday() < 5 and now.hour == 17 and now.second <= 5:
             report = self.generate_closed_positions_report(positions)
             self.deliver_positions_report(report)
+            return
 
         # sleep until next full hour
         next_hour = now.replace(hour=(now.hour + 1) % 24, minute=0, second=1)
