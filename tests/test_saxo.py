@@ -116,7 +116,7 @@ def test_close():
     # TODO: Mock HTTP requests/responses to speed up the tests
 
     # Already Closed
-    positions = get_mock_data("alread_closed_pos.json")
+    positions = get_mock_data("already_closed_pos.json")
     out = saxo.close(positions)
     from requests import Response
     assert isinstance(out, Response)
