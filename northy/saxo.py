@@ -1,9 +1,13 @@
+import pytz
+from datetime import datetime
+import sys
 import jwt
 import requests
 from requests import Response
 import pandas as pd
 import random, string
 import time, uuid, json
+from .email import Email
 from .utils import Utils
 from datetime import datetime, timezone
 from collections import namedtuple
@@ -1299,59 +1303,46 @@ class SaxoHelper(Saxo):
             "date": date
         }
 
-    def job_generate_closed_positions_report(self, positions, force=False):
+    def deliver_positions_report(self, report):
+        # Create summary
+        sheet = ",".join(map(str, report["trades_profit_loss"]))
+        summary = """
+        <p>Trading Date: %s</p>
+        <p>Total Profit/Loss: %s</p>
+        <p>Total Number of Trades: %s</p>
+        <p>Average P&L/Trade: %s</p>
+        <p>Sheet: %s</p>
+        """ % (report["date"],
+                report["total_profit_loss"],
+                report["count_closed_trades"],
+                report["avg_profit_loss"],
+                sheet)
+
+        # Send report to Email
+        # TODO: remove hardcoded email
+        email = Email()
+        email.send(
+                to="rtk@rtk-cv.dk",
+                subject=f"Trading Report {report['date']}",
+                content=summary)
+        
+    def job_generate_closed_positions_report(self, positions):
         """
             Generate a report of closed positions and send it via email.
             Report will only be generated at 17:00 on weekdays.
 
             Args:
                 positions (dict): Positions object
-                force (bool): Force report to sent via email
         """
-        from .email import Email
+        # Only send report at 17:00 on weekdays
+        now = datetime.now(pytz.timezone('US/Central'))
 
-        import pytz
-        from datetime import datetime
-
-        central = pytz.timezone('US/Central')
-        now = datetime.now(central)
-        is_reporting_time = now.weekday() < 5 and now.hour == 17 and now.second <= 5
-
-        if is_reporting_time or force:
+        if now.weekday() < 5 and now.hour == 17 and now.second <= 5:
             report = self.generate_closed_positions_report(positions)
+            self.deliver_positions_report(report)
 
-            # Create summary
-            sheet = ",".join(map(str, report["trades_profit_loss"]))
-            summary = """
-            <p>Trading Date: %s</p>
-            <p>Total Profit/Loss: %s</p>
-            <p>Total Number of Trades: %s</p>
-            <p>Average P&L/Trade: %s</p>
-            <p>Sheet: %s</p>
-            """ % (report["date"],
-                    report["total_profit_loss"],
-                    report["count_closed_trades"],
-                    report["avg_profit_loss"],
-                    sheet)
-
-            # Send report to Email
-            # TODO: remove hardcoded email
-            email = Email()
-            email.send(
-                    to="rtk@rtk-cv.dk",
-                    subject=f"Trading Report {report['date']}",
-                    content=summary)
-            
-            if force:
-                import sys
-                sys.exit()
-        else:
-            # sleep until next full hour
-            now = datetime.now()
-            next_hour = now.replace(hour=(now.hour + 1) % 24, minute=0, second=1)
-            sleep_time = (next_hour - now).seconds
-            self.logger.info(f"Not time to report yet. Sleeping {sleep_time} seconds")
-            time.sleep(sleep_time)
-
-
-
+        # sleep until next full hour
+        next_hour = now.replace(hour=(now.hour + 1) % 24, minute=0, second=1)
+        sleep_time = (next_hour - now).seconds
+        self.logger.info(f"Sleeping {sleep_time} sec. until next full hour")
+        time.sleep(sleep_time)
