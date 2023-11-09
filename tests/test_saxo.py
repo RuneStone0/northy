@@ -174,6 +174,29 @@ def test_trade():
         logger.warning("Could not delete order")
         pass
 
+def test_trade_buysell_all():
+    """
+    Test all possible combinations of symbols and trade directions
+    Attempts to create an order and then deletes it (if possible)
+    """
+    symbols = saxo_config.config["tickers"].keys()
+    direction = ["LONG", "SHORT"]
+    for symbol in symbols:
+        for dir in direction:
+            signal = f"{symbol}_TRADE_{dir}_IN_13199_SL_25"
+            logger.info(f"Testing {signal}")
+            rsp = saxo.trade(signal)
+            order = rsp.json()
+            assert rsp.status_code == 200
+            assert isinstance(order, dict)
+
+            # Delete order (note: only possible if the order is still open)
+            try:
+                saxo.cancel_order(orders=order["OrderId"])
+            except:
+                logger.warning("Could not delete order")
+                pass
+
 def test_trade_flat():
     saxo.trade("SPX_FLAT")
 
