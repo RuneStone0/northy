@@ -49,13 +49,21 @@ class SaxoConfig:
             self.logger.warning(f"Unknown symbol '{symbol}'. Setting SL to 9.")
             return 9
 
+    def get_asset_type(self, uic):
+        tickers = self.config["tickers"]
+        for ticker, info in tickers.items():
+            if info['Uic'] == uic:
+                return info['AssetType']
+        return None
+        
 class Saxo:
     def __init__(self, config_file="saxo_config.json", profile_name="default"):
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
 
         # Set trade account config
-        self.config = SaxoConfig().config
+        self.saxo_config = SaxoConfig()
+        self.config = self.saxo_config.config
         self.set_profile(profile_name)
         self.tickers = self.config["tickers"]
 
@@ -455,7 +463,6 @@ class Saxo:
         print(rsp)
         time.sleep(10)
 
-
     def positions(self, cfd_only=True, profit_only=True, symbol=None, 
                   status_open=True) -> dict:
         """
@@ -765,7 +772,8 @@ class Saxo:
         """
         # TODO: Implement caching, when running e.g. "SXP_FLATSTOP", 
         # we will need to fetch prices for all positions
-        path = f"/trade/v1/infoprices/?Uic={uic}&AssetType=CfdOnIndex"
+        asset_type = self.saxo_config.get_asset_type(uic)
+        path = f"/trade/v1/infoprices/?Uic={uic}&AssetType={asset_type}"
         rsp = self.get(path=path)
         if rsp.status_code != 200:
             return None
@@ -790,10 +798,11 @@ class Saxo:
         BuySell = "Sell" if current_BuySell == "Buy" else "Buy"
 
         # Construct stop loss order
+        asset_type = self.saxo_config.get_asset_type(uic)
         stoploss_order = {
             "Uic": uic,
             "AccountKey": self.profile["AccountKey"],
-            "AssetType": "CfdOnIndex",
+            "AssetType": asset_type,
             "OrderType": "StopIfTraded",
             "ManualOrder": False,
             "BuySell": BuySell,
@@ -831,9 +840,11 @@ class Saxo:
         """
         # Base order parameters
         saxo_helper = SaxoHelper()
+        uic = saxo_helper.symbol_to_uic(symbol)
+        asset_type = self.saxo_config.get_asset_type(uic)
         self.order = dict()
-        self.order["Uic"] = saxo_helper.symbol_to_uic(symbol)
-        self.order["AssetType"] = "CfdOnIndex"
+        self.order["Uic"] = uic
+        self.order["AssetType"] = asset_type
         self.order["OrderType"] = OrderType
         self.order["ManualOrder"] = False
 
