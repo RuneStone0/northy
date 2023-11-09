@@ -346,7 +346,7 @@ class Saxo:
 
         return rsp
 
-    def trade(self, signal) -> dict:
+    def trade(self, signal) -> Response:
         """ 
             Execute Trade based on signal
 
@@ -354,7 +354,7 @@ class Saxo:
                 signal (str): Signal to execute. (e.g. `SPX_TRADE_SHORT_IN_4162_SL_10`)
 
             Returns:
-                dict: Order response
+                requests.Response: Order response
 
             Example response:
                 `{'OrderId': '5014824029', 'Orders': [{'OrderId': '5014824030'}]}`
@@ -367,7 +367,7 @@ class Saxo:
 
         # Determine action
         if s.action == "TRADE":
-            self.logger.info("Placing trade for {signal}")
+            self.logger.info(f"Placing trade for {signal}")
             buy = True if s.direction == "LONG" else False
             if self.profile["OrderPreference"].upper() == "MARKET":
                 self.logger.info("Profile OrderPreference is set to MARKET")
@@ -789,13 +789,6 @@ class Saxo:
         # Invert BuySell value
         BuySell = "Sell" if current_BuySell == "Buy" else "Buy"
 
-        # Invert amount, but only for short positions
-        if current_BuySell == "Sell":
-            amount = amount * -1
-
-        #print(f"Stop loss amount: {amount}")
-        #print(f"Stop loss BuySell: {BuySell}")
-
         # Construct stop loss order
         stoploss_order = {
             "Uic": uic,
@@ -871,11 +864,7 @@ class Saxo:
             bid = self.bid(self.order["Uic"])  # estimated entry price
             #print("Estimated entry price: {}".format(bid))
 
-            stoploss_points = 25 if symbol == "NDX" else 10 # TODO: Make this dynamic
-            #print("Stop loss points: {}".format(stoploss_points))
-
             stoploss_price = self.get_stoploss_price(entry=bid, stoploss=stoploss_points, BuySell=self.order["BuySell"])
-            #print("Stop loss price: {}".format(stoploss_price))
 
             order = self.stoploss_order(uic=self.order["Uic"], 
                                         stoploss_price=stoploss_price, 
@@ -890,6 +879,7 @@ class Saxo:
         # Execute order
         self.logger.info(self.order)
         rsp = self.post(path="/trade/v2/orders", data=self.order)
+        self.logger.debug(f"Response: {rsp.json()}")
         
         # Sleep to avoid rate limiting
         time.sleep(2)
