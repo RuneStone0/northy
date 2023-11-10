@@ -552,41 +552,40 @@ class Saxo:
         rsp = self.__post(path="/trade/v2/orders", data=order)
         time.sleep(2)
 
-    def action_flat(self, symbol):
+    def action_flat(self, symbol, profit_only=True):
         """ Execute FLATSTOP signal """
         # Get all profitable positions
         
-        # TODO:Get real-time pricing working for positions(). Meanwhile,
+        # TODO: Get real-time pricing working for positions().
+        # Meanwhile, we'll work with delayed prices.
         # set profit_only=False until we can get real-time prices
-
         positions = self.positions(cfd_only=True, 
-                                    profit_only=False,
+                                    profit_only=profit_only,
                                     symbol=symbol)
         
         saxo_helper = SaxoHelper()
         saxo_helper.pprint_positions(positions)
 
+        # Loop through positions        
         for position in positions["Data"]:
-            position_id = position["PositionId"]
+            pos_id = position["PositionId"]
+            p_base = position["PositionBase"]
 
-            stop_details = saxo_helper.get_position_stop_details(position)
+            # Try to get entry and stoploss price
+            # If RelatedOpenOrders doesn't exist, no stoploss exists.
+            is_flat = False
+            try:
+                entry_price = p_base["OpenPrice"]
+                stoploss_price = p_base["RelatedOpenOrders"][0]["OrderPrice"]
+                if entry_price == stoploss_price:
+                    is_flat = True
+                    self.logger.info(f"{pos_id} is flat. Skipping..")
+            except:
+                # No stoploss postion found
+                pass
 
-            if stop_details["stop"]:
-                stop_points = stop_details["stop_points"]
-                self.logger.info(f"Position ({position_id}) already have stop set to {stop_points} points.")
-            else:
+            if not is_flat:
                 self.set_stoploss(position=position, points=0)
-
-            """
-            print(stop_details)
-            if stop_details["stop_points"] == 0 and stop_details["stop"]:
-                # Stop loss is enable and set to flat (0 points from entry)
-                self.logger.debug(f"Position ({position_id}) is already flat. Skipping..")
-                continue
-            else:
-                self.logger.info(f"Position ({position_id}) stop loss set to flat")
-                self.set_stoploss(position=position, points=0)
-            """
 
     def __action_scaleout(self, signal, order):
         """ 
@@ -783,6 +782,62 @@ class Saxo:
     ####### TRADING #######
     def stoploss_order(self, uic, stoploss_price, BuySell, amount):
         """ 
+            Creates stop loss order. This is used when new positions are created.
+        """
+        current_BuySell = BuySell
+
+        # Invert BuySell value
+        BuySell = "Sell" if current_BuySell == "Buy" else "Buy"
+
+        # Construct stop loss order
+        stoploss_order = {
+            "Uic": uic,
+            "AccountKey": self.profile["AccountKey"],
+            "AssetType": self.saxo_config.get_asset_type(uic),
+            "OrderType": "StopIfTraded",
+            "ManualOrder": False,
+            "BuySell": BuySell,
+            "Amount": amount,
+            "OrderDuration": { "DurationType": "GoodTillCancel" },
+            "OrderPrice": stoploss_price,
+        }
+        return [stoploss_order]
+    
+    def stoploss_order_existing(self, position, points_away=0):
+        """ 
+            Creates stop loss order for an existing position.
+        """
+        # General
+        uic = position["PositionBase"]["Uic"]
+
+        # Get current position details
+        current_amount = position["PositionBase"]["Amount"]
+        current_BuySell = "Buy" if current_amount > 0 else "Sell"
+        current_OpenPrice = position["PositionBase"]["OpenPrice"]
+        
+        # Prepare stop loss order
+        order_BuySell = "Sell" if current_BuySell == "Buy" else "Buy"
+        order_amount = current_amount * -1
+        if order_BuySell == "Buy":
+            order_OrderPrice = current_OpenPrice - points_away
+        else:
+            order_OrderPrice = current_OpenPrice + points_away
+
+        stoploss_order = {
+            "Uic": uic,
+            "AccountKey": self.profile["AccountKey"],
+            "AssetType": self.saxo_config.get_asset_type(uic),
+            "OrderType": "StopIfTraded",
+            "ManualOrder": False,
+            "BuySell": order_BuySell,
+            "Amount": order_amount,
+            "OrderDuration": { "DurationType": "GoodTillCancel" },
+            "OrderPrice": order_OrderPrice,
+        }
+        return [stoploss_order]
+    
+    def stoploss_order_old(self, uic, stoploss_price, BuySell, amount):
+        """ 
             Creates stop loss order based on current order details.
             This method will create and invert details accordingly.
 
@@ -790,9 +845,6 @@ class Saxo:
             this method will create a Sell order of 10 contracts.
         """
         current_BuySell = BuySell
-        current_amount = amount
-        print(f"Current position amount: {current_amount}")
-        print(f"Current position BuySell: {current_BuySell}")
         
         # Invert BuySell value
         BuySell = "Sell" if current_BuySell == "Buy" else "Buy"
@@ -989,7 +1041,6 @@ class Saxo:
         # Current position details
         pos_id = position["PositionId"]
         position_base = position["PositionBase"]
-        uic = position_base["Uic"]
         entry = position_base["OpenPrice"]
         amount = position_base["Amount"]
         BuySell = "Buy" if amount > 0 else "Sell"
@@ -998,19 +1049,12 @@ class Saxo:
         stoploss_price = self.get_stoploss_price(entry=entry, 
                                                  stoploss=points, 
                                                  BuySell=BuySell)
-        orders = self.stoploss_order(uic=uic,
-                                    stoploss_price=stoploss_price, 
-                                    BuySell=BuySell,
-                                    amount=amount)
-        __order = {
-            "PositionId": pos_id,
-            "Orders": orders
-        }
-        print(__order)
-        
+        sl_order = self.stoploss_order(position=position, points_away=points)
+        order = { "PositionId": pos_id, "Orders": sl_order }
+
         msg = f"Stop loss set to {stoploss_price} ({points} points) on {pos_id}"
         self.logger.info(msg)
-        rsp = self.post(path="/trade/v2/orders", data=__order)
+        rsp = self.post(path="/trade/v2/orders", data=order)
         time.sleep(1) # Sleep to avoid rate limiting
 
         if rsp.status_code != 200:
@@ -1094,7 +1138,6 @@ class SaxoHelper(Saxo):
             entry_date = p["PositionBase"]["ExecutionTimeOpen"]
             entry_date = datetime.strptime(entry_date, "%Y-%m-%dT%H:%M:%S.%fZ")
             entry_date = entry_date.replace(second=0, microsecond=0)
-            print(p)
 
             uic = p["PositionBase"]["Uic"]
             symbol = self.uic_to_symbol(uic)
@@ -1116,12 +1159,12 @@ class SaxoHelper(Saxo):
                 "Stoploss Set": sl_set
             })
         df = pd.DataFrame(data)
-        #print(df)
         print(df.to_string(index=False))
 
     def get_position_stop_details(self, position) -> dict:
         """
-            Get stop loss details for position
+            Translates position data to a dict with stop loss details.
+
 
             Args:
                 position (dict): Position object
@@ -1241,6 +1284,7 @@ class SaxoHelper(Saxo):
             return ret
         except Exception:
             self.logger.error(f"symbol_to_uic failed for {symbol}")
+            return None
 
     def generate_closed_positions_report(self, positions):
         """

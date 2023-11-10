@@ -163,8 +163,6 @@ def test_trade():
     price = int(price) + 5
     signal = f"NDX_TRADE_SHORT_IN_{price}_SL_25"
     order = saxo.trade(signal=signal).json()
-    print(order)
-    print(type(order))
     
     # Delete order (note: this is only possible if the order is still open)
     try:
