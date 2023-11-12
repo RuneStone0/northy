@@ -41,9 +41,9 @@ if __name__ == '__main__':
         logger.info("Position not found")
 
     @click.command()
-    @click.option('--force', required=False, is_flag=True, default=False, 
-                  type=bool, help='Force an email repor to be sent')
-    def report_closed_positions(force):
+    @click.option('--job', required=False, is_flag=True, default=False, 
+                  type=bool, help='Run as background job')
+    def report_closed_positions(job):
         """ 
             Report Closed Positions 
 
@@ -54,17 +54,22 @@ if __name__ == '__main__':
 
             The report will be sent daily at a specific (hardcoded) time.
         """
-        if force:
-            saxo_helper = SaxoHelper()
+        from northy.saxo_report import SaxoReport
+        saxo_report = SaxoReport()
+
+        # Run once
+        if not job:
+            logger.info("Running once")
             positions = saxo.positions(status_open=False, profit_only=False)
-            report = saxo_helper.generate_closed_positions_report(positions)
-            saxo_helper.deliver_positions_report(report)
+            saxo_report.send_report(positions)
             return
 
+        # Run as background job
         while True:
-            saxo_helper = SaxoHelper()
+            logger.info("Running as background job")
+            saxo_report.close_report_sleep()
             positions = saxo.positions(status_open=False, profit_only=False)
-            saxo_helper.job_generate_closed_positions_report(positions=positions)
+            saxo_report.send_report(positions=positions)
         
     @click.command()
     def orders():

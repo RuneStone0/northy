@@ -197,23 +197,3 @@ def test_trade_buysell_all():
 
 def test_trade_flat():
     saxo.trade("SPX_FLAT")
-
-def test_report_generation():
-    positions = get_mock_data("closed_pos.json")
-    report = saxo_helper.generate_closed_positions_report(positions=positions)
-    assert isinstance(report, dict)
-    assert report["count_closed_trades"] == 1
-    assert report["total_profit_loss"] == -3.75
-
-@patch('northy.saxo.datetime')
-def test_report_generation2(mock_datetime):
-    positions = get_mock_data("closed_pos.json")
-
-    # Create a fixed datetime for testing (before 17:00)
-    mock_datetime.now.return_value = datetime(2023, 6, 22, 16, 59, 59)
-    saxo_helper.job_generate_closed_positions_report(positions=positions)
-
-    # Create a fixed datetime for testing (at 17:00)
-    mock_datetime.now.return_value = datetime(2023, 6, 22, 17, 2, 1)
-    saxo_helper.job_generate_closed_positions_report(positions=positions)
-
