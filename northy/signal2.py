@@ -664,7 +664,7 @@ class SignalHelper:
         text = tweet_text
         text = text.replace("\n", " | ")
         text = text.replace("ALERT: ", "")
-        text = text.replace("  ", "")
+        text = re.sub(r'\s+', ' ', text)
         text = text.upper()
 
         # Fix bug with `| LONG $SPX $NDX | IN 3580 - 10 PT STOP |IN 10900 - 25 PT STOP`   1576847187740266496
