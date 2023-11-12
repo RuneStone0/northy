@@ -17,9 +17,7 @@ if __name__ == '__main__':
     @click.option('--tweet', default=None, type=str, help='Twitter ID to lookup and parse')
     def parse(tweet):
         signal = Signal()
-        print("Parsing tweet", tweet)
-        sig = signal.parse(tid=tweet)
-        print(sig)
+        signal.parse(tid=tweet)
 
     @click.command()
     def watch():
@@ -30,6 +28,7 @@ if __name__ == '__main__':
         except Exception as e:
             p = Prowl(API_KEY=config["PROWL_API_KEY"])
             p.send("Error: cli_signal.py crashed!!")
+            logger.critical(e, exc_info=True)
 
     cli.add_command(parse)
     cli.add_command(watch)
