@@ -418,9 +418,6 @@ class Saxo:
                 return delta_in_minutes
             
             for p in positions["Data"]:
-                saxo_helper = SaxoHelper()
-                saxo_helper.pprint_positions(p)
-
                 # Don't close positions without stoploss
                 # Northy positions always have a stoploss, so this should be OK to skip
                 if len(p["PositionBase"]["RelatedOpenOrders"]) == 0:
@@ -817,7 +814,15 @@ class Saxo:
         
         # Prepare stop loss order
         order_BuySell = "Sell" if current_BuySell == "Buy" else "Buy"
-        order_amount = current_amount * -1
+        if current_BuySell == "Buy":
+            # If we want to set a SL on a LONG position (Buy), we want the order
+            # to be BuySell: "Sell" of the same amount as the current position.
+            order_amount = current_amount
+        if current_BuySell == "Sell":
+            # If we want to set a SL on a SHORT position (Sell), we want the order
+            # to be BuySell: "Buy" of the _inverse_ amount as the current position.
+            order_amount = current_amount * -1
+
         if order_BuySell == "Buy":
             order_OrderPrice = current_OpenPrice - points_away
         else:
@@ -1046,10 +1051,10 @@ class Saxo:
         BuySell = "Buy" if amount > 0 else "Sell"
 
         # Prepare stop loss order (oppoiste of current position)
-        stoploss_price = self.get_stoploss_price(entry=entry, 
-                                                 stoploss=points, 
+        stoploss_price = self.get_stoploss_price(entry=entry,
+                                                 stoploss=points,
                                                  BuySell=BuySell)
-        sl_order = self.stoploss_order(position=position, points_away=points)
+        sl_order = self.stoploss_order_existing(position=position, points_away=points)
         order = { "PositionId": pos_id, "Orders": sl_order }
 
         msg = f"Stop loss set to {stoploss_price} ({points} points) on {pos_id}"
