@@ -400,34 +400,35 @@ class Saxo:
             pass
         if s.action == "CLOSED":
             # Close latest positions that are not flat
-            positions = self.positions(cfd_only=True, profit_only=False)
-            TZ = ZoneInfo('America/Chicago')
+            self.logger.debug(f"Closing recently opened {s.symbol} position")
+            positions = self.positions(cfd_only=True, profit_only=False,
+                                       show=True, symbol=s.symbol)
+            tz = ZoneInfo('America/Chicago')
             
-            def __position_age(position):
+            def __position_age(position) -> int:
                 """
                     Return the age of a position in minutes
                 """
-                p = position
-                now = datetime.now().astimezone(TZ)
-
-                ExecutionTimeOpen = p["PositionBase"]["ExecutionTimeOpen"]
-                ExecutionTimeOpen = dateutil.parser.parse(ExecutionTimeOpen).astimezone(TZ)
-                delta = now - ExecutionTimeOpen
-                delta_in_minutes = delta.total_seconds() // 60
-                print(f"Position age: {delta_in_minutes} minutes")
-                return delta_in_minutes
+                now = datetime.now(tz=tz)
+                pos_open_local_tz = position["PositionBase"]["ExecutionTimeOpen"]
+                execution_time_open = dateutil.parser.parse(pos_open_local_tz).astimezone(tz)
+                delta = now - execution_time_open
+                return int(delta.total_seconds() // 60)
             
             for p in positions["Data"]:
                 # Don't close positions without stoploss
-                # Northy positions always have a stoploss, so this should be OK to skip
+                # Northy positions always have a stoploss
                 if len(p["PositionBase"]["RelatedOpenOrders"]) == 0:
-                    print("Position does not have a stoploss. Skipping..")
+                    self.logger.info("Position does not have a stoploss. Skipping..")
                     continue
 
-                # skip if older than 1 hour
+                # Don't close positions older than 1 hour.
+                # Northy usually close positions shortly after they are opened.
+                # Existing (old) positions might be manual trades
                 # TODO: Analyze all northy close signals and see if they are all closed within 1 hour
                 if __position_age(p) > 60:
-                    print("Position is older than 1 hour. Skipping..")
+                    pos_id = p["PositionId"]
+                    self.logger.info(f"Position {pos_id} is older than 1 hour. Skipping..")
                     continue
 
                 self.close(position=p)
@@ -461,7 +462,7 @@ class Saxo:
         time.sleep(10)
 
     def positions(self, cfd_only=True, profit_only=True, symbol=None, 
-                  status_open=True) -> dict:
+                  status_open=True, show=False) -> dict:
         """
             Get all positions
 
@@ -481,6 +482,9 @@ class Saxo:
         saxo_helper = SaxoHelper()
         pos = saxo_helper.filter_positions(pos, cfd_only=cfd_only, 
             profit_only=profit_only, symbol=symbol, status_open=status_open)
+
+        if show:
+            saxo_helper.pprint_positions(pos)
 
         return pos
 
@@ -963,11 +967,23 @@ class Saxo:
 
     def close(self, position) -> Response:
         """ Close position """
+        # Current position details
         PositionId = position["PositionId"]
         pb = position["PositionBase"]
-        BuySell = "Sell" if pb["Amount"] > 0 else "Buy"
-        inserse_amount = pb["Amount"] * -1
-        
+        current_amount = position["PositionBase"]["Amount"]
+        current_BuySell = "Buy" if current_amount > 0 else "Sell"
+
+        # Prepare order
+        order_BuySell = "Sell" if current_BuySell == "Buy" else "Buy"
+        if current_BuySell == "Buy":
+            # If we want to set a SL on a LONG position (Buy), we want the order
+            # to be BuySell: "Sell" of the same amount as the current position.
+            order_amount = current_amount
+        if current_BuySell == "Sell":
+            # If we want to set a SL on a SHORT position (Sell), we want the order
+            # to be BuySell: "Buy" of the _inverse_ amount as the current position.
+            order_amount = current_amount * -1
+
         order = {
             "PositionId": PositionId,
             "Orders": [{
@@ -975,9 +991,9 @@ class Saxo:
                 "Uic": pb["Uic"],
                 "AssetType": pb["AssetType"],
                 "OrderType": "Market",
-                "BuySell": BuySell,
+                "BuySell": order_BuySell,
                 "ManualOrder": False,
-                "Amount": inserse_amount,
+                "Amount": order_amount,
                 "OrderDuration": {
                     "DurationType": "DayOrder"
                 },
@@ -987,7 +1003,7 @@ class Saxo:
 
         # Execute order
         self.logger.debug(order)
-        self.logger.info("Closing position: {}".format(PositionId))
+        self.logger.info(f"Closing position: {PositionId}")
         rsp = self.post(path="/trade/v2/orders", data=order)
         time.sleep(1) # Sleep to avoid rate limiting
         return rsp
