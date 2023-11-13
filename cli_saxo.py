@@ -121,13 +121,14 @@ if __name__ == '__main__':
             saxo.trade(signal=signal)
 
         # If tweet is provided
-        if tweet is not None:
+        elif tweet is not None:
             tdb = TweetsDB(config)
             doc = tdb.get_tweet(tweet)
             for signal in doc["signals"]:
                 saxo.trade(signal=signal)
-
-        logger.error("Something is not right..")
+        
+        else:
+            logger.error("Something is not right..")
 
     @click.command()
     def watch():
