@@ -18,6 +18,7 @@ ignore_tweets = [
     "1641890973302116358", # ALERT: Limit buy $SPX | IN: 4000 - 15 point stop
     "1645367498823352320", # REMOVED $SPX 4000 LIMIT BUY ORDER. |  | #HOUSEKEEPING |  | NARRATOR: HA HA HTTPS://T.CO/ZR5COSFEX9
     "1639263064758312965", # ALERT: Flat stopped $SPX (add-on)\n\nRe-entry long\nIN 397 - 10 pt stop
+    "1715013850490118431", # ALERT: flat stopped $RUT (add-on)\nRe-entry long\nIN: 17329- 10 pt stop..
     "1660904073049038848",
 ]
 
@@ -698,8 +699,8 @@ class SignalHelper:
         """
         # get all IN numbers from text
         text = self.normalize_text(text)
-        text = text.replace(":", " ") # replace : with space
-        text = text.replace("  ", " ") #remove double spaces
+        text = text.replace(":", " ") # Replace : with space
+        text = re.sub(r'\s+', ' ', text) # Remove double spaces
 
         out = re.findall(f'({inout}[\s|:])(\d+)', text) # --> IN:1234
         out = [int(i[1]) for i in out] # --> [1234]
