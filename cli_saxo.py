@@ -116,16 +116,18 @@ if __name__ == '__main__':
     @click.option('--tweet', default=None, type=str, help='Execute trades for a specific tweet id')
     def trade(signal, tweet):
         """ Execute trade(s) based on a signal or tweet id """
+        # If signal is provided
         if signal is not None:
             saxo.trade(signal=signal)
-        elif tweet is not None:
-            print(tweet)
+
+        # If tweet is provided
+        if tweet is not None:
             tdb = TweetsDB(config)
             doc = tdb.get_tweet(tweet)
             for signal in doc["signals"]:
                 saxo.trade(signal=signal)
-        else:
-            print("Something is not right..")
+
+        logger.error("Something is not right..")
 
     @click.command()
     def watch():
