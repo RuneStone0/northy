@@ -219,12 +219,11 @@ class TweetsDB:
 
         if isinstance(data, dict):
             # Handle basic dict data
-            self.logger.debug("Handling basic dict data")
             data["tid"] = str(data["tid"])  # Ensure tid is always a string
             _data = data
         else:
             # Handle tweepy.tweet.Tweet Object
-            self.logger.debug("Handling tweepy.tweet.Tweet Object")
+            self.logger.warning("Deprecated: tweepy.tweet.Tweet Object. Use dict instead.")
             _data = {
                 "tid": str(data.id),
                 "author_id": str(data.author_id),
@@ -237,6 +236,6 @@ class TweetsDB:
             self.pprint(_data, inserted=True)
         except DuplicateKeyError:
             tid = _data["tid"]
-            self.logger.debug(f"Tweet ({tid}) already exists")
+            self.logger.debug(f"Tweet {tid} already exists")
         except Exception as e:
             self.logger.error(e)
