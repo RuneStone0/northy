@@ -24,6 +24,7 @@ saxo_openapi
 pytest
 pytest-cov
 pytest-xdist
+pytest-dotenv
 
 # Email
 postmarker
