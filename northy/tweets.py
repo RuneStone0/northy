@@ -236,7 +236,7 @@ class TweetsDB:
             self.db.tweets.insert_one(_data)
             self.pprint(_data, inserted=True)
         except DuplicateKeyError:
-            self.logger.debug("Tweet already exists")
-            self.pprint(_data)
+            tid = _data["tid"]
+            self.logger.debug(f"Tweet ({tid}) already exists")
         except Exception as e:
             self.logger.error(e)
