@@ -193,3 +193,36 @@ def test_trade_buysell_all():
 
 def test_trade_flat():
     saxo.trade("SPX_FLAT")
+
+def test_scaleout_long():
+    """ Test scaleout of LONG position """
+    ## Open a new position, that we can scale out of
+    trade_size = saxo.profile["TradeSize"]["SPX"]
+    trade_size_scale = trade_size * 0.25
+    saxo.market(symbol="SPX", buy=True, amount=trade_size_scale)
+
+    ## Scale out
+    signal = "SPX_SCALEOUT_IN_3809_OUT_4153_POINTS_344"
+    rsp = saxo.trade(signal)
+    assert rsp.status_code == 200
+
+def test_scaleout_short():
+    """ Test scaleout of SHORT position """
+    ## Open a new position, that we can scale out of
+    trade_size = saxo.profile["TradeSize"]["SPX"]
+    trade_size_scale = trade_size * 0.25
+    saxo.market(symbol="SPX", buy=False, amount=trade_size_scale)
+
+    ## Scale out
+    signal = "SPX_SCALEOUT_IN_4153_OUT_3809_POINTS_344"
+    rsp = saxo.trade(signal)
+    assert rsp.status_code == 200
+
+@patch.object(Saxo, 'positions')
+def test_scaleout_no_positions(mock_positions):
+    """ Test scaleout when no position exists """
+    # Mock the data returned by Saxo.positions()
+    mock_positions.return_value = {'__count': 0, 'Data': []}
+    signal = "SPX_SCALEOUT_IN_4153_OUT_3809_POINTS_344"
+    rsp = saxo.trade(signal)
+    assert rsp == None
