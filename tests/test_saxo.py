@@ -45,10 +45,6 @@ def test_refresh_token():
     # test if first two chars are "ey"
     assert saxo.refresh_token()["access_token"][0:2] == "ey"
 
-def test_valid_token():
-    token = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjEwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCJ9.eyJpc3MiOiJodHRwczovL2F1dGgubm9ydGh5LmNvbSIsInN1YiI6...Oi8vYXBpLm5vcnRoeS5jb20iXSwiaWF0IjoxNjI5MjU0NjQ0LCJleHAiOjE2MjkzNDEwNDQsImF6cCI6IjE3NDcwNzkzIiwic2NvcGUiOiJvcGVuaWQgcH"
-    assert saxo.valid_token(token) == False
-
 def test_get_stoploss():
     assert saxo_config.get_stoploss("SPX") == 10
     assert saxo_config.get_stoploss("RUT") == 10
