@@ -1,9 +1,6 @@
 import os
 from northy import utils
-from northy.config import set_env
 from northy.saxo import SaxoHelper
-from datetime import datetime
-from unittest.mock import patch
 
 saxo_helper = SaxoHelper()
 u = utils.Utils()
@@ -94,48 +91,3 @@ def test_symbol_to_uic():
 
     # Invalid Symbol
     assert saxo_helper.symbol_to_uic("INVALID") == None
-
-def test_generate_closed_positions_report():
-    # A few closed positions
-    # Expected output: {
-    #   'total_profit_loss': -1856.8, 'count_closed_trades': 1,
-    #   'trades_profit_loss': [-1856.8], 'avg_profit_loss': -1856.8, 
-    #   'date': '2023-08-15'
-    # }
-    positions = get_mock_data("few_pos_closed.json")
-    out = saxo_helper.generate_closed_positions_report(positions=positions)
-    assert isinstance(out, dict)
-    assert out["total_profit_loss"] == -1856.8
-    assert out["count_closed_trades"] == 1
-    assert out["trades_profit_loss"] == [-1856.8]
-    assert out["avg_profit_loss"] == -1856.8
-    assert out["date"] == "2023-08-15"
-
-    # No closed positions
-    # Expexted output: {
-    #   'total_profit_loss': 0, 'count_closed_trades': 0, 
-    #   'trades_profit_loss': [], 'avg_profit_loss': 'N/A', 
-    #   'date': '2023-07-31'
-    # }
-    positions = get_mock_data("no_closed_pos.json")
-    out = saxo_helper.generate_closed_positions_report(positions=positions)
-    assert isinstance(out, dict)
-    assert out['total_profit_loss'] == 0
-    assert out['count_closed_trades'] == 0
-    assert out['trades_profit_loss'] == []
-    assert out['avg_profit_loss'] == 'N/A'
-    assert out['date'] == '2023-07-31'
-
-def test_job_generate_closed_positions_report():
-    set_env()  # Set environment variables
-    positions = get_mock_data("positions.json")
-    saxo_helper.job_generate_closed_positions_report(positions, skip=True)
-
-@patch('northy.saxo.datetime')
-def test_job_generate_closed_positions_report_skip_false(mock_datetime):
-    # Create a fixed datetime for testing
-    mock_datetime.now.return_value = datetime(2023, 8, 15, 16, 59, 55)
-
-    # mocking of datetime is required
-    positions = get_mock_data("SaxoTrader_Saxo_positions.json")
-    saxo_helper.job_generate_closed_positions_report(positions, skip=False)

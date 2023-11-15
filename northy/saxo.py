@@ -1133,7 +1133,6 @@ class SaxoHelper(Saxo):
         # Calculate minutes since post
         min_since_post = (now - created_at).total_seconds() / 60
         min_since_post = round(min_since_post)
-        self.logger.info(min_since_post)
 
         # Check if min_since_post is greater than max_age
         if min_since_post > max_age:
