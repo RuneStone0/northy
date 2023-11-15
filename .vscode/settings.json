@@ -1,0 +1,19 @@
+{
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.pytest_cache": true,
+        "**/.saxo-session": true,
+        "**/.coverage": true,
+        "**/.tox": true,
+        "**/venv": true,
+    },
+    "editor.rulers": [
+        80
+    ],
+    "editor.fontSize": 12,
+    "terminal.integrated.fontSize": 11,
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.pytestEnabled": true,
+}
