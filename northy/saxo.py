@@ -106,7 +106,8 @@ class Saxo:
         
         if __action == "SCALEOUT":
             # SPX_SCALEOUT_IN_3809_OUT_4153_POINTS_344
-            return namedtuple("signal", ["symbol", "action", "entry", "exit", "points", "raw"])(s[0], s[1], s[3], s[5], s[7], signal)
+            _entry, _exit, _points = float(s[3]), float(s[5]), float(s[7])
+            return namedtuple("signal", ["symbol", "action", "entry", "exit", "points", "raw"])(s[0], s[1], _entry, _exit, _points, signal)
 
         if __action == "FLAT":
             # SPX_FLAT
@@ -395,9 +396,28 @@ class Saxo:
             """ Set positions stop loss to flat """
             self.action_flat(symbol=s.symbol)
         if s.action == "SCALEOUT":
-            # TODO
-            self.logger.info("SCALEOUT not implemented yet")
-            pass
+            # Scale parameters
+            pos_size = self.profile["TradeSize"][s.symbol]
+            scale_size = pos_size * 0.25
+            positions = self.positions(cfd_only=True, profit_only=False,
+                                       show=True, symbol=s.symbol)
+
+            # Ensure we scaleout of an existing position
+            if positions["__count"] == 0:
+                self.logger.info("No positions found. Skipping..")
+                return None
+
+            # Initiate scaleout
+            pos_data = positions["Data"]
+            total_pos_size = sum(_p["PositionBase"]["Amount"] for _p in pos_data)
+            current_position_is_long = True if s.entry < s.exit else False
+            buy_scale_out = not current_position_is_long
+            self.logger.info(f"Scaling out {scale_size} of the {total_pos_size}\
+{s.symbol} position.")
+            order = self.market(symbol=s.symbol,
+                                amount=scale_size, 
+                                buy=buy_scale_out)
+            return order
         if s.action == "CLOSED":
             # Close latest positions that are not flat
             self.logger.debug(f"Closing recently opened {s.symbol} position")
@@ -514,45 +534,6 @@ class Saxo:
             exit_price = entry + stoploss
         return exit_price
 
-    def __action_trade(self, signal, order):
-        """
-            Handle Trade Orders 
-
-            Example signal:
-                SPX_TRADE_SHORT_IN_4162_SL_10
-        """
-        s = signal
-        accountKey = self.TraderConfig["SAXO_DEMO"]["AccountKey"]
-
-        # Market order
-        order["BuySell"] = "Buy" if s.direction == "LONG" else "Sell"  # Set BuySell value
-        order["Amount"] = self.config["TradeSize"][s.symbol]  # Set order quantity
-        order["AccountKey"] = accountKey
-        order["OrderDuration"] = { "DurationType": "DayOrder" }
-
-        # Stop Loss order
-        _SL_price = self.get_stoploss_price(s.entry, s.stoploss, order["BuySell"]) # Get stop loss price
-        _SL_BuySell_Direction = "Sell" if order["BuySell"] == "Buy" else "Buy"
-        stoploss_order = {
-            "Uic": order["Uic"],
-            "AccountKey": accountKey,
-            "AssetType": order["AssetType"],
-            "OrderType": "StopIfTraded",
-            "ManualOrder": False,
-            "BuySell": _SL_BuySell_Direction,
-            "Amount": order["Amount"],
-            "OrderDuration": { "DurationType": "GoodTillCancel" },
-            "OrderPrice": _SL_price,
-        }
-        order["Orders"] = [stoploss_order]
-        #order = {"AccountKey":"wlgQxI5-JzdhnV4s6BsDiA==","ManualOrder": False,"Uic":4913,"AssetType":"CfdOnIndex","OrderType":"Market","BuySell":"Buy","Amount":70,"OrderDuration":{"DurationType":"DayOrder"},"OrderRelation":"StandAlone","OrderContext":{"QuoteId":"638178880555876049","LastSeenClientBidPrice":4128.33,"LastSeenClientAskPrice":4129.23},"AppHint":17105153,"Orders":[{"AccountKey":"wlgQxI5-JzdhnV4s6BsDiA==","Uic":4913,"ManualOrder": False,"AssetType":"CfdOnIndex","Amount":70,"BuySell":"Sell","OrderDuration":{"DurationType":"GoodTillCancel"},"OrderPrice":4046.64,"OrderType":"StopIfTraded","AppHint":17105153}]}
-
-        self.logger.info("{} was converted to market order at ~{} with stop loss at {}".format(s.raw, s.entry, _SL_price))
-
-        # Execute order
-        rsp = self.__post(path="/trade/v2/orders", data=order)
-        time.sleep(2)
-
     def action_flat(self, symbol, profit_only=True):
         """ Execute FLATSTOP signal """
         # Get all profitable positions
@@ -587,25 +568,6 @@ class Saxo:
 
             if not is_flat:
                 self.set_stoploss(position=position, points=0)
-
-    def __action_scaleout(self, signal, order):
-        """ 
-            Create scale out order.
-
-            In Saxobank we cannot close a partial trade. Instead we create a new order in the opposite direction.
-            SaxoBank will eventually handle real-time netting of the two orders.
-        """
-        s = signal
-        self.logger.info(f"Handling scale out signal: {s.raw}")
-
-        order["BuySell"] = "Buy" if s.entry > s.exit else "Sell"        # Set BuySell value
-        order["Amount"] = self.config["TradeSize"][s.symbol] * 0.25     # Set amount (25% of trade size)
-        order["OrderType"] = self.config["OrderType"]                   # Set OrderType
-
-        self.logger.info("Scaling out by placing a {BuySell}ing {amount}".format(
-            amount=order["Amount"], 
-            BuySell=order["BuySell"])
-        )
 
     def __action_closed(self, signal, order):
         """ 
