@@ -1,6 +1,6 @@
 import logging
 from colorama import Fore, Style, init
-
+from northy.config import config
 init(autoreset=True)
 
 class ColoredFormatter(logging.Formatter):
@@ -53,7 +53,7 @@ class ColoredFormatter(logging.Formatter):
 def setup_logger():
     # Configure the root logger
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=config["LOG_LEVEL"],
         format='%(asctime)s - %(levelname)s - %(message)s',
         filename='northy.log',
         filemode='a',
@@ -62,7 +62,7 @@ def setup_logger():
 
     # Add a console handler for printing logs to the console
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.DEBUG)
+    console_handler.setLevel(config["LOG_LEVEL"])
     console_formatter = ColoredFormatter('%(asctime)s %(levelname)s %(message)s')
     console_handler.setFormatter(console_formatter)
     logging.getLogger('').addHandler(console_handler)
