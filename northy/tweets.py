@@ -5,7 +5,7 @@ import tweepy
 import logging
 from .db import Database
 from .config import config
-from termcolor import colored
+from northy.color import colored
 from pymongo import DESCENDING
 from pymongo.errors import DuplicateKeyError
 from datetime import datetime
@@ -130,9 +130,9 @@ class Tweets:
             # Handle Tweet data dict
             try:
                 _tid = str(tweet["tid"])
-                _author_id = tweet["author_id"]
-                _created_at = tweet["created_at"]
+                _created_at = tweet["created_at"][:-5]
                 _text = tweet["text"]
+                _text = ' '.join(_text.splitlines())
             except Exception as e:
                 self.logger.error(f"Error parsing {e} from {tweet}")
                 self.logger.error(tweet)
@@ -145,17 +145,12 @@ class Tweets:
         
         # Coloring
         inserted_indicator = colored("[+]", "green") if inserted else colored("[-]", "red")
-        tid_color = colored(_tid, "green")
-        author_id_color = colored(_author_id, "blue")
-        created_at_color = colored(_created_at, "red")
-        text_color = colored(' '.join(_text.splitlines()), "white")
+        tid_color = colored(_tid, "green") if inserted else colored(_tid, "red")
+        created_at_color = colored(_created_at, "white")
+        text_color = colored(_text, "blue")
 
         # Output to log
-        indicator = "[+]" if inserted else "[-]"
-        self.logger.debug(f"{indicator} {_tid} {_author_id} {_created_at} {_text}")
-
-        # Friendly print
-        print(inserted_indicator, tid_color, author_id_color, created_at_color, text_color)
+        self.logger.debug(f"{inserted_indicator} {tid_color} {created_at_color} {text_color}")
 
     def is_trading_hours(self, sleep=None):
         """
@@ -223,7 +218,7 @@ class TweetsDB:
             _data = data
         else:
             # Handle tweepy.tweet.Tweet Object
-            self.logger.warning("Deprecated: tweepy.tweet.Tweet Object. Use dict instead.")
+            #self.logger.warning("Deprecated: tweepy.tweet.Tweet Object. Use dict instead.")
             _data = {
                 "tid": str(data.id),
                 "author_id": str(data.author_id),
