@@ -2,7 +2,6 @@ tweepy
 python-dotenv
 Click
 colorama
-termcolor
 pyprowl
 PyJWT
 flask

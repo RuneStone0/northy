@@ -2,7 +2,7 @@ import re
 import sys
 import json
 import time
-from termcolor import colored
+from northy.color import colored
 from .db import Database
 from datetime import datetime
 from .prowl import Prowl
