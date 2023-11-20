@@ -7,7 +7,7 @@ from northy.tweets import TweetsDB
 from northy.prowl import Prowl
 
 if __name__ == '__main__':
-    setup_logger()
+    setup_logger(filename='saxo.log')
     logger = logging.getLogger(__name__)
 
     saxo = Saxo()

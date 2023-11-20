@@ -7,7 +7,7 @@ from northy.tweets import Tweets, TweetsDB
 tweets = Tweets(config)
 
 if __name__ == '__main__':
-    setup_logger()
+    setup_logger(filename='tweets.log')
     logger = logging.getLogger(__name__)
 
     @click.group()

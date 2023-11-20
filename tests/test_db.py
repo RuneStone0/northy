@@ -2,7 +2,7 @@ import tempfile
 import pytest
 from northy.db import Database
 from northy.logger import setup_logger
-setup_logger()
+setup_logger(filename='db.log')
 
 def test_db_mock():
     db = Database(production=False)

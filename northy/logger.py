@@ -1,3 +1,4 @@
+import os
 import logging
 from colorama import Fore, Style, init
 from northy.config import config
@@ -50,12 +51,16 @@ class ColoredFormatter(logging.Formatter):
 
         return log_msg
 
-def setup_logger():
+def setup_logger(filename="northy.log"):
+    # crete logs dir if it doesn't exist
+    if not os.path.exists("logs"):
+        os.makedirs("logs")
+
     # Configure the root logger
     logging.basicConfig(
         level=config["LOG_LEVEL"],
         format='%(asctime)s - %(levelname)s - %(message)s',
-        filename='northy.log',
+        filename=f'logs/{filename}',
         filemode='a',
         datefmt='%Y-%m-%d %H:%M:%S'
     )

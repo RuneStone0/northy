@@ -1,7 +1,5 @@
 from northy.signal2 import Signal, SignalHelper
 from northy.db import Database
-from northy.logger import setup_logger
-setup_logger()
 
 db = Database(production=False)
 signal = Signal(production=False)

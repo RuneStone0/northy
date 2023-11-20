@@ -6,7 +6,7 @@ from northy.prowl import Prowl
 from northy.config import config
 
 if __name__ == '__main__':
-    setup_logger()
+    setup_logger(filename='signal.log')
     logger = logging.getLogger(__name__)
 
     @click.group()
