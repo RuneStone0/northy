@@ -6,6 +6,7 @@ import logging
 from .db import Database
 from .config import config
 from northy.color import colored
+from datetime import timedelta
 from pymongo import DESCENDING
 from pymongo.errors import DuplicateKeyError
 from datetime import datetime
@@ -33,6 +34,9 @@ class Tweets:
             bearer_token=config["TWITTER_BEARER_TOKEN"],
             access_token=config["TWITTER_TOKEN_KEY"],
             access_token_secret=config["TWITTER_TOKEN_SECRET"],
+            # we do this, so we can interact with tweets as dict, regardless 
+            # if they are coming from Twitter API or MongoDB
+            return_type=dict,
             wait_on_rate_limit=True)
 
         # Set the pagination_token to None
@@ -78,20 +82,20 @@ class Tweets:
             user_auth=True,
             pagination_token=self.pagination_token  # Pass the pagination_token
         )
-
         # Check if no more tweets are available
-        next_token = tweets.meta.get('next_token')
+        next_token = tweets["meta"]["next_token"]
         if not next_token:
             logging.info("No more tweets available")
             sys.exit(0)
 
         # Process and store the tweets
-        for tweet in tweets.data:
+        for tweet in tweets["data"]:
             # Store the tweet in the database or perform any desired actions
+
             self.db.add_tweet(tweet)
 
         # Set the pagination_token to fetch the next batch of tweets
-        self.pagination_token = tweets.meta['next_token']
+        self.pagination_token = next_token
 
     def fetchall(self, user_id="897502744298258432"):
         """
@@ -101,12 +105,14 @@ class Tweets:
                 user_id (str): User ID to fetch tweets from (default: NTLiveStream)
         """
         while True:
-            self.get_user_tweets(user_id=user_id, max_results=100)
+            self.get_user_tweets(user_id=user_id, max_results=5)
+            #self.get_user_tweets(user_id=user_id, max_results=100)
             self.rate_limit_handler()
 
-    def me(self):
-        me = self.client.get_me()
-        self.logger.info(f"Authenticated as: {me.data.name} (@{me.data.username})")
+    def me(self) -> dict:
+        me = self.client.get_me()["data"]
+        name, username = me["name"], me["username"]
+        self.logger.info(f"Authenticated as: {name} (@{username})")
         return me
 
     def rate_limit_handler(self, sleep=None):
@@ -119,29 +125,18 @@ class Tweets:
         # Used to avoid waiting when unit testing
         sleep = rate_limit_per_user if sleep is None else sleep
 
-        self.logger.info(f"rate_limit_handler, waiting {sleep} seconds...")
+        self.logger.info(f"rate_limit_handler, waiting {int(sleep/60)} minutes...")
         time.sleep(sleep)
 
     def pprint(self, tweet, inserted=False):
         """
             Print tweet nicely
         """
-        if isinstance(tweet, dict):
-            # Handle Tweet data dict
-            try:
-                _tid = str(tweet["tid"])
-                _created_at = tweet["created_at"][:-5]
-                _text = tweet["text"]
-                _text = ' '.join(_text.splitlines())
-            except Exception as e:
-                self.logger.error(f"Error parsing {e} from {tweet}")
-                self.logger.error(tweet)
-                return None
-        else:
-            # Handle tweepy.tweet.Tweet Object
-            msg = "Parsing Tweet Objects are deprecated. Use dict instead."
-            self.logger.warning(msg)
-            return None
+        # Parse Tweet data
+        _tid = str(tweet["tid"])
+        _created_at = tweet["created_at"]
+        _text = tweet["text"]
+        _text = ' '.join(_text.splitlines())
         
         # Coloring
         inserted_indicator = colored("[+]", "green") if inserted else colored("[-]", "red")
@@ -152,36 +147,69 @@ class Tweets:
         # Output to log
         self.logger.debug(f"{inserted_indicator} {tid_color} {created_at_color} {text_color}")
 
-    def is_trading_hours(self, sleep=None):
+    def tweet_throttle(self) -> None:
         """
-            Check if it's trading hours
+            Throttle when to look for new tweets.
+            These functions are based on analysis found in
+            /temp/mongodb_charts_queries/*
         """
         # Set the timezone to US Central Time
-        
-
         us_central_timezone = ZoneInfo('America/Chicago')
-
-        # if not weekday, sleep for 1 hour
-        if datetime.now(tz=us_central_timezone).weekday() >= 5:
-            sleep_minutes = 60
-            sleep = sleep_minutes if sleep is None else sleep  # Used to avoid waiting when unit testing
-            self.logger.info(f"It's the weekend. Sleeping for {sleep} minutes..")
-            time.sleep(sleep)
-            return False
-
-        # if time is not between 8:30 and 15:00 Central Time, sleep for 15 minutes
         now = datetime.now(tz=us_central_timezone)
-        trading_start_time = now.replace(hour=8, minute=30, second=0, microsecond=0)
-        trading_end_time = now.replace(hour=15, minute=0, second=0, microsecond=0)
 
-        if now < trading_start_time or now > trading_end_time:
-            sleep_minutes = 15
-            sleep = sleep_minutes * 60 if sleep is None else sleep  # Used to avoid waiting when unit testing
-            self.logger.info(f"It's not trading hours. Sleeping for {sleep} minutes..")
-            time.sleep(sleep)
-            return False
-        
-        return True
+        def __saturday():
+            """ Skip Saturday """
+            if now.weekday() == 5:
+                # sleep until Sunday
+                sleep_time = (now.replace(hour=23, minute=59, second=59) - now).total_seconds()
+                time.sleep(sleep_time)
+                self.logger.info(f"It's Saturday. Sleep until Sunday..")
+        __saturday()
+
+        def __sunday():
+            """ On Sunday, only look for tweets between 17:00 and 18:00 """
+            sunday = now.weekday() == 6
+            if sunday and now.hour == 17:
+                # It's Sunday and 17:00
+                # We check for new tweets every 10min.
+                sleep_time = 10
+                self.logger.info(f"It's {now.weekday()} on {now.hour}th hour. Sleeping for {sleep_time} minutes..")
+                time.sleep(sleep_time * 60)
+            elif sunday and now.hour < 17:
+                # It's Sunday, but not 17:00 yet, sleep until then
+                sleep_time = (now.replace(hour=17, minute=0, second=0) - now).total_seconds()
+                self.logger.info(sleep_time)
+                self.logger.info("It's Sunday but not 17:00 yet. Sleeping {sleep_time} seconds..")
+            elif sunday and now.hour > 17:
+                # It's Sunday, but past 17:00
+                # Sleep until Monday
+                sleep_time = (now.replace(hour=23, minute=59, second=59) - now).total_seconds()
+                time.sleep(sleep_time)
+                self.logger.info(f"It's Sunday, but past 17:00. Sleep until Monday..")
+            else:
+                # It's not Sunday
+                pass
+        __sunday()
+
+        def __weekday():
+            # Its not a weekday, move on
+            if now.weekday() >= 5:
+                return None
+
+            # Its a weekday! We generally check for tweets all day, except
+            # between 16:00 and 01:00 we'll only check once every hour
+            weekday_msg = f"It's a weekday on {now.hour}th hour."
+            off_hours = "We only check for new Tweets every hour betwwen 16-01"
+            if now.hour >= 16 or now.hour <= 1:
+                # We check for new tweets every full hour
+                sleep_time = (timedelta(hours=1) - timedelta(minutes=now.minute, seconds=now.second)).total_seconds()
+                sleep_msg = f"Sleeping for {int(sleep_time / 60)} minutes.."
+                self.logger.info(f"{weekday_msg} {off_hours} {sleep_msg}")
+                time.sleep(sleep_time)
+            else:
+                # We don't have any delays on weekdays during peak hours
+                self.logger.debug(f"{weekday_msg} Go look for tweets..")
+        __weekday()
         
 class TweetsDB:
     def __init__(self, config):
@@ -206,25 +234,17 @@ class TweetsDB:
         doc =  self.db.tweets.find_one({}, sort=[("created_at", DESCENDING)])
         return doc
     
-    def add_tweet(self, data):
+    def add_tweet(self, tweet):
         """
             Add a tweet to the database.
         """
-        _data = None
-
-        if isinstance(data, dict):
-            # Handle basic dict data
-            data["tid"] = str(data["tid"])  # Ensure tid is always a string
-            _data = data
-        else:
-            # Handle tweepy.tweet.Tweet Object
-            #self.logger.warning("Deprecated: tweepy.tweet.Tweet Object. Use dict instead.")
-            _data = {
-                "tid": str(data.id),
-                "author_id": str(data.author_id),
-                "created_at": data.created_at,
-                "text": data.text,
-            }
+        created_at = datetime.strptime(tweet["created_at"], '%Y-%m-%dT%H:%M:%S.%fZ')
+        _data = {
+            "tid": str(tweet["id"]),
+            "author_id": str(tweet["author_id"]),
+            "created_at": created_at,
+            "text": tweet["text"],
+        }
 
         try:
             self.db.tweets.insert_one(_data)
