@@ -133,7 +133,7 @@ class Tweets:
             Print tweet nicely
         """
         # Parse Tweet data
-        _tid = str(tweet["tid"])
+        _tid = str(tweet["id"])
         _created_at = tweet["created_at"]
         _text = tweet["text"]
         _text = ' '.join(_text.splitlines())
