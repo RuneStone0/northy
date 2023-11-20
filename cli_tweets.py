@@ -4,6 +4,7 @@ import logging
 from northy.config import config
 from northy.logger import setup_logger
 from northy.tweets import Tweets, TweetsDB
+from northy.prowl import Prowl
 tweets = Tweets(config)
 
 if __name__ == '__main__':
@@ -61,23 +62,25 @@ if __name__ == '__main__':
 
         while True:
             # only fetch tweets when needed
-            #tweets.tweet_throttle()
+            tweets.tweet_throttle()
 
             # Attempt to fetch new tweets
             try:
                 if not found_max_tweets:
                     # By default, we only fetch 5 tweets at a time
-                    data = tweets.fetch(since_id=latest_twitter_id).data
+                    data = tweets.fetch(since_id=latest_twitter_id)["data"]
                 else:
                     # If we found 5 tweets on previous run, we fetch more next time
-                    data = tweets.fetch(since_id=latest_twitter_id, max_results=25).data
+                    data = tweets.fetch(since_id=latest_twitter_id, max_results=25)["data"]
                 
                 # Logic that decides if we should fetch more tweets next time
-                logger.info(f"Found {len(data)} tweets")
                 if len(data) == 5:
+                    logger.info(f"Found {len(data)} tweets. Bump next fetch to 25 tweets.")
                     found_max_tweets = True
             except Exception as e:
-                logger.error(e)
+                logger.error(f"cli_tweets.py unexpected error", exc_info=True)
+                prowl = Prowl(API_KEY=config["PROWL_API_KEY"])
+                prowl.send(f"cli_tweets.py unexpected error")
                 time.sleep(60)
                 continue
 
