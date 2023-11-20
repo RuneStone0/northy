@@ -57,23 +57,39 @@ if __name__ == '__main__':
 
         tweetsdb = TweetsDB(config)
         latest_twitter_id = tweetsdb.get_latest()['tid']
+        found_max_tweets = False
 
         while True:
-            # only fetch tweets during trading hours
-            if tweets.is_trading_hours():
-                try:
+            # only fetch tweets when needed
+            #tweets.tweet_throttle()
+
+            # Attempt to fetch new tweets
+            try:
+                if not found_max_tweets:
+                    # By default, we only fetch 5 tweets at a time
                     data = tweets.fetch(since_id=latest_twitter_id).data
-                except Exception as e:
-                    logger.error(e)
-                    time.sleep(60)
-                    continue
+                else:
+                    # If we found 5 tweets on previous run, we fetch more next time
+                    data = tweets.fetch(since_id=latest_twitter_id, max_results=25).data
+                
+                # Logic that decides if we should fetch more tweets next time
+                logger.info(f"Found {len(data)} tweets")
+                if len(data) == 5:
+                    found_max_tweets = True
+            except Exception as e:
+                logger.error(e)
+                time.sleep(60)
+                continue
 
-                for tweet in data:
-                    inserted = tweetsdb.add_tweet(tweet)
-                    tweets.pprint(tweet=tweet, inserted=inserted)
+            # Process and store the tweets
+            for tweet in data:
+                inserted = tweetsdb.add_tweet(tweet)
+                tweets.pprint(tweet=tweet, inserted=inserted)
 
-                latest_twitter_id = tweetsdb.get_latest()['tid']
-                tweets.rate_limit_handler()
+            # Update the latest_twitter_id to fetch from
+            latest_twitter_id = tweetsdb.get_latest()['tid']
+
+            tweets.rate_limit_handler() # Roughly 3 min. delay
 
     cli.add_command(me)
     cli.add_command(search)
