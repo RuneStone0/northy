@@ -1,7 +1,7 @@
 from northy.logger import setup_logger
 import logging
 
-def test_():
+def test_logger():
     logger = logging.getLogger(__name__)
     assert setup_logger() == None
     logger.debug("Test logger")
