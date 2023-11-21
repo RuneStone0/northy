@@ -24,6 +24,7 @@ class Noc:
             self.__set_db_path()
         else:
             self.db_path = wpndatabase_path
+        self.logger.info(f"Using: {self.db_path}")
 
     def __set_db_path(self):
         # Get path to noc db
@@ -123,11 +124,18 @@ class Noc:
     def process_notification(self):
         notifications = self.get_notifications()
         for notification in notifications:
+            # Check if notification is a tweet
+            is_tweet = "twitter" in notification.get("payload", {}).get("toast", {}).get("@launch", "")
+            if is_tweet == False:
+                self.logger.debug(f"Ignore non-Twwet notification")
+                continue
+
+            # Tweet notification
             data = self.notification_to_tweet(notification)
             if data["from"] == "Northy":
                 self.db.add_tweet(data)
             else:
-                self.logger.debug(f"Ignore notification: {data}")
+                self.logger.debug(f"Ignore Tweet: {data}")
             
             # Delete notification after processing
             self.delete_notification(notification["id"])
@@ -137,4 +145,4 @@ class Noc:
             self.process_notification()
             
             # Check for new notifications every second
-            time.sleep(5)
+            time.sleep(1)
