@@ -24,6 +24,7 @@ class Noc:
             self.__set_db_path()
         else:
             self.db_path = wpndatabase_path
+        self.logger.critical("Keep the browser open to receive notifications!")
         self.logger.info(f"Using: {self.db_path}")
 
     def __set_db_path(self):
