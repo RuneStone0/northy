@@ -126,17 +126,18 @@ class Noc:
         for notification in notifications:
             # Check if notification is a tweet
             is_tweet = "twitter" in notification.get("payload", {}).get("toast", {}).get("@launch", "")
-            if is_tweet == False:
-                self.logger.debug(f"Ignore non-Twwet notification")
-                continue
 
-            # Tweet notification
-            data = self.notification_to_tweet(notification)
-            if data["from"] == "Northy":
-                self.db.add_tweet(data)
+            if is_tweet:
+                # Tweet notification
+                data = self.notification_to_tweet(notification)
+                if data["from"] == "Northy":
+                    self.db.add_tweet(data)
+                else:
+                    self.logger.debug(f"Ignore Tweet: {data}")
             else:
-                self.logger.debug(f"Ignore Tweet: {data}")
-            
+                # Non-Tweet notification
+                self.logger.debug(f"Ignore non-Twwet notification")
+
             # Delete notification after processing
             self.delete_notification(notification["id"])
 
