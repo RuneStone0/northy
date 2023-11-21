@@ -1,8 +1,6 @@
 import tempfile
 import pytest
 from northy.db import Database
-from northy.logger import setup_logger
-setup_logger(filename='db.log')
 
 def test_db_mock():
     db = Database(production=False)
@@ -39,3 +37,19 @@ def test_backup(temp_folder):
     db = Database(connection_string=connection_string)
     result = db.backup(output_directory=temp_folder)
     assert result is None, "Backup should complete without errors"
+
+def test_add_tweet():
+    db = Database(production=False)
+
+    # New Insert
+    data = {"tid": "1234567890", "from": "test", "text": "test"}
+    add_tweet = db.add_tweet(data)
+    assert isinstance(add_tweet, bool)
+    assert add_tweet == True
+
+    # Test when tweet already exists
+    add_tweet = db.add_tweet(data)
+    assert isinstance(add_tweet, bool)
+    assert add_tweet == False
+
+    add_tweet = db.add_tweet("")

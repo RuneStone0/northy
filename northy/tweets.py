@@ -91,7 +91,6 @@ class Tweets:
         # Process and store the tweets
         for tweet in tweets["data"]:
             # Store the tweet in the database or perform any desired actions
-
             self.db.add_tweet(tweet)
 
         # Set the pagination_token to fetch the next batch of tweets
@@ -133,7 +132,7 @@ class Tweets:
             Print tweet nicely
         """
         # Parse Tweet data
-        _tid = str(tweet["id"])
+        _tid = str(tweet["tid"])
         _created_at = tweet["created_at"]
         _text = tweet["text"]
         _text = ' '.join(_text.splitlines())
@@ -239,8 +238,13 @@ class TweetsDB:
             Add a tweet to the database.
         """
         created_at = datetime.strptime(tweet["created_at"], '%Y-%m-%dT%H:%M:%S.%fZ')
+        try:
+            tid = tweet["tid"]
+        except KeyError:
+            tid = tweet["id"]
+
         _data = {
-            "tid": str(tweet["id"]),
+            "tid": str(tid),
             "author_id": str(tweet["author_id"]),
             "created_at": created_at,
             "text": tweet["text"],
