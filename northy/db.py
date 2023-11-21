@@ -1,8 +1,10 @@
 import os
 import logging
 from pymongo import MongoClient
+from pymongo.errors import DuplicateKeyError
 from datetime import datetime
-from .config import config
+from northy.color import colored
+from northy.config import config
 import mongomock
 import bson
 
@@ -67,3 +69,38 @@ class Database(object):
         
         print(f"Backup of '{self.db.tweets.name}' collection saved to '{backup_file_path}'")
 
+    def pprint(self, tweet, inserted=False):
+        """
+            Print tweet nicely
+        """
+        # Parse Tweet data
+        _tid = str(tweet["tid"])
+        _created_at = tweet["created_at"]
+        _text = tweet["text"]
+        _text = ' '.join(_text.splitlines())
+        
+        # Coloring
+        inserted_indicator = colored("[+]", "green") if inserted else colored("[-]", "red")
+        tid_color = colored(_tid, "green") if inserted else colored(_tid, "red")
+        created_at_color = colored(_created_at, "white")
+        text_color = colored(_text, "blue")
+
+        # Output to log
+        self.logger.debug(f"{inserted_indicator} {tid_color} {created_at_color} {text_color}")
+
+    def add_tweet(self, data) -> bool:
+        """
+            Add a tweet to the database.
+        """
+        try:
+            data["created_at"] = datetime.now()
+            self.db.tweets.insert_one(data)
+            self.pprint(data, inserted=True)
+            return True
+        except DuplicateKeyError:
+            tid = data["tid"]
+            self.logger.debug(f"Tweet {tid} already exists")
+        except Exception as e:
+            self.logger.error(e)
+        
+        return False
