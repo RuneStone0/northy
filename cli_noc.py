@@ -13,10 +13,11 @@ if __name__ == '__main__':
         pass
 
     @click.command()
-    def watch():
+    @click.option('--path', required=False, default=None, type=str, help='Path to wpndatabase')
+    def watch(path):
         """
         """
-        noc = Noc()
+        noc = Noc(wpndatabase_path=path)
         noc.watch()
 
     cli.add_command(watch)

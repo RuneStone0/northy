@@ -19,6 +19,7 @@ class Noc:
         self.db = Database(production=self.production)
 
         # Prepare class
+        self.__prepare_cache()
         self.__check_os()
         if wpndatabase_path is None:
             self.__set_db_path()
@@ -26,6 +27,19 @@ class Noc:
             self.db_path = wpndatabase_path
         self.logger.critical("Keep the browser open to receive notifications!")
         self.logger.info(f"Using: {self.db_path}")
+
+    def __prepare_cache(self):
+        """
+            Cache is used to keep track of which notifications have already been processed.
+            This is necessary because the notifications are not deleted from the database.
+            Using a cache presents us from making unnecessary database queries.
+            The cache is a list of notification ids.
+
+            When the cache reaches a certain size, we clean it up, to avoid memory issues.
+        """
+        self.cache = []
+        self.cache_max = 100
+        self.cache_clean = self.cache_max / 2
 
     def __set_db_path(self):
         # Get path to noc db
@@ -112,6 +126,9 @@ class Noc:
         return tweet
 
     def delete_notification(self, _id):
+        # TODO: Delete this once proven that its not needed
+        # Deleting notifications from the database is not working
+        # Using cachce to avoid unnecessary database queries
         """ Delete a notification from the database """
         conn = sqlite3.connect(self.db_path)
         cur = conn.cursor()
@@ -125,6 +142,11 @@ class Noc:
     def process_notification(self):
         notifications = self.get_notifications()
         for notification in notifications:
+            nid = notification["id"]
+            if nid in self.cache:
+                #self.logger.info(f"Notification {nid} already processed")
+                continue
+
             # Check if notification is a tweet
             is_tweet = "twitter" in notification.get("payload", {}).get("toast", {}).get("@launch", "")
 
@@ -134,13 +156,16 @@ class Noc:
                 if data["from"] == "Northy":
                     self.db.add_tweet(data)
                 else:
-                    self.logger.debug(f"Ignore Tweet: {data}")
+                    self.logger.debug(f"Ignore non-Northy Tweet: {data}")
             else:
                 # Non-Tweet notification
                 self.logger.debug(f"Ignore non-Twwet notification")
 
-            # Delete notification after processing
-            self.delete_notification(notification["id"])
+            # Add notification id to cache and clean it if necessary
+            self.cache.append(nid)
+            if len(self.cache) >= self.cache_max:
+                print(f"Remove {self.cache_clean} items from cache")
+                for _ in range(self.cache_clean): self.cache.pop(0)
 
     def watch(self):
         while True:
