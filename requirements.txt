@@ -29,5 +29,4 @@ pytest-dotenv
 postmarker
 
 # Windows Notification Center
-winrt
 xmltodict
