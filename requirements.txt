@@ -27,3 +27,7 @@ pytest-dotenv
 
 # Email
 postmarker
+
+# Windows Notification Center
+winrt
+xmltodict
