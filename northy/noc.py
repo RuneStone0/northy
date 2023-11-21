@@ -116,6 +116,9 @@ class Noc:
         tid = toast["@launch"].split("|")[-1].split("-")[-1]
         _from = toast["visual"]["binding"]["text"][0]
         _text = toast["visual"]["binding"]["text"][1]
+        # Text is none, when only a picture is posted
+        if _text is None:
+            _text = ""
         
         _text = re.sub(r'\s+', ' ', _text)
         tweet = {
