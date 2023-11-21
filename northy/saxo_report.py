@@ -1,8 +1,8 @@
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
 import time
-from .email import Email
 import logging
+from zoneinfo import ZoneInfo
+from northy.email import Email
+from datetime import datetime, timedelta
 
 class SaxoReport:
     def __init__(self) -> None:
