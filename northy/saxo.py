@@ -20,27 +20,25 @@ utils = Utils()
 # create random context that contain letters (a-z) and numbers (0-9) as well as - (dash) and _ (underscore). It is case insensitive. Max length is 50 characters.
 ContextId = ''.join(random.choice(string.ascii_letters + string.digits + '-_') for i in range(50))
 ReferenceId = ''.join(random.choice(string.ascii_letters + string.digits + '-_') for i in range(50))
+saxo_tickers = utils.read_json(filename="conf/saxo_tickers.js")[0]
+saxo_config = utils.read_json(filename="conf/saxo_config.js")[0]
+
 
 class SaxoConfig:
-    def __init__(self, config_file="saxo_config.json"):
+    def __init__(self):
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
-
-        self.load_config(filename=config_file)
-
-    def load_config(self, filename):
-        """ Read config from file """
-        with open(filename, "r") as file:
-            config = json.load(file)
-        self.config = config
-    
+        
+        self.tickers = saxo_tickers
+        self.config = saxo_config
+        
     def get_stoploss(self, symbol):
         """
             Lookup default stoploss points for a symbol.
         """
         symbol = symbol.upper()
         try:
-            stoploss_points = self.config["tickers"][symbol]["stoploss_points"]
+            stoploss_points = self.tickers[symbol]["stoploss_points"]
             return stoploss_points
         except Exception as e:
             # Setting arbitrary SL for unknown symbols
@@ -48,22 +46,20 @@ class SaxoConfig:
             return 9
 
     def get_asset_type(self, uic):
-        tickers = self.config["tickers"]
-        for ticker, info in tickers.items():
+        for ticker, info in saxo_tickers.items():
             if info['Uic'] == uic:
                 return info['AssetType']
         return None
         
 class Saxo:
-    def __init__(self, config_file="saxo_config.json", profile_name="default"):
+    def __init__(self, profile_name="default"):
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
 
         # Set trade account config
-        self.saxo_config = SaxoConfig()
-        self.config = self.saxo_config.config
+        self.config = saxo_config
         self.set_profile(profile_name)
-        self.tickers = self.config["tickers"]
+        self.tickers = saxo_tickers
 
         # Misc vars
         self.session_filename = ".saxo-session"
@@ -1065,11 +1061,12 @@ class Saxo:
         return rsp
 
 # Create a SaxoHelper class that inherits from Saxo
-class SaxoHelper(Saxo):
-    def __init__(self, config_file="saxo_config.json", profile_name="default"):
-        super().__init__(config_file, profile_name)
-        self.logger = self.logger
-        self.config = self.config
+class SaxoHelper():
+    def __init__(self):
+        # Create a logger instance for the class
+        self.logger = logging.getLogger(__name__)
+
+        self.config = saxo_config
 
     def doc_older_than(self, document, max_age=15):
         """
@@ -1235,10 +1232,8 @@ class SaxoHelper(Saxo):
                 saxo.uic_to_symbol(4162) --> SPX
         """
         # TODO: Split this into two separate functions
-        TABLE = self.config["tickers"]
-
         uic = int(uic)
-        for symbol, v in TABLE.items():
+        for symbol, v in saxo_tickers.items():
             if v["Uic"] == uic:
                 return symbol
         
@@ -1257,10 +1252,9 @@ class SaxoHelper(Saxo):
             Example:
                 saxo.symbol_to_uic("SPX") --> 4162
         """
-        TABLE = self.config["tickers"]
         symbol = symbol.upper()
         try:
-            ret = TABLE[symbol]["Uic"]
+            ret = saxo_tickers[symbol]["Uic"]
             return ret
         except Exception:
             self.logger.error(f"symbol_to_uic failed for {symbol}")
