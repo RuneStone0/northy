@@ -1,4 +1,3 @@
-import os
 import logging
 from northy.config import config
 from postmarker.core import PostmarkClient

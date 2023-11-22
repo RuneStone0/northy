@@ -1,10 +1,10 @@
 import time
 import click
 import logging
+from northy.prowl import Prowl
 from northy.config import config
 from northy.logger import setup_logger
 from northy.tweets import Tweets, TweetsDB
-from northy.prowl import Prowl
 tweets = Tweets(config)
 
 if __name__ == '__main__':

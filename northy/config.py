@@ -1,6 +1,6 @@
 import os
 from dotenv import dotenv_values
-from .utils import Utils
+from northy.utils import Utils
 utils = Utils()
 
 config = {

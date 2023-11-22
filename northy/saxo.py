@@ -1,14 +1,12 @@
 from zoneinfo import ZoneInfo
 import dateutil.parser
-from datetime import datetime
 import jwt
 import requests
 from requests import Response
 import pandas as pd
 import random, string
 import time, uuid, json
-from .email import Email
-from .utils import Utils
+from northy.utils import Utils
 from datetime import datetime, timezone
 from collections import namedtuple
 from saxo_openapi import API
