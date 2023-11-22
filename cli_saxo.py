@@ -1,10 +1,10 @@
 import click
 import logging
+from northy.prowl import Prowl
+from northy.config import config
+from northy.tweets import TweetsDB
 from northy.logger import setup_logger
 from northy.saxo import Saxo, SaxoHelper
-from northy.config import config, set_env
-from northy.tweets import TweetsDB
-from northy.prowl import Prowl
 
 if __name__ == '__main__':
     setup_logger(filename='saxo.log')

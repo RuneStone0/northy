@@ -1,17 +1,15 @@
-import os
 import sys
+import time
 import time
 import tweepy
 import logging
-from .db import Database
-from .config import config
+from northy.db import Database
+from northy.config import config
 from northy.color import colored
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pymongo import DESCENDING
 from pymongo.errors import DuplicateKeyError
-from datetime import datetime
 from zoneinfo import ZoneInfo
-import time
 
 class Tweets:
     """

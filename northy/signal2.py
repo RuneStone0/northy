@@ -2,13 +2,13 @@ import re
 import sys
 import json
 import time
-from northy.color import colored
-from .db import Database
-from datetime import datetime
-from .prowl import Prowl
-from .config import config
-from .saxo import SaxoConfig
 import logging
+from datetime import datetime
+from northy.prowl import Prowl
+from northy.db import Database
+from northy.color import colored
+from northy.config import config
+from northy.saxo import SaxoConfig
 
 ignore_tweets = [
     "1557516667357380608", # FLAT STOPPED $SPX | RE-ENTRY SHORT | IN 4211 - 10 PT STOP. | ADJUSTED $NDX STOP TO -25. |  | TAKING THE STOP RISK OVERNIGHT

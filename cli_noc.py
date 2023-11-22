@@ -1,4 +1,3 @@
-import time
 import click
 import logging
 from northy.noc import Noc
