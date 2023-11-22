@@ -6,6 +6,7 @@ pyprowl
 PyJWT
 flask
 pandas
+jsmin
 
 # Logging
 colorlog
