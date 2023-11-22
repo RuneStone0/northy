@@ -26,6 +26,7 @@ class Noc:
         else:
             self.db_path = wpndatabase_path
         self.logger.critical("Keep the browser open to receive notifications!")
+        self.logger.critical("Make sure Twitter notification is enabled (https://twitter.com/settings/push_notifications). This setting is managed per-browser and not per Twitter account. Thus, you need to enable it for each browser you use.")
         self.logger.info(f"Using: {self.db_path}")
 
     def __prepare_cache(self):
@@ -59,14 +60,14 @@ class Noc:
         # connect to the database
         conn = sqlite3.connect(self.db_path)
         cur = conn.cursor()
-        cur.execute("SELECT * FROM Notification")
+        cur.execute("SELECT * FROM Notification WHERE type = 'toast'")
         for row in cur.fetchall():
             # extract data from rows
             order = row[0]
             _id = row[1]
             #handler_id = row[2]
             #activity_id = row[3]
-            _type = row[4]
+            #_type = row[4]
             payload = row[5]
             #tag = row[6]
             #group = row[7]
@@ -77,10 +78,6 @@ class Noc:
             #boot_id = row[12]
             #expires_on_reboot = row[13]
 
-            # skip if not a toast notification
-            if _type != "toast":
-                continue
-            
             # convert relevant data to dict
             notidication = {
                 "order": order,
@@ -159,7 +156,8 @@ class Noc:
                 if data["from"] == "Northy":
                     self.db.add_tweet(data)
                 else:
-                    self.logger.debug(f"Ignore non-Northy Tweet: {data}")
+                    data_print = "{}: {}".format(data["from"], data["text"])
+                    self.logger.debug(f"Ignore non-Northy Tweet: {data_print}")
             else:
                 # Non-Tweet notification
                 self.logger.debug(f"Ignore non-Twwet notification")
@@ -167,7 +165,7 @@ class Noc:
             # Add notification id to cache and clean it if necessary
             self.cache.append(nid)
             if len(self.cache) >= self.cache_max:
-                print(f"Remove {self.cache_clean} items from cache")
+                self.logger.debug(f"Remove {self.cache_clean} items from cache")
                 for _ in range(self.cache_clean): self.cache.pop(0)
 
     def watch(self):

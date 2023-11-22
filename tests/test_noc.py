@@ -9,7 +9,9 @@ def test_process_notification():
     files = [
         'wpndatabase.db',  # contains only tweets
         'wpndatabase-surfacex.db',  # contains no tweets (important for testing)
-        'wpndatabase-windows10.db'
+        'wpndatabase-windows10.db',
+        'wpndatabase-meme.db', # contains tweets without text, only images
+        'wpndatabase-whatsapp.db' # contains db rows that are un-parseable
     ]
     for file in files:
         original_path = f'tests/noc/{file}'
