@@ -35,7 +35,7 @@ class Saxo:
         self.tickers = saxo_tickers
 
         # Misc vars
-        self.session_filename = ".saxo-session"
+        self.session_filename = ".saxo-session-{}".format(self.profile["username"])
         self.base_url = self.environment["OpenApiBaseUrl"]
         self.state = str(uuid.uuid4())
 
