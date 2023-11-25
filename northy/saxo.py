@@ -1,3 +1,5 @@
+import os
+import sys
 from zoneinfo import ZoneInfo
 import dateutil.parser
 import jwt
@@ -24,14 +26,14 @@ saxo_tickers = utils.read_json(filename="conf/saxo_tickers.js")[0]
 saxo_config = utils.read_json(filename="conf/saxo_config.js")[0]
 
 class Saxo:
-    def __init__(self, profile_name="default"):
+    def __init__(self):
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
         self.saxo_helper = SaxoHelper()
 
         # Set trade account config
         self.config = saxo_config
-        self.set_profile(profile_name)
+        self.set_profile()
         self.tickers = saxo_tickers
 
         # Misc vars
@@ -44,16 +46,17 @@ class Saxo:
         self.token = self.__get_bearer()
         self.client = API(access_token=self.token)
 
-    def set_profile(self, profile_name):
-        """ Set profile """
-        self.profile_name = profile_name
-        self.profile = self.config["profiles"][self.profile_name]
+    def set_profile(self):
+        """ Set profile based on environment variable SAXO_PROFILE """
+        profile_name = os.getenv("SAXO_PROFILE", "default")
+        self.profile = self.config["profiles"][profile_name]
+        profile_description = self.profile["description"]
         self.environment_name = self.profile["environment"]
         self.environment = self.config["environments"][self.environment_name]
         self.username = self.profile["username"]
         self.password = self.profile["password"]
-
-        self.logger.info(f"Using profile: {self.profile_name} ({self.environment_name})")
+        self.logger.info(f"Saxo profile: {profile_name} ({profile_description})")
+        self.logger.info(f"Saxo Environment: {self.environment_name}")
 
     def signal_to_tuple(self, signal):
         """ 
@@ -98,16 +101,24 @@ class Saxo:
         # Vars
         auth_endpoint = self.environment["AuthorizationEndpoint"]
         client_id = self.environment["AppKey"]
-        redirect_uri = self.environment["RedirectUrls"][1]
+        redirect_uri = self.environment["RedirectUrls"][0]
 
         url = f"{auth_endpoint}?response_type=code&client_id={client_id}&state={self.state}&redirect_uri={redirect_uri}"
         self.logger.debug(f"GET {url}")
         r = self.s.get(url, allow_redirects=False)
+
+        if r.status_code == 400:
+            self.logger.error("400 Bad Request")
+            self.logger.error(r.content)
+            self.logger.error("Ensure you've added localhsot to the App Redirect URLs")
+            raise Exception("400 Bad Request")
+
         redirect_url = r.headers["Location"]
         return redirect_url
 
     def __manual_auth(self, redirect_url):
         """ Authenticate "manually" using user/pass """
+        self.logger.info("Authenticating manually using user/pass")
         def __parse_url(url):
             """ Parse URL and return query string as dict """
             from urllib.parse import urlparse, parse_qs
@@ -144,7 +155,7 @@ class Saxo:
 
     def __access_token(self, auth_code, grant_type):
         # Vars
-        redirect_uri = self.environment["RedirectUrls"][1]
+        redirect_uri = self.environment["RedirectUrls"][0]
         token_endpoint = self.environment["TokenEndpoint"]
         app_key = self.environment["AppKey"]
         app_secret = self.environment["AppSecret"]

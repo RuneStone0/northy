@@ -1,3 +1,4 @@
+import os
 import click
 import logging
 from northy.prowl import Prowl
@@ -10,24 +11,26 @@ if __name__ == '__main__':
     setup_logger(filename='saxo.log')
     logger = logging.getLogger(__name__)
 
-    saxo = Saxo()
-
     @click.group()
-    def cli():
-        pass
+    @click.option('--profile', required=False, type=str, help='Set Saxo Profile')
+    @click.pass_context
+    def cli(ctx, profile):
+        ctx.ensure_object(dict)
+        os.environ["SAXO_PROFILE"] = profile
 
-    @click.command()
+    @cli.command()
     def positions():
         """ List positions """
+        saxo = Saxo()
         positions = saxo.positions(cfd_only=False, profit_only=False)
         saxo_helper = SaxoHelper()
         saxo_helper.pprint_positions(positions)
 
-    @click.command()
+    @cli.command()
     @click.option('--id', required=True, type=str, help='Position ID')
     def close_position(id):
         """ Close position """
-
+        saxo = Saxo()
         # Find position object by looping through all positions
         positions = saxo.positions(cfd_only=False, profit_only=False)
         for position in positions["Data"]:
@@ -40,7 +43,7 @@ if __name__ == '__main__':
 
         logger.info("Position not found")
 
-    @click.command()
+    @cli.command()
     @click.option('--job', required=False, is_flag=True, default=False, 
                   type=bool, help='Run as background job')
     def report_closed_positions(job):
@@ -55,6 +58,7 @@ if __name__ == '__main__':
             The report will be sent daily at a specific (hardcoded) time.
         """
         from northy.saxo_report import SaxoReport
+        saxo = Saxo()
         saxo_report = SaxoReport()
 
         # Run once
@@ -71,17 +75,19 @@ if __name__ == '__main__':
             positions = saxo.positions(status_open=False, profit_only=False)
             saxo_report.send_report(positions=positions)
         
-    @click.command()
+    @cli.command()
     def orders():
         """ List orders """
+        saxo = Saxo()
         orders = saxo.orders()
         for o in orders["Data"]:
-            print(o["BuySell"], o["Uic"], o["Amount"], o["Status"])
+            logger.info(o["BuySell"], o["Uic"], o["Amount"], o["Status"])
 
-    @click.command()
+    @cli.command()
     @click.option('--orders', required=True, type=str, help='Comma separated list of Order IDs')
     def cancel_orders(orders):
         """ Cancel Orders """
+        saxo = Saxo()
         saxo.cancel_order(orders)
 
     @click.command()
@@ -91,10 +97,11 @@ if __name__ == '__main__':
     @click.option('--points', default=None, type=int, help='Stop Loss points')
     def market(symbol, amount, buy, points):
         """ Execute rades """
+        saxo = Saxo()
         order = saxo.market(symbol=symbol, amount=amount, buy=buy, stoploss_points=points)
-        print(order)
+        logger.info(order)
 
-    @click.command()
+    @cli.command()
     @click.option('--symbol', required=True, type=str, help='Symbol to trade')
     @click.option('--amount', required=True, type=str, help='Amount to trade')
     @click.option('--price', required=True, type=int, help='Limit price')
@@ -103,6 +110,7 @@ if __name__ == '__main__':
     @click.option('--points', default=None, type=int, help='Stop Loss points')
     def limit(symbol, amount, buy, price, stoploss_price, points):
         """ Execute rades """
+        saxo = Saxo()
         order = saxo.limit(symbol=symbol,
             amount=amount,
             limit=price, 
@@ -111,7 +119,7 @@ if __name__ == '__main__':
             stoploss_points=points)
         logger.info(order)
 
-    @click.command()
+    @cli.command()
     @click.option('--signal', default=None, type=str, help='Trade signal (e.g. SPX_TRADE_LONG_IN_3609_SL_10)')
     @click.option('--tweet', default=None, type=str, help='Execute trades for a specific tweet id')
     @click.pass_context
@@ -121,6 +129,7 @@ if __name__ == '__main__':
         if ctx.args == []:
             print(trade.get_help(ctx))
 
+        saxo = Saxo()
         # If signal is provided
         if signal is not None:
             saxo.trade(signal=signal)
@@ -135,11 +144,12 @@ if __name__ == '__main__':
         else:
             logger.error("Something is not right..")
 
-    @click.command()
+    @cli.command()
     def watch():
         """
             Watch for alerts and execute trades
         """
+        saxo = Saxo()
         try:
             saxo.watch()
         except Exception as e:
