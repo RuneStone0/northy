@@ -160,7 +160,7 @@ class Noc:
                     self.logger.debug(f"Ignore non-Northy Tweet: {data_print}")
             else:
                 # Non-Tweet notification
-                self.logger.debug(f"Ignore non-Twwet notification")
+                self.logger.debug(f"Ignore non-Tweet notification")
 
             # Add notification id to cache and clean it if necessary
             self.cache.append(nid)
