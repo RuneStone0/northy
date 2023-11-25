@@ -2,7 +2,7 @@
     "files.exclude": {
         "**/__pycache__": true,
         "**/.pytest_cache": true,
-        "**/.saxo-session": true,
+        "**/.saxo-session*": true,
         "**/.coverage": true,
         "**/.tox": true,
         "**/venv": true,
