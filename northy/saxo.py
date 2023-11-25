@@ -23,38 +23,11 @@ ReferenceId = ''.join(random.choice(string.ascii_letters + string.digits + '-_')
 saxo_tickers = utils.read_json(filename="conf/saxo_tickers.js")[0]
 saxo_config = utils.read_json(filename="conf/saxo_config.js")[0]
 
-
-class SaxoConfig:
-    def __init__(self):
-        # Create a logger instance for the class
-        self.logger = logging.getLogger(__name__)
-        
-        self.tickers = saxo_tickers
-        self.config = saxo_config
-        
-    def get_stoploss(self, symbol):
-        """
-            Lookup default stoploss points for a symbol.
-        """
-        symbol = symbol.upper()
-        try:
-            stoploss_points = self.tickers[symbol]["stoploss_points"]
-            return stoploss_points
-        except Exception as e:
-            # Setting arbitrary SL for unknown symbols
-            self.logger.warning(f"Unknown symbol '{symbol}'. Setting SL to 9.")
-            return 9
-
-    def get_asset_type(self, uic):
-        for ticker, info in saxo_tickers.items():
-            if info['Uic'] == uic:
-                return info['AssetType']
-        return None
-        
 class Saxo:
     def __init__(self, profile_name="default"):
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
+        self.saxo_helper = SaxoHelper()
 
         # Set trade account config
         self.config = saxo_config
@@ -363,6 +336,8 @@ class Saxo:
                 `{'OrderId': '5014824029', 'Orders': [{'OrderId': '5014824030'}]}`
         """
         self.logger.debug(f"Processing signal: {signal}")
+        self.logger.debug("Current positions:")
+        self.positions(cfd_only=False, profit_only=False, show=True, status_open=True)
 
         # Convert signal to namedtuple
         s = self.signal_to_tuple(signal)
@@ -451,12 +426,15 @@ class Saxo:
                 Position hit its stop loss. Depending on the signal, 
                 we might re-enter the position (handled by "TRADE" action)
             """
-            msg = f"Tweet indicated that {s.symbol} hit its stop loss.."
+            msg = f"Tweet indicates that {s.symbol} hit its stop loss and was closed out.."
             self.logger.info(msg)
         if s.action == "LIMIT":
             # TODO
             self.logger.info("FLATSTOP not implemented yet")
             pass
+
+        self.logger.debug("Current positions:")
+        self.positions(cfd_only=False, profit_only=False, show=True, status_open=True)
 
     def enable_real_time_prices(self):
         """
@@ -728,7 +706,7 @@ class Saxo:
         """
         # TODO: Implement caching, when running e.g. "SXP_FLATSTOP", 
         # we will need to fetch prices for all positions
-        asset_type = self.saxo_config.get_asset_type(uic)
+        asset_type = self.saxo_helper.get_asset_type(uic)
         path = f"/trade/v1/infoprices/?Uic={uic}&AssetType={asset_type}"
         rsp = self.get(path=path)
         if rsp.status_code != 200:
@@ -750,7 +728,7 @@ class Saxo:
         stoploss_order = {
             "Uic": uic,
             "AccountKey": self.profile["AccountKey"],
-            "AssetType": self.saxo_config.get_asset_type(uic),
+            "AssetType": self.saxo_helper.get_asset_type(uic),
             "OrderType": "StopIfTraded",
             "ManualOrder": False,
             "BuySell": BuySell,
@@ -791,7 +769,7 @@ class Saxo:
         stoploss_order = {
             "Uic": uic,
             "AccountKey": self.profile["AccountKey"],
-            "AssetType": self.saxo_config.get_asset_type(uic),
+            "AssetType": self.saxo_helper.get_asset_type(uic),
             "OrderType": "StopIfTraded",
             "ManualOrder": False,
             "BuySell": order_BuySell,
@@ -815,7 +793,7 @@ class Saxo:
         BuySell = "Sell" if current_BuySell == "Buy" else "Buy"
 
         # Construct stop loss order
-        asset_type = self.saxo_config.get_asset_type(uic)
+        asset_type = self.saxo_helper.get_asset_type(uic)
         stoploss_order = {
             "Uic": uic,
             "AccountKey": self.profile["AccountKey"],
@@ -858,7 +836,7 @@ class Saxo:
         # Base order parameters
         saxo_helper = SaxoHelper()
         uic = saxo_helper.symbol_to_uic(symbol)
-        asset_type = self.saxo_config.get_asset_type(uic)
+        asset_type = self.saxo_helper.get_asset_type(uic)
         self.order = dict()
         self.order["Uic"] = uic
         self.order["AssetType"] = asset_type
@@ -1067,6 +1045,7 @@ class SaxoHelper():
         self.logger = logging.getLogger(__name__)
 
         self.config = saxo_config
+        self.tickers = saxo_tickers
 
     def doc_older_than(self, document, max_age=15):
         """
@@ -1254,8 +1233,27 @@ class SaxoHelper():
         """
         symbol = symbol.upper()
         try:
-            ret = saxo_tickers[symbol]["Uic"]
+            ret = self.tickers[symbol]["Uic"]
             return ret
         except Exception:
             self.logger.error(f"symbol_to_uic failed for {symbol}")
             return None
+
+    def get_stoploss(self, symbol):
+        """
+            Lookup default stoploss points for a symbol.
+        """
+        symbol = symbol.upper()
+        try:
+            stoploss_points = self.tickers[symbol]["stoploss_points"]
+            return stoploss_points
+        except Exception as e:
+            # Setting arbitrary SL for unknown symbols
+            self.logger.warning(f"Unknown symbol '{symbol}'. Setting SL to 9.")
+            return 9
+
+    def get_asset_type(self, uic):
+        for ticker, info in self.tickers.items():
+            if info['Uic'] == uic:
+                return info['AssetType']
+        return None

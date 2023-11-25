@@ -109,13 +109,18 @@ if __name__ == '__main__':
             buy=buy,
             stoploss_price=stoploss_price,
             stoploss_points=points)
-        print(order)
+        logger.info(order)
 
     @click.command()
     @click.option('--signal', default=None, type=str, help='Trade signal (e.g. SPX_TRADE_LONG_IN_3609_SL_10)')
     @click.option('--tweet', default=None, type=str, help='Execute trades for a specific tweet id')
-    def trade(signal, tweet):
-        """ Execute trade(s) based on a signal or tweet id """
+    @click.pass_context
+    def trade(ctx, signal, tweet):
+        """ Execute trades based on a signal or tweet id """
+        # No input provided
+        if ctx.args == []:
+            print(trade.get_help(ctx))
+
         # If signal is provided
         if signal is not None:
             saxo.trade(signal=signal)
