@@ -327,16 +327,38 @@ class Saxo:
         self.logger.debug("POST {}".format(url))
         rsp = self.s.post(url, json=data)
 
-        # If 401, re-authenticate and retry
+        # 401 - Unauthorized
         if rsp.status_code == 401:
             self.logger.warning("401 Unauthorized")
             self.__authenticate()
             self.logger.debug("POST {} (retry)".format(url))
             rsp = self.s.post(url, json=data)
-        
+
+        # 409 - Duplicate order operations
+        # https://www.developer.saxo/openapi/learn/rate-limiting
+        if rsp.status_code == 409:
+            self.logger.warning("409 Conflict - Duplicate order operations (Rate limit)")
+            self.logger.warning("Retryning after 15 seconds..")
+            time.sleep(15)
+            self.logger.debug("POST {} (retry)".format(url))
+            rsp = self.s.post(url, json=data)
+
+        # If 429, Exceeding Limits
+        # https://www.developer.saxo/openapi/learn/rate-limiting
+        if rsp.status_code == 429:
+            self.logger.warning("409 Too Many Requests - Exceeding Limits (Rate limit)")
+            self.logger.critical(rsp.headers)
+            session_reset = rsp.headers["X-RateLimit-SessionOrders-Reset"]
+            self.logger.critical(session_reset)
+            self.logger.warning(f"Retryning after {session_reset} seconds..")
+            time.sleep(session_reset)
+            self.logger.debug("POST {} (retry)".format(url))
+            rsp = self.s.post(url, json=data)
+            sys.exit(1)
+
         if rsp.status_code != 200:
-            self.logger.error(f"POST {url} failed with status code {rsp.status_code}")
-            self.logger.error(rsp.json())
+            self.logger.warning(f"POST {url} failed with status code {rsp.status_code}")
+            self.logger.warning(rsp.json())
             return rsp
 
         return rsp
