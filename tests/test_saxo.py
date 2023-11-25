@@ -3,9 +3,8 @@ import logging
 from northy import utils
 from unittest.mock import patch
 from datetime import datetime, timezone, timedelta
-from northy.saxo import Saxo, SaxoConfig, SaxoHelper
+from northy.saxo import Saxo, SaxoHelper
 saxo = Saxo()
-saxo_config = SaxoConfig()
 saxo_helper = SaxoHelper()
 logger = logging.getLogger(__name__)
 
@@ -46,11 +45,11 @@ def test_refresh_token():
     assert saxo.refresh_token()["access_token"][0:2] == "ey"
 
 def test_get_stoploss():
-    assert saxo_config.get_stoploss("SPX") == 10
-    assert saxo_config.get_stoploss("RUT") == 10
-    assert saxo_config.get_stoploss("NDX") == 25
-    assert saxo_config.get_stoploss("DJIA") == 25
-    assert saxo_config.get_stoploss("INVALID") == 9
+    assert saxo_helper.get_stoploss("SPX") == 10
+    assert saxo_helper.get_stoploss("RUT") == 10
+    assert saxo_helper.get_stoploss("NDX") == 25
+    assert saxo_helper.get_stoploss("DJIA") == 25
+    assert saxo_helper.get_stoploss("INVALID") == 9
 
 def test_signal_to_tuple():
     signals = [
@@ -173,7 +172,7 @@ def test_trade_buysell_all():
     Test all possible combinations of symbols and trade directions
     Attempts to create an order and then deletes it (if possible)
     """
-    symbols = saxo_config.config["tickers"].keys()
+    symbols = saxo.tickers.keys()
     direction = ["LONG", "SHORT"]
     for symbol in symbols:
         for dir in direction:
