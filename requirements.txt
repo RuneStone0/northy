@@ -16,10 +16,6 @@ coloredlogs
 mongomock
 pymongo[srv]
 
-# SaxoBank SDK
-#git+https://github.com/hootnot/saxo_openapi.git
-saxo_openapi
-
 # Unit testing
 pytest
 pytest-cov

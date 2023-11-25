@@ -11,10 +11,8 @@ import time, uuid, json
 from northy.utils import Utils
 from datetime import datetime, timezone
 from collections import namedtuple
-from saxo_openapi import API
 from requests.auth import HTTPBasicAuth
 from jwt.exceptions import ExpiredSignatureError
-import saxo_openapi.endpoints.trading as tr
 import logging
 
 utils = Utils()
@@ -44,7 +42,6 @@ class Saxo:
         # Setup Saxo API connection
         self.s = requests.session()
         self.token = self.__get_bearer()
-        self.client = API(access_token=self.token)
 
     def set_profile(self):
         """ Set profile based on environment variable SAXO_PROFILE """
@@ -581,134 +578,6 @@ class Saxo:
 
             if not is_flat:
                 self.set_stoploss(position=position, points=0)
-
-    def __action_closed(self, signal, order):
-        """ 
-            Close position
-
-            Example signal:
-                NDX_CLOSED
-        """
-        # TODO: Fix this
-        #positions = saxo.positions()
-
-        # Mock positions
-        positions = dict()
-        positions["Data"] = [
-            {
-            "NetPositionId": "GBPUSD_FxSpot",
-            "PositionBase": {
-                "AccountId": "192134INET",
-                "Amount": 80.0,
-                "AssetType": "CfdOnIndex",
-                "CanBeClosed": True,
-                "ClientId": "654321",
-                "CloseConversionRateSettled": False,
-                "ExecutionTimeOpen": "2023-04-08T15:00:00Z",
-                "IsForceOpen": False,
-                "IsMarketOpen": False,
-                "LockedByBackOffice": False,
-                "OpenPrice": 3990,
-                "SpotDate": "2016-09-06",
-                "Status": "Open",
-                "Uic": 31,
-                "ValueDate": "2017-05-04T00:00:00Z"
-            },
-            "PositionId": "1019942425",
-            "PositionView": {
-                "Ask": 1.2917,
-                "Bid": 1.29162,
-                "CalculationReliability": "Ok",
-                "CurrentPrice": 4000,
-                "CurrentPriceDelayMinutes": 0,
-                "CurrentPriceType": "Bid",
-                "Exposure": 80.0,
-                "ExposureCurrency": "GBP",
-                "ExposureInBaseCurrency": 129192.0,
-                "InstrumentPriceDayPercentChange": 0.26,
-                "ProfitLossOnTrade": -2998.0,
-                "ProfitLossOnTradeInBaseCurrency": -2998.0,
-                "SettlementInstruction": {
-                "ActualRolloverAmount": 0.0,
-                "ActualSettlementAmount": 80.0,
-                "Amount": 80.0,
-                "IsSettlementInstructionsAllowed": False,
-                "Month": 7,
-                "SettlementType": "FullSettlement",
-                "Year": 2020
-                },
-                "TradeCostsTotal": 0.0,
-                "TradeCostsTotalInBaseCurrency": 0.0
-            }
-            }
-        ]
-        for _p in positions["Data"]:
-            # Only process CFDs
-            if _p["PositionBase"]["AssetType"] != "CfdOnIndex":
-                continue
-
-            # Only deal with positions opened within the last 1 hour
-            _open_time = datetime.strptime(_p["PositionBase"]["ExecutionTimeOpen"], "%Y-%m-%dT%H:%M:%SZ")
-            if (datetime.now() - _open_time).total_seconds() > 3600:
-                self.logger.info("Position was opened more than 1 hour. Skipping.")
-                continue
-            else:
-                self.logger.info("Position was opened less than 1 hour.")
-
-            # Only deal with positions within 25 points of profit/loss
-            _points = (_p["PositionView"]["CurrentPrice"] - _p["PositionBase"]["OpenPrice"])
-            if _points >= 25 or _points <= -25:
-                self.logger.info("Position is not within 25 points of profit/loss. Skipping.")  
-                continue
-            else:
-                self.logger.info("Position is within 25 points of profit/loss. Closing.")
-
-            # Closing position
-            self.logger.info("Closing position.")
-            _position_size = _p["PositionBase"]["Amount"]
-            order["Amount"] = -int(_position_size)
-            order["PositionId"] = _p["PositionId"]
-            order["AccountKey"] = self.profile["AccountKey"]
-            print(order)
-            
-            # Close position using saxo_openapi
-            r = tr.positions.ExercisePosition(order["PositionId"], data=order)
-            print(r)
-            rv = self.client.request(r)
-
-            # Close order using requests
-            """
-            self.authenticate()
-            r = self.s.put(f"{self.base_url}/trade/v1/positions/stringValue/exercise", data=order)
-            print(r.content)
-            """
-
-    def __action_limit(self, signal, order):
-        """
-            Handle Limit Order
-
-            Example signal:
-                SPX_LIMIT_LONG_IN_3749_OUT_3739_SL_10
-        """
-        s = signal
-
-        # Market order
-        order["BuySell"] = "Buy" if s.direction == "LONG" else "Sell"  # Set BuySell value
-        order["Amount"] = self.config["TradeSize"][s.symbol]  # Set order quantity
-        order["OrderPrice"] = s.entry
-        order["OrderType"] = "Limit"
-
-        # Stop Loss order
-        _SL_price = self.get_stoploss_price(entry=s.entry, stoploss=s.stoploss, BuySell=order["BuySell"])
-        _SL_BuySell_Direction = "Sell" if order["BuySell"] == "Buy" else "Buy"
-        order["Orders"] =  [{
-            "BuySell": _SL_BuySell_Direction,
-            "ManualOrder": False,
-            "OrderDuration": { "DurationType": "GoodTillCancel" },
-            "OrderPrice": _SL_price,
-            "OrderType": "StopIfTraded"
-        }]
-        self.logger.info("{} was converted to a limit order at ~{} with stop loss at {}".format(s.raw, s.entry, _SL_price))
 
     def price(self, uic):
         """ 
