@@ -166,7 +166,7 @@ class Noc:
             self.cache.append(nid)
             if len(self.cache) >= self.cache_max:
                 self.logger.debug(f"Remove {self.cache_clean} items from cache")
-                for _ in range(self.cache_clean): self.cache.pop(0)
+                for _ in range(int(self.cache_clean)): self.cache.pop(0)
 
     def watch(self):
         while True:
