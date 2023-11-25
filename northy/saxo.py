@@ -129,6 +129,14 @@ class Saxo:
         # Post login, fetch auth code
         self.logger.info(f"GET {post_login_url}")
         r = self.s.get(post_login_url, allow_redirects=False)
+        if "/disclaimer" in r.text:
+            # disclaimer page is shown after a new API App is created.
+            self.logger.critical("Disclaimer page detected. Manual accept required.")
+            self.logger.critical(f"1. Go to: {redirect_url}")
+            self.logger.critical("2. Login and and accept the disclaimer.")
+            self.logger.critical("3. Logout and try to login again programatically.")
+            sys.exit(1)
+
         auth_code_url = r.headers["Location"]
         auth_code = __parse_url(auth_code_url)["code"][0]
         self.logger.debug(f"Auth Code: {auth_code}")
