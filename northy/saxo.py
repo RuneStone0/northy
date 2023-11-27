@@ -375,7 +375,7 @@ class Saxo:
         """
         self.logger.debug(f"Processing signal: {signal}")
         self.logger.debug("Current positions:")
-        self.positions(cfd_only=False, profit_only=False, show=True, status_open=True)
+        self.positions(cfd_only=False, profit_only=False, show=True)
 
         # Convert signal to namedtuple
         s = self.signal_to_tuple(signal)
@@ -472,7 +472,7 @@ class Saxo:
             pass
 
         self.logger.debug("Current positions:")
-        self.positions(cfd_only=False, profit_only=False, show=True, status_open=True)
+        self.positions(cfd_only=False, profit_only=False, show=True)
 
     def enable_real_time_prices(self):
         """
@@ -492,7 +492,7 @@ class Saxo:
         time.sleep(10)
 
     def positions(self, cfd_only=True, profit_only=True, symbol=None, 
-                  status_open=True, show=False) -> dict:
+                  status=None, show=False) -> dict:
         """
             Get all positions
 
@@ -511,14 +511,14 @@ class Saxo:
         # Filter positions
         saxo_helper = SaxoHelper()
         pos = saxo_helper.filter_positions(pos, cfd_only=cfd_only, 
-            profit_only=profit_only, symbol=symbol, status_open=status_open)
+            profit_only=profit_only, symbol=symbol, status=status)
 
         if show:
             saxo_helper.pprint_positions(pos)
 
         return pos
 
-    def orders(self, status_open=True):
+    def orders(self):
         """
             Get all orders
 
@@ -526,14 +526,6 @@ class Saxo:
                 See `tests/mock_data/SaxoTrader_Saxo_orders.json`
         """
         orders = self.get(f"/port/v1/orders?ClientKey=" + self.profile["AccountKey"]).json()
-
-        # Filter orders
-        """
-        if status_open:
-            status = "Open" if status_open else "Closed"
-            self.logger.info(f"Filtering orders, showing orders with status {status} only")
-            orders["Data"] = [o for o in orders["Data"] if o["Status"] == status]
-        """
         return orders
 
     def get_stoploss_price(self, entry, stoploss, BuySell):
@@ -1059,8 +1051,9 @@ class SaxoHelper():
 
         return ret
 
-    def filter_positions(self, positions, cfd_only=True, profit_only=True, 
-                         symbol=None, status_open=True) -> dict:
+    def filter_positions(self, positions:dict, cfd_only:bool=True,
+                         profit_only:bool=True, symbol:bool=None,
+                         status:list=None) -> dict:
         """
             Filter positions
 
@@ -1069,7 +1062,7 @@ class SaxoHelper():
                 cfd_only (bool): Show CFDs only
                 profit_only (bool): Show positions in profit only
                 symbol (str): Show positions for symbol only
-                status_open (bool): Show open positions only
+                status (list): Show positions with status [Open, Closed, Working]
 
             Returns:
                 dict: Filtered positions object
@@ -1078,6 +1071,9 @@ class SaxoHelper():
                 `{'__count': len(new_positions), 'Data': [..]}`
         """
         pos = positions["Data"]
+
+        # Set default status
+        if status is None: status = ["Open", "Closed", "Waiting"]
 
         idx_to_remove = []
         idx = 0
@@ -1096,10 +1092,10 @@ class SaxoHelper():
             if symbol is not None and symbol != sym:
                 idx_to_remove.append(idx)
 
-            # Status open only
-            # Statuses: Open, Closed, Working
-            if status_open and p["PositionBase"]["Status"] == "Closed":
+            # Status filter
+            if p_base["Status"] not in status:
                 idx_to_remove.append(idx)
+
             
             idx += 1
             

@@ -64,15 +64,14 @@ if __name__ == '__main__':
         # Run once
         if not job:
             logger.info("Running once")
-            positions = saxo.positions(status_open=False, profit_only=False)
-            saxo_report.send_report(positions)
+            positions = saxo.positions(status=["Closed"], profit_only=False, show=True)
             return
 
         # Run as background job
         while True:
             logger.info("Running as background job")
             saxo_report.close_report_sleep()
-            positions = saxo.positions(status_open=False, profit_only=False)
+            positions = saxo.positions(status=["Closed"], profit_only=False)
             saxo_report.send_report(positions=positions)
         
     @cli.command()
