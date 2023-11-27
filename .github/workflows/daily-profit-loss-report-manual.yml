@@ -19,6 +19,7 @@ jobs:
     # Load secrets into Actions Environment
     env:
       POSTMARK_SERVER_TOKEN: ${{ secrets.POSTMARK_SERVER_TOKEN }}
+      PRODUCTION: ${{ env.PRODUCTION }}
     
     steps:
       - uses: actions/checkout@v3
