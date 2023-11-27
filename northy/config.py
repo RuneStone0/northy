@@ -5,7 +5,7 @@ utils = Utils()
 
 config = {
     **dotenv_values(".env"),
-    #**os.environ,  # override loaded values with environment variables
+    **os.environ,  # override loaded values with environment variables
 }
 
 production = utils.str2bool(config["PRODUCTION"])
