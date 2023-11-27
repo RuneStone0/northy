@@ -16,7 +16,7 @@ if __name__ == '__main__':
     @click.pass_context
     def cli(ctx, profile):
         ctx.ensure_object(dict)
-        os.environ["SAXO_PROFILE"] = os.environ.get("SAXO_PROFILE", "default")
+        os.environ["SAXO_PROFILE"] = profile
 
     @cli.command()
     def positions():
@@ -65,6 +65,7 @@ if __name__ == '__main__':
         if not job:
             logger.info("Running once")
             positions = saxo.positions(status=["Closed"], profit_only=False, show=True)
+            saxo_report.send_report(positions)
             return
 
         # Run as background job

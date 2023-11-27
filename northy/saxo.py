@@ -990,6 +990,10 @@ class SaxoHelper():
             Args:
                 position (dict): Dictionary of positions
         """
+        if positions["__count"] == 0:
+            self.logger.info("No positions found.")
+            return None
+        
         data = []
         for p in positions["Data"]:
             pos_id = p["PositionId"]
@@ -1085,9 +1089,7 @@ class SaxoHelper():
                 idx_to_remove.append(idx)
             
             # Profit only
-            self.logger.info(p_base)
             if profit_only and p["PositionView"]["ProfitLossOnTrade"] <= 0:
-                #print(p["PositionView"]["ProfitLossOnTrade"])
                 idx_to_remove.append(idx)
 
             # Symbol only
