@@ -1078,17 +1078,20 @@ class SaxoHelper():
         idx_to_remove = []
         idx = 0
         for p in pos:
+            p_base = p["PositionBase"]
+
             # CFD only
-            if cfd_only and p["PositionBase"]["AssetType"] != "CfdOnIndex":
+            if cfd_only and p_base["AssetType"] != "CfdOnIndex":
                 idx_to_remove.append(idx)
             
             # Profit only
+            self.logger.info(p_base)
             if profit_only and p["PositionView"]["ProfitLossOnTrade"] <= 0:
                 #print(p["PositionView"]["ProfitLossOnTrade"])
                 idx_to_remove.append(idx)
 
             # Symbol only
-            sym = self.uic_to_symbol(p["PositionBase"]["Uic"])
+            sym = self.uic_to_symbol(p_base["Uic"])
             if symbol is not None and symbol != sym:
                 idx_to_remove.append(idx)
 
@@ -1096,6 +1099,18 @@ class SaxoHelper():
             if p_base["Status"] not in status:
                 idx_to_remove.append(idx)
 
+            # When a position is closed, another position in the opposite
+            # direction is created. To avoid confusion, we hide these "opposite"
+            # positions.
+            if p_base["Status"] == "Closed":
+                time_open = p_base["ExecutionTimeOpen"]
+                time_close = p_base["ExecutionTimeClose"]
+                dt_format = "%Y-%m-%dT%H:%M:%S.%fZ"
+                time_open_dt = datetime.strptime(time_open, dt_format)
+                time_close_dt = datetime.strptime(time_close, dt_format)
+                # if open is older than close, hide it
+                if time_open_dt > time_close_dt:
+                    idx_to_remove.append(idx)
             
             idx += 1
             
