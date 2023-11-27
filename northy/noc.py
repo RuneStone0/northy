@@ -14,9 +14,8 @@ class Noc:
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
 
-        # MongoDB
+        # Set variables
         self.production = config["PRODUCTION"] if production is None else production
-        self.db = Database(production=self.production)
 
         # Prepare class
         self.__prepare_cache()
@@ -27,6 +26,7 @@ class Noc:
             self.db_path = wpndatabase_path
         self.logger.critical("Keep the browser open to receive notifications!")
         self.logger.critical("Make sure Twitter notification is enabled (https://twitter.com/settings/push_notifications). This setting is managed per-browser and not per Twitter account. Thus, you need to enable it for each browser you use.")
+        self.logger.critical("In Chrome, add twitter.com / x.com to the list of Always Active Sites: chrome://settings/performance (managed by your chrome profile)")
         self.logger.info(f"Using: {self.db_path}")
 
     def __prepare_cache(self):
@@ -107,7 +107,37 @@ class Noc:
 
         return notidications
 
-    def notification_to_tweet(self, notification):
+    def notification_to_tweet(self, notification) -> dict:
+        """
+            Convert a notification to a tweet-like dict
+            The notification is a dict with the following structure:
+            {
+                "order": 1,
+                "id": 1,
+                "payload": {
+                    "toast": {
+                        "@launch": "twitter://timeline|Twitter|Twitter|twitter://timeline",
+                        "visual": {
+                            "binding": {
+                                "text": [
+                                    "Northy",
+                                    "Hello World!"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+
+            The tweet-like dict has the following structure:
+            {
+                "tid": 1,
+                "from": "Northy",
+                "text": "Hello World!"
+            }
+
+            The tid is the tweet id, which is extracted from the notification id.
+        """
         toast = notification["payload"]["toast"]
         # convert notification to tweet
         tid = toast["@launch"].split("|")[-1].split("-")[-1]
@@ -139,7 +169,7 @@ class Noc:
         
         conn.close()
 
-    def process_notification(self):
+    def process_notification(self, db):
         notifications = self.get_notifications()
         for notification in notifications:
             nid = notification["id"]
@@ -154,23 +184,24 @@ class Noc:
                 # Tweet notification
                 data = self.notification_to_tweet(notification)
                 if data["from"] == "Northy":
-                    self.db.add_tweet(data)
+                    db.add_tweet(data)
                 else:
                     data_print = "{}: {}".format(data["from"], data["text"])
-                    self.logger.debug(f"Ignore non-Northy Tweet: {data_print}")
+                    self.logger.info(f"Ignore non-Northy Tweet: {data_print}")
             else:
                 # Non-Tweet notification
-                self.logger.debug(f"Ignore non-Tweet notification")
+                self.logger.info(f"Ignore non-Tweet notification")
 
             # Add notification id to cache and clean it if necessary
             self.cache.append(nid)
             if len(self.cache) >= self.cache_max:
-                self.logger.debug(f"Remove {self.cache_clean} items from cache")
+                self.logger.info(f"Remove {self.cache_clean} items from cache")
                 for _ in range(int(self.cache_clean)): self.cache.pop(0)
 
     def watch(self):
+        db = Database(production=self.production)
         while True:
-            self.process_notification()
+            self.process_notification(db=db)
             
             # Check for new notifications every second
             time.sleep(1)
