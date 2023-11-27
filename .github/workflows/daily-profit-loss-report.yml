@@ -1,0 +1,32 @@
+name: Saxo Report (scheduled)
+
+on:
+  schedule:
+  # weekdays 5pm US Central time
+  - cron: '0 23 * * 1-5'
+
+permissions:
+  contents: read
+
+jobs:
+  run_script:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    # Load secrets into Actions Environment
+    env:
+      POSTMARK_SERVER_TOKEN: ${{ secrets.POSTMARK_SERVER_TOKEN }}
+    
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip' # caching pip dependencies
+      - run: pip install -r requirements.txt
+    
+      - name: Run job
+        run: python3 cli_saxo.py report-closed-positions
+
+      #- name: Run job
+      #run: python3 cli_saxo.py --profile SIM2 report-closed-positions
