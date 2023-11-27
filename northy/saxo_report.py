@@ -76,8 +76,13 @@ class SaxoReport:
             Args:
                 positions (dict): Positions object
         """
+        if positions["__count"] == 0:
+            self.logger.info("No positions found. Not sending report")
+            return
+        
         # Generate report data
         report = self.__positions_to_report_data(positions)
+        self.logger.info(f"Report data: {report}")
 
         # Create summary
         sheet = ",".join(map(str, report["trades_profit_loss"]))
