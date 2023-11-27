@@ -15,6 +15,7 @@ if __name__ == '__main__':
     @click.option('--path', required=False, default=None, type=str, help='Path to wpndatabase')
     def watch(path):
         """
+        Watch for notifications and insert into DB
         """
         noc = Noc(wpndatabase_path=path)
         noc.watch()
