@@ -91,7 +91,7 @@ def test_filter_positions2():
     # No filter
     new_pos = filter_positions(positions, cfd_only=False, profit_only=False)
     assert isinstance(new_pos, dict)
-    assert new_pos["__count"] == 8
+    assert new_pos["__count"] == 9
 
     # Default filter options
     new_pos = filter_positions(positions)
@@ -104,7 +104,7 @@ def test_filter_positions2():
     assert new_pos["__count"] == 3
 
     # Filter by profit_only
-    new_pos = filter_positions(positions, cfd_only=False, status_open=False)
+    new_pos = filter_positions(positions, cfd_only=False, profit_only=True)
     assert isinstance(new_pos, dict)
     assert new_pos["__count"] == 2
 
