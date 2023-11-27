@@ -12,11 +12,11 @@ if __name__ == '__main__':
     logger = logging.getLogger(__name__)
 
     @click.group()
-    @click.option('--profile', required=False, type=str, help='Set Saxo Profile')
+    @click.option('--profile', required=False, default="default", type=str, help='Set Saxo Profile')
     @click.pass_context
     def cli(ctx, profile):
         ctx.ensure_object(dict)
-        os.environ["SAXO_PROFILE"] = profile
+        os.environ["SAXO_PROFILE"] = os.environ.get("SAXO_PROFILE", "default")
 
     @cli.command()
     def positions():
