@@ -204,4 +204,7 @@ class Noc:
             self.process_notification(db=db)
             
             # Check for new notifications every second
-            time.sleep(1)
+            time.sleep(10)
+
+            # print progress dot
+            sys.stdout.write('.')
