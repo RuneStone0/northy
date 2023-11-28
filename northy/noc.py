@@ -183,11 +183,11 @@ class Noc:
             if is_tweet:
                 # Tweet notification
                 data = self.notification_to_tweet(notification)
+                data_print = "{}: {}".format(data["from"], data["text"])
                 if data["from"] == "Northy":
                     db.add_tweet(data)
                     self.logger.info(f"Northy Tweet: {data_print}")
                 else:
-                    data_print = "{}: {}".format(data["from"], data["text"])
                     self.logger.info(f"Ignore non-Northy Tweet: {data_print}")
             else:
                 # Non-Tweet notification
