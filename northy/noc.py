@@ -205,6 +205,3 @@ class Noc:
             
             # Check for new notifications every second
             time.sleep(10)
-
-            # print progress dot
-            sys.stdout.write('.')
