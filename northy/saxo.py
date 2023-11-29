@@ -7,7 +7,7 @@ import requests
 from requests import Response
 import pandas as pd
 import random, string
-import time, uuid, json
+import time, uuid
 from northy.utils import Utils
 from datetime import datetime, timezone
 from collections import namedtuple
@@ -961,26 +961,25 @@ class SaxoHelper():
             Returns:
                 bool: True if document is older than max_age
         """
-        # Get current time in UTC
-        now = datetime.now(timezone.utc)
+        # Get current UTC time
+        now = datetime.now(tz=timezone.utc)
 
-        # Get created_at in UTC
-        created_at = document["created_at"]
-        created_at = created_at.replace(tzinfo=timezone.utc)
+        # Convert string to datetime
+        created_at = datetime.fromisoformat(document["created_at"])
 
-        # Calculate minutes since post
-        min_since_post = (now - created_at).total_seconds() / 60
-        min_since_post = round(min_since_post)
+        # Get minutes since created_at and now
+        diff = now - created_at 
+        min_since_created_at = int(diff.total_seconds() / 60)
 
         # Check if min_since_post is greater than max_age
-        if min_since_post > max_age:
+        if min_since_created_at > max_age:
             tid = document["tid"]
-            msg = f"Tweet {tid} from is {min_since_post} min. old. " \
-                  f"Created at {created_at} compared to now ({now})."
+            msg = f"Tweet {tid} is {min_since_created_at} min. old. " \
+                  f"Created {created_at} compared to {now}"
             self.logger.info(msg)
             return True
 
-        self.logger.info(f"Tweet is not older than {max_age} minutes")
+        self.logger.info(f"Tweet is fresh ({min_since_created_at} min. old)")
         return False
     
     def pprint_positions(self, positions:dict) -> None:
