@@ -235,7 +235,9 @@ class TweetsDB:
         """
             Add a tweet to the database.
         """
+        # Convert tweet["created_at"] to datetime
         created_at = datetime.strptime(tweet["created_at"], '%Y-%m-%dT%H:%M:%S.%fZ')
+
         try:
             tid = tweet["tid"]
         except KeyError:
@@ -247,12 +249,4 @@ class TweetsDB:
             "created_at": created_at,
             "text": tweet["text"],
         }
-
-        try:
-            self.db.tweets.insert_one(_data)
-            self.pprint(_data, inserted=True)
-        except DuplicateKeyError:
-            tid = _data["tid"]
-            self.logger.debug(f"Tweet {tid} already exists")
-        except Exception as e:
-            self.logger.error(e)
+        self.db.add_tweet(_data)
