@@ -2,7 +2,7 @@ import os
 import logging
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
-from datetime import datetime
+from datetime import datetime, timezone
 from northy.color import colored
 from northy.config import config
 import mongomock
@@ -92,8 +92,23 @@ class Database(object):
         """
             Add a tweet to the database.
         """
+        # Check if created_at exists
+        if "created_at" not in data.keys():
+            self.logger.error("created_at is missing")
+            return False
+        
+        # Check if created_at is datetime format
+        if not isinstance(data["created_at"], datetime):
+            self.logger.error("created_at is not datetime")
+            return False
+        
+        # Check if created_at is UTC
+        if data["created_at"].tzinfo != timezone.utc:
+            self.logger.error("created_at is not UTC")
+            return False
+        
+        # Attempt to insert tweet into database
         try:
-            data["created_at"] = datetime.now()
             self.db.tweets.insert_one(data)
             self.pprint(data, inserted=True)
             return True
