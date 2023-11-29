@@ -1,5 +1,6 @@
 import tempfile
 import pytest
+from datetime import datetime, timezone
 from northy.db import Database
 
 def test_db_mock():
@@ -42,7 +43,8 @@ def test_add_tweet():
     db = Database(production=False)
 
     # New Insert
-    data = {"tid": "1234567890", "from": "test", "text": "test"}
+    now = datetime.now(tz=timezone.utc)
+    data = {"tid": "1234567890", "from": "test", "text": "test", "created_at": now}
     add_tweet = db.add_tweet(data)
     assert isinstance(add_tweet, bool)
     assert add_tweet == True
@@ -52,4 +54,15 @@ def test_add_tweet():
     assert isinstance(add_tweet, bool)
     assert add_tweet == False
 
-    add_tweet = db.add_tweet("")
+    # created_at is missing
+    data = {"tid": "1234567890", "from": "test", "text": "test"}
+    add_tweet = db.add_tweet(data)
+    assert isinstance(add_tweet, bool)
+    assert add_tweet == False
+
+    # created_at is not datetime
+    now = datetime.now(tz=timezone.utc)
+    data = {"tid": "1234567890", "from": "test", "text": "test", "created_at": ""}
+    add_tweet = db.add_tweet(data)
+    assert isinstance(add_tweet, bool)
+    assert add_tweet == False

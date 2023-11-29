@@ -1,6 +1,7 @@
 import os
 import shutil
 from northy.noc import Noc
+from northy.db import Database
 
 def test_process_notification():
     # create /tmp if not exists
@@ -21,7 +22,8 @@ def test_process_notification():
 
         # Test against temp file
         noc = Noc(production=False, wpndatabase_path=temp_path)
-        assert noc.process_notification() == None
+        db = Database(production=False)
+        assert noc.process_notification(db) == None
 
 def test_notification_to_tweet():
     # Test parsing notification without text (image posted)

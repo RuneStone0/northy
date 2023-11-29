@@ -6,9 +6,9 @@ import logging
 from datetime import datetime
 from northy.prowl import Prowl
 from northy.db import Database
+from northy.saxo import SaxoHelper, saxo_tickers
 from northy.color import colored
 from northy.config import config
-from northy.saxo import SaxoConfig
 
 ignore_tweets = [
     "1557516667357380608", # FLAT STOPPED $SPX | RE-ENTRY SHORT | IN 4211 - 10 PT STOP. | ADJUSTED $NDX STOP TO -25. |  | TAKING THE STOP RISK OVERNIGHT
@@ -40,8 +40,8 @@ class Signal:
         self.db_tweets = self.db.tweets
 
         # SaxoConfig
-        self.saxo_config = SaxoConfig()
         self.signal_helper = SignalHelper()
+        self.saxo_helper = SaxoHelper()
 
     def __unique(self, sequence):
         """
@@ -219,7 +219,7 @@ class Signal:
             # We don't care to parse the SL from the text. Its always the same anyway
             # TODO: Above is not true. 1641890973302116358 is an example where we have different SL
             # TODO: Parse the signal itself and get the SL from there
-            POINTS = self.saxo_config.get_stoploss(symbol)
+            POINTS = self.saxo_helper.get_stoploss(symbol)
             self.logger.warning("Setting SL based on SaxoConfig and not the signal")
 
             __ACTION_CODE += f"_SL_{POINTS}"
@@ -287,7 +287,7 @@ class Signal:
                 IN = signal_helper.get_closest_symbols(signal_helper.find_INOUT(text, "IN"))[symbol]
 
                 # Set stop loss
-                POINTS = self.saxo_config.get_stoploss(symbol)
+                POINTS = self.saxo_helper.get_stoploss(symbol)
                 CALC_OUT = int(IN) - int(POINTS)
 
                 ACTION_CODE += f"_IN_{IN}_OUT_{CALC_OUT}_SL_{POINTS}"
@@ -646,8 +646,7 @@ class Signal:
 
 class SignalHelper:
     def __init__(self) -> None:
-        self.ticker_config = SaxoConfig().config["tickers"]
-        pass
+        self.ticker_config = saxo_tickers
 
     def normalize_text(self, tweet_text:str) -> str:
         """
