@@ -2,7 +2,7 @@ import os
 import logging
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
-from datetime import datetime, timezone
+from datetime import datetime
 from northy.color import colored
 from northy.config import config
 import mongomock
@@ -101,12 +101,7 @@ class Database(object):
         if not isinstance(data["created_at"], datetime):
             self.logger.error("created_at is not datetime")
             return False
-        
-        # Check if created_at is UTC
-        if data["created_at"].tzinfo != timezone.utc:
-            self.logger.error("created_at is not UTC")
-            return False
-        
+                
         # Attempt to insert tweet into database
         try:
             self.db.tweets.insert_one(data)

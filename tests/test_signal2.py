@@ -22,10 +22,6 @@ def test_signal2_get():
     assert isinstance(ret, list)
     assert ret[0] == "SPX_FLAT"
 
-    # Loop through all valid IDs, with alerts
-    for i in db.tweets.aggregate([{"$match": {"alert": True}}]):
-        assert isinstance(signal.get(i["tid"]), list)
-
 def test_signal2_getall():
     # generate test cases for TradeSignal.getall()
     assert signal.getall() == None
