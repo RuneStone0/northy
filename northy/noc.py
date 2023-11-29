@@ -5,6 +5,7 @@ import time
 import sqlite3
 import xmltodict
 import logging
+from datetime import datetime
 from northy.config import config
 from northy.db import Database
 
@@ -143,6 +144,12 @@ class Noc:
         tid = toast["@launch"].split("|")[-1].split("-")[-1]
         _from = toast["visual"]["binding"]["text"][0]
         _text = toast["visual"]["binding"]["text"][1]
+        
+        # Convert displayTimestamp to datetime
+        displayTimestamp = toast["@displayTimestamp"]
+        date_string = displayTimestamp.replace("Z", "+00:00")
+        created_at = datetime.fromisoformat(date_string)
+
         # Text is none, when only a picture is posted
         if _text is None:
             _text = ""
@@ -151,7 +158,8 @@ class Noc:
         tweet = {
             "tid": tid,
             "from": _from,
-            "text": _text
+            "text": _text,
+            "created_at": created_at
         }
         return tweet
 
