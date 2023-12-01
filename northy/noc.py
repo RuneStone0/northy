@@ -25,9 +25,10 @@ class Noc:
             self.__set_db_path()
         else:
             self.db_path = wpndatabase_path
-        self.logger.critical("Keep the browser open to receive notifications!")
-        self.logger.critical("Make sure Twitter notification is enabled (https://twitter.com/settings/push_notifications). This setting is managed per-browser and not per Twitter account. Thus, you need to enable it for each browser you use.")
-        self.logger.critical("In Chrome, add twitter.com / x.com to the list of Always Active Sites: chrome://settings/performance (managed by your chrome profile)")
+        self.logger.critical("The browser must be kept open to receive notifications!")
+        self.logger.critical("Only one browser can Twitter Notifications enabled. If another browser is enabled, it can hijack the notifications")
+        self.logger.critical("Enable Twitter notification (https://twitter.com/settings/push_notifications). Setting is managed per-browser and not per Twitter/Chrome profile.")
+        self.logger.critical("Add twitter.com / x.com to Always Active Sites (chrome://settings/performance)")
         self.logger.info(f"Using: {self.db_path}")
 
     def __prepare_cache(self):
@@ -212,4 +213,4 @@ class Noc:
             self.process_notification(db=db)
             
             # Check for new notifications every second
-            time.sleep(10)
+            time.sleep(2)
