@@ -951,21 +951,23 @@ class SaxoHelper():
 
     def doc_older_than(self, document, max_age=15):
         """
-            Check if document is older than max_age. `created_at` from db is
-            converted to UTC, and compared against now()
+        Check if document is older than max_age. `created_at` from db is
+        converted to UTC, and compared against now()
 
-            Args:
-                document (dict): Document from MongoDB
-                max_age (int): Max age in minutes
+        Args:
+            document (dict): Document from MongoDB
+            max_age (int): Max age in minutes
 
-            Returns:
-                bool: True if document is older than max_age
+        Returns:
+            bool: True if document is older than max_age
         """
         # Get current UTC time
         now = datetime.now(tz=timezone.utc)
 
         # Convert string to datetime
-        created_at = datetime.fromisoformat(document["created_at"])
+        # TODO: Can be removed when ES-1015 is fixed
+        created_at = document["created_at"]  # datetime without tzinfo
+        created_at = created_at.replace(tzinfo=timezone.utc) # add UTC tz
 
         # Get minutes since created_at and now
         diff = now - created_at 

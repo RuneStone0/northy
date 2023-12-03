@@ -1,13 +1,12 @@
 import os
-import logging
-from northy import utils
-from northy.config import set_env
+from northy.db import Database
+from northy.utils import Utils
 from northy.saxo import SaxoHelper
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from unittest.mock import patch
 
 saxo_helper = SaxoHelper()
-u = utils.Utils()
+u = Utils()
 
 def get_mock_data(filename):
     dir = os.path.dirname(__file__)
@@ -109,3 +108,28 @@ def test_filter_positions2():
     assert new_pos["__count"] == 2
 
     saxo_helper.pprint_positions(new_pos)
+
+def test_doc_older_than_simple():
+    """
+    Test the doc_older_than function against two mock documents.
+    """
+    # mock data
+    old = datetime.now(tz=timezone.utc) + timedelta(minutes=-16)
+    new = datetime.now(tz=timezone.utc)
+    data_old = {"tid": "data_old", "created_at": old, "alert": True }
+    data_new = {"tid": "data_new", "created_at": new, "alert": True }
+
+    assert saxo_helper.doc_older_than(document=data_old) == True
+    assert saxo_helper.doc_older_than(document=data_new) == False
+
+def test_doc_older_than_full():
+    """
+    Test the doc_older_than function against all tweets in the database.
+    """
+    db = Database(production=False).db
+    pipe = [
+        {"$match": {"alert": True}},
+    ]
+    data = db.tweets.aggregate(pipe)
+    for i in data:
+        assert saxo_helper.doc_older_than(document=i) == True
