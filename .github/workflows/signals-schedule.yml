@@ -1,0 +1,32 @@
+name: Signals (manual)
+
+on:
+  schedule:
+    - cron: '0 4 * * *'  # Run every day at 04:00 UTC (22:00 CT)
+
+permissions:
+  contents: read
+
+jobs:
+  run_script:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1439  # timeout after 24 hours -1 minute
+    
+    # Load secrets into Actions Environment
+    env:
+      PROWL_API_KEY: ${{ secrets.PROWL_API_KEY }}
+      MONGODB_CONN: ${{ secrets.MONGODB_CONN }}
+      LOG_LEVEL: 'DEBUG'
+      PRODUCTION: 'True'
+    
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip' # caching pip dependencies
+      - run: pip install -r requirements.txt
+    
+      - name: Run job
+        run: python3 cli_signal.py watch
+        continue-on-error: true  # avoid returning error when timeout is reached
