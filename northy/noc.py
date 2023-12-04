@@ -213,4 +213,4 @@ class Noc:
             self.process_notification(db=db)
             
             # Check for new notifications every second
-            time.sleep(2)
+            time.sleep(1)
