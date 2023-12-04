@@ -1,4 +1,4 @@
-name: Signals (manual)
+name: Signals (scheduled)
 
 on:
   schedule:
