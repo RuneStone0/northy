@@ -16,6 +16,9 @@ jobs:
     # Load secrets into Actions Environment
     env:
       POSTMARK_SERVER_TOKEN: ${{ secrets.POSTMARK_SERVER_TOKEN }}
+      SAXO_CONFIG: ${{ secrets.SAXO_CONFIG }}
+      LOG_LEVEL: 'DEBUG'
+      PRODUCTION: 'True'
     
     steps:
       - uses: actions/checkout@v3
@@ -25,8 +28,8 @@ jobs:
           cache: 'pip' # caching pip dependencies
       - run: pip install -r requirements.txt
     
-      - name: Run job
+      - name: Run report for 'default' profile
         run: python3 cli_saxo.py report-closed-positions
 
-      #- name: Run job
-      #run: python3 cli_saxo.py --profile SIM2 report-closed-positions
+      - name: Run report for 'SIM2' profile
+        run: python3 cli_saxo.py --profile SIM2 report-closed-positions
