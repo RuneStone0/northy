@@ -37,7 +37,6 @@ class Saxo:
 
         # Set trade account config
         self.config = saxo_config
-        self.logger.debug(f"Saxo config: {self.config}")
         self.set_profile()
         self.tickers = saxo_tickers
 
