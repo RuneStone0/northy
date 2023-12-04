@@ -21,6 +21,7 @@ jobs:
     
     # Load secrets into Actions Environment
     env:
+      ACTIONS_STEP_DEBUG: true
       PROWL_API_KEY: ${{ secrets.PROWL_API_KEY }}
       MONGODB_CONN: ${{ secrets.MONGODB_CONN }}
       LOG_LEVEL: 'DEBUG'
