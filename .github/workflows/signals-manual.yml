@@ -17,7 +17,7 @@ permissions:
 jobs:
   run_script:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 1
     
     # Load secrets into Actions Environment
     env:
@@ -37,7 +37,7 @@ jobs:
       - name: Run manual command
         run: |
           command="${{ github.event.inputs.command }}"
-          
+          echo "Running command: $command"
           if [ "$command" == "watch" ]; then
             echo "Running watch command..."
             python3 cli_signal.py $command
