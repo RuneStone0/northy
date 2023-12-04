@@ -21,7 +21,13 @@ utils = Utils()
 ContextId = ''.join(random.choice(string.ascii_letters + string.digits + '-_') for i in range(50))
 ReferenceId = ''.join(random.choice(string.ascii_letters + string.digits + '-_') for i in range(50))
 saxo_tickers = utils.read_json(filename="conf/saxo_tickers.js")[0]
-saxo_config = utils.read_json(filename="conf/saxo_config.js")[0]
+
+try:
+    # try reading from file
+    saxo_config = utils.read_json(filename="conf/saxo_config.js")[0]
+except:
+    # try reading from env (used by github actions)
+    saxo_config = utils.json_from_env("SAXO_CONFIG")
 
 class Saxo:
     def __init__(self):
