@@ -20,6 +20,7 @@ ignore_tweets = [
     "1639263064758312965", # ALERT: Flat stopped $SPX (add-on)\n\nRe-entry long\nIN 397 - 10 pt stop
     "1715013850490118431", # ALERT: flat stopped $RUT (add-on)\nRe-entry long\nIN: 17329- 10 pt stop..
     "1660904073049038848",
+    "1730645567368224857", # ALERT: Closed 3rd scale on $RUT IN: 1639 OUT: 1861 +222
 ]
 
 class Signal:
@@ -149,7 +150,9 @@ class Signal:
             data["signals"] = signals
 
         # Only for console output
-        #text = self.signal_helper.normalize_text(tweet["text"])
+        text = self.signal_helper.normalize_text(tweet["text"])
+        self.logger.debug(text)
+        self.logger.debug(signals)
         #print(colored(f"Input:\t\t{text}", "yellow"))
         #print(colored("Signals:", "green"))
         #[print(colored(f"\t\t{s}", "green")) for s in signals]  # Using list comprehension
