@@ -1,3 +1,4 @@
+import os
 import json
 import logging
 from jsmin import jsmin
@@ -23,6 +24,17 @@ class Utils:
         except FileNotFoundError:
             self.logger.warning(f"File '{filename}' not found.")
             return None
+
+    def json_from_env(self, env_var):
+        """
+            Read JSON from environment variable.
+        """
+        data = os.environ.get(env_var)
+        if data is None:
+            self.logger.warning(f"Environment variable '{env_var}' not found.")
+            return None
+        else:
+            return json.loads(data)
 
     def json_to_string(self, data):
         return json.dumps(data)
