@@ -35,23 +35,23 @@ jobs:
       - run: pip install -r requirements.txt
     
       - name: Run manual command
-      run: |
-        command="${{ github.event.inputs.command }}"
-        
-        if [ "$command" == "watch" ]; then
-          echo "Running watch command..."
-          python3 cli_signal.py $command
-        elif [ "$command" == "parse" ]; then
-          parse_input="${{ github.event.inputs.parse-input }}"
+        run: |
+          command="${{ github.event.inputs.command }}"
           
-          if [ -z "$parse_input" ]; then
-            echo "Error: parse-input is required for parse command."
+          if [ "$command" == "watch" ]; then
+            echo "Running watch command..."
+            python3 cli_signal.py $command
+          elif [ "$command" == "parse" ]; then
+            parse_input="${{ github.event.inputs.parse-input }}"
+            
+            if [ -z "$parse_input" ]; then
+              echo "Error: parse-input is required for parse command."
+              exit 1
+            fi
+
+            echo "Running parse command with input: $parse_input"
+            python3 cli_signal.py parse --tweet $parse_input
+          else
+            echo "Error: Unsupported command - $command"
             exit 1
           fi
-
-          echo "Running parse command with input: $parse_input"
-          python3 cli_signal.py parse --tweet $parse_input
-        else
-          echo "Error: Unsupported command - $command"
-          exit 1
-        fi
