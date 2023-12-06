@@ -148,6 +148,11 @@ class Signal:
             # Parse trading signal
             signals = self.text_to_signal(tweet)
             data["signals"] = signals
+        else:
+            # Tweet is not an alert
+            self.logger.debug(f"Tweet {tid} is not an alert")
+            data["signals"] = []
+            return data
 
         # Only for console output
         text = self.signal_helper.normalize_text(tweet["text"])
