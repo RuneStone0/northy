@@ -16,6 +16,11 @@ if __name__ == '__main__':
     @click.command()
     @click.option('--tweet', default=None, type=str, help='Twitter ID to lookup and parse')
     def parse(tweet):
+        # No input provided
+        if tweet is None:
+            logger.info("No tweet id provided")
+            return
+
         signal = Signal()
         signal.parse(tid=tweet)
 
