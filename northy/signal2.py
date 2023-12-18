@@ -21,6 +21,10 @@ ignore_tweets = [
     "1715013850490118431", # ALERT: flat stopped $RUT (add-on)\nRe-entry long\nIN: 17329- 10 pt stop..
     "1660904073049038848",
     "1730645567368224857", # ALERT: Closed 3rd scale on $RUT IN: 1639 OUT: 1861 +222
+    "1734315240756777155", # ALERT: Closed 3rd scale $NDX IN: 14060 OUT: 16215 +2155
+    "1735301009012867241", # ALERT: short $SPX IN: 4737 - 10 pt stop
+    "1735028643770880079", # ALERT: Short $SPX IN: 4710 - 10 pt stop
+    "1734490464969953693", # ALERT: Short $SPX IN: 4628 - 10 pt stop
 ]
 
 class Signal:
@@ -146,7 +150,13 @@ class Signal:
         # Parse trading signal
         if data["alert"]:
             # Parse trading signal
-            signals = self.text_to_signal(tweet)
+            try:
+                signals = self.text_to_signal(tweet)
+            except Exception as e:
+                msg = f"Failed parsing signal to text for {tid}"
+                self.logger.error(msg, e)
+                self.prowl.send(message=msg, priority=1)
+                return None
             data["signals"] = signals
         else:
             # Tweet is not an alert
@@ -583,6 +593,11 @@ class Signal:
             Output:
                 1550479656805081088 	 IN  ALERT: SHORT $SPX | IN 4000 - 10 PT STOP
         """
+        # Sometimes parsing of tweets fails, we handle that here
+        if data is None:
+            self.logger.error(f"Skip logging {doc['tid']} because data is None")
+            return
+
         tid = doc["tid"]
         text = doc["text"].strip()
         if data["alert"]:
@@ -621,14 +636,17 @@ class Signal:
             data = parse(tid=doc["tid"], update_db=True)
             watch_log(doc, data, prowl_notification=False)
 
-    def watch_stream(self):
+    def watch_stream(self, timeout=True):
         # Watch for new documents (tweets) where "alert" is not set
         pipeline = [
             { "$match": { "operationType": { "$in": ["insert"] } } }, # 'insert', 'update', 'replace', 'delete'
             { "$match": { "alert": { "$exists": False } } }, # Get tweets where "alerts" it not set (yet)
         ]
         # Create a change stream
-        change_stream = self.db_tweets.watch(pipeline)
+        if timeout:
+            timeout_in_milliseconds = 24 * 60 * 60 * 1000  # 24 hours in milliseconds
+        change_stream = self.db_tweets.watch(pipeline=pipeline, 
+                                             max_await_time_ms=5000)
 
         # Iterate over the change stream
         for change in change_stream:
@@ -636,7 +654,7 @@ class Signal:
             data = self.parse(doc["tid"], update_db=True)
             self.watch_log(doc, data)
 
-    def watch(self):
+    def watch(self, timeout:float = -1):
         """
             Watch for new tweets and parse them.
 
