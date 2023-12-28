@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   run_script:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 10
     
     # Load secrets into Actions Environment
