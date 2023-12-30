@@ -9,26 +9,23 @@
 6. Enable "Keep screen on"
 
 ## Run Github Actions inside WSL on Windows
-```bash
-cd /home/actions-runner
-./run.sh
+Assuming Github Actions is installed in WSL, run:
+```PowerShell
+northy\scripts\win_start_gha.ps1
 ```
 
-## Start Notification Center for new Tweets
-```cmd
-PowerShell -Command "Set-ExecutionPolicy Unrestricted" >> "%TEMP%\StartupLog.txt" 2>&1
-PowerShell %USERPROFILE%\Documents\code\RuneOrg\northy\scripts\noc.ps1
+## Start watching Notification Center
+```PowerShell
+northy\scripts\win_start_noc_watch.ps1
 ```
 
 ## Exit Windows without killing console
-When you RDP into a Windows box, you can exit the RDP session without killing 
-the console, thus keeping the Windows Notifications Center "alive". This is 
-required to keep the script (noc.py) receiving notifications from Twitter.
+RDP sessions will become "deactivated" when there is not a connection to them. Programs will still run, but anything that depends on GUI interaction will break badly. To "convert" a terminal session into a console session before terminating the RDP session by running the following command: `for /f "skip=1 tokens=3" %s in ('query user %USERNAME%') do (tscon.exe %s /dest:console)`
 
 More info here: 
 https://stackoverflow.com/questions/15887729/can-the-gui-of-an-rdp-session-remain-active-after-disconnect
 
-```cmd
-PowerShell -Command "Set-ExecutionPolicy Unrestricted" >> "%TEMP%\StartupLog.txt" 2>&1
-PowerShell %USERPROFILE%\Documents\code\RuneOrg\northy\scripts\noc.ps1
+Alternatively run this script:
+```PowerShell
+northy\scripts\win_exit_rdp.ps1
 ```
