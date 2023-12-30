@@ -15,6 +15,14 @@ echo "Install requirements.txt"
 sleep 2
 pip install -r .\requirements.txt
 
+# Check if Chrome is running
+if (Get-Process -Name "chrome" -ErrorAction SilentlyContinue) {
+    Write-Host "Chrome is already open."
+} else {
+    Write-Host "Chrome is not open. Opening Chrome..."
+    Start-Process "chrome"
+}
+
 echo "Start watching Windows Notification Center.."
 sleep 2
 .\cli_noc.py watch
