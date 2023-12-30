@@ -1,0 +1,1 @@
+wsl /home/actions-runner/run.sh
