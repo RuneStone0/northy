@@ -10,7 +10,7 @@ permissions:
 jobs:
   run_script:
     runs-on: self-hosted
-    timeout-minutes: 1440
+    timeout-minutes: 10 # 1440
     
     # Load secrets into Actions Environment
     env:
@@ -28,5 +28,5 @@ jobs:
       - run: pip install -r requirements.txt
     
       - name: Run job
-        run: python3 cli_signal.py watch --timeout 1439
+        run: python3 cli_signal.py watch --timeout 9 # 1439
         continue-on-error: true  # avoid returning error when timeout is reached
