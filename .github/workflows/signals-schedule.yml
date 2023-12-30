@@ -2,7 +2,9 @@ name: Signals (scheduled)
 
 on:
   schedule:
-    - cron: '0 4 * * *'  # Run every day at 04:00 UTC (22:00 CT)
+    #- cron: '0 4 * * *'  # Run every day at 04:00 UTC (22:00 CT)
+    # run every 10 minutes
+    - cron: '*/10 * * * *'
 
 permissions:
   contents: read
