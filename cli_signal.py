@@ -14,7 +14,7 @@ if __name__ == '__main__':
         pass
 
     @click.command()
-    @click.option('--tweet', default=None, type=str, help='Twitter ID to lookup and parse')
+    @click.option('--tweet', default=None, type=str, help='Parse Twitter ID')
     def parse(tweet):
         # No input provided
         if tweet is None:
@@ -25,11 +25,18 @@ if __name__ == '__main__':
         signal.parse(tid=tweet)
 
     @click.command()
-    def watch():
-        """ Watch for new tweets and signals """
+    @click.option('--timeout', default=-1, type=float, 
+                  help='Kill process after x min.')
+    def watch(timeout):
+        """ 
+            Watch for new tweets and signals.
+
+            Args:
+                timeout: Timeout in minutes. Deault will run forever.
+        """
         try:
             signal = Signal()
-            signal.watch()
+            signal.watch(timeout=timeout)
         except Exception as e:
             p = Prowl(API_KEY=config["PROWL_API_KEY"])
             p.send("Error: cli_signal.py crashed!!")
