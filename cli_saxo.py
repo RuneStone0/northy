@@ -149,13 +149,14 @@ if __name__ == '__main__':
         """
             Watch for alerts and execute trades
         """
-        saxo = Saxo()
-        try:
-            saxo.watch()
-        except Exception as e:
-            p = Prowl(API_KEY=config["PROWL_API_KEY"])
-            p.send("Error: cli_saxo.py crashed!!")
-            logger.error(e)
+        while True:
+            try:
+                saxo = Saxo()
+                saxo.watch()
+            except Exception as e:
+                p = Prowl(API_KEY=config["PROWL_API_KEY"])
+                p.send("cli_saxo.py watch crashed!! Restarting..")
+                logger.error(e, exc_info=True)
 
     cli.add_command(report_closed_positions)
     cli.add_command(positions)
