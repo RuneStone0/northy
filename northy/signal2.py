@@ -25,6 +25,8 @@ ignore_tweets = [
     "1735301009012867241", # ALERT: short $SPX IN: 4737 - 10 pt stop
     "1735028643770880079", # ALERT: Short $SPX IN: 4710 - 10 pt stop
     "1734490464969953693", # ALERT: Short $SPX IN: 4628 - 10 pt stop
+    "1736735079810928884", # ALERT: Closed final scale $NDX IN: 14060 OUT 16620 +2560
+    "1737565902223130808", # ALERT: Closed 1 scale $SPX IN: 4770 OUT: 4710 +60
 ]
 
 class Signal:
@@ -636,15 +638,12 @@ class Signal:
             data = parse(tid=doc["tid"], update_db=True)
             watch_log(doc, data, prowl_notification=False)
 
-    def watch_stream(self, timeout=True):
+    def watch_stream(self):
         # Watch for new documents (tweets) where "alert" is not set
         pipeline = [
             { "$match": { "operationType": { "$in": ["insert"] } } }, # 'insert', 'update', 'replace', 'delete'
             { "$match": { "alert": { "$exists": False } } }, # Get tweets where "alerts" it not set (yet)
         ]
-        # Create a change stream
-        if timeout:
-            timeout_in_milliseconds = 24 * 60 * 60 * 1000  # 24 hours in milliseconds
         change_stream = self.db_tweets.watch(pipeline=pipeline, 
                                              max_await_time_ms=5000)
 
@@ -654,7 +653,7 @@ class Signal:
             data = self.parse(doc["tid"], update_db=True)
             self.watch_log(doc, data)
 
-    def watch(self, timeout:float = -1):
+    def watch(self):
         """
             Watch for new tweets and parse them.
 
