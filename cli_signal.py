@@ -25,7 +25,7 @@ if __name__ == '__main__':
         signal.parse(tid=tweet)
 
     @click.command()
-    def watch(timeout):
+    def watch():
         """ 
             Watch for new tweets and signals.
         """
