@@ -25,18 +25,13 @@ if __name__ == '__main__':
         signal.parse(tid=tweet)
 
     @click.command()
-    @click.option('--timeout', default=-1, type=float, 
-                  help='Kill process after x min.')
     def watch(timeout):
         """ 
             Watch for new tweets and signals.
-
-            Args:
-                timeout: Timeout in minutes. Deault will run forever.
         """
         try:
             signal = Signal()
-            signal.watch(timeout=timeout)
+            signal.watch()
         except Exception as e:
             p = Prowl(API_KEY=config["PROWL_API_KEY"])
             p.send("Error: cli_signal.py crashed!!")
