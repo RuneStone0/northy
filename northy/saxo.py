@@ -9,6 +9,7 @@ import pandas as pd
 import random, string
 import time, uuid
 from northy.utils import Utils
+from northy.db import Database
 from datetime import datetime, timezone
 from collections import namedtuple
 from requests.auth import HTTPBasicAuth
@@ -864,12 +865,11 @@ class Saxo:
         return self.price(uic)["Quote"]["Bid"]
 
     def watch(self):
-        from northy.db import Database
-        db = Database().db
-        saxo_helper = SaxoHelper()
-
         self.logger.info("Starting change stream....")
         while True:
+            db = Database().db
+            saxo_helper = SaxoHelper()
+            
             # Watch for new documents (tweets) where "alert" is not set
             pipeline = [
                 # 'insert', 'update', 'replace', 'delete'
