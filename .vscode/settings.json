@@ -16,4 +16,8 @@
         "tests"
     ],
     "python.testing.pytestEnabled": true,
+
+    // Markdown
+    // https://marketplace.visualstudio.com/items?itemName=yzhang.markdown-all-in-one
+    "markdown.extension.preview.autoShowPreviewToSide": true
 }
