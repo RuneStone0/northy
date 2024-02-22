@@ -26,7 +26,6 @@ Breakdown
         CLOSED      - close recently opened position (100% of position)
         SCALEOUT    - scale out of position (25% of position)
         LIMIT       - set a limit order
-        STOPLOSS    - set a stop loss order
     DIRECTION - define the position direction
         LONG        - go long a trade (buy)
         SHORT       - go short a trade (sell)
@@ -43,5 +42,53 @@ SPX_FLATSTOP
 SPX_CLOSED
 SPX_SCALEOUT_IN_3588_OUT_3682_POINTS_94
 SPX_LIMIT_LONG_IN_3673_OUT_3663_SL_10
+```
+
+## JSON Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "TICKER": { "type": "string" },
+    "ACTION": { "type": "string", "enum": ["TRADE", "FLAT", "FLATSTOP", "CLOSED", "SCALEOUT", "LIMIT", "STOPLOSS"] },
+    "DIRECTION": { "type": "string", "enum": ["LONG", "SHORT"] },
+    "IN_PRICE": { "type": "number" },
+    "OUT_PRICE": { "type": "number" },
+    "SL_POINTS": { "type": "number" }
+  },
+  "required": ["TICKER", "ACTION", "DIRECTION", "IN_PRICE", "OUT_PRICE", "SL_POINTS"],
+  "additionalProperties": false
+}
+```
+
+## JSON Example
+`ALERT: Flat stopped $SPX Re-entry short IN 4770 - 10 pt stop`
+
+```json
+[
+    {
+        "TICKER": "SPX",
+        "ACTION": "FLATSTOP",
+    },
+    {
+    "TICKER": "SPX",
+    "ACTION": "TRADE",
+    "DIRECTION": "SHORT",
+    "IN_PRICE": 4770,
+    "SL_POINTS": 10
+    }
+]
+```
+  "properties": {
+    "TICKER": { "type": "string" },
+    "ACTION": { "type": "string", "enum": ["TRADE", "FLAT", "FLATSTOP", "CLOSED", "SCALEOUT", "LIMIT", "STOPLOSS"] },
+    "DIRECTION": { "type": "string", "enum": ["LONG", "SHORT"] },
+    "IN_PRICE": { "type": "number" },
+    "OUT_PRICE": { "type": "number" },
+    "SL_POINTS": { "type": "number" }
+  },
+  "required": ["TICKER", "ACTION", "DIRECTION", "IN_PRICE", "OUT_PRICE", "SL_POINTS"],
+  "additionalProperties": false
+}
 ```
 

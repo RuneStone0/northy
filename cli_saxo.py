@@ -128,6 +128,7 @@ if __name__ == '__main__':
         # No input provided
         if ctx.args == []:
             print(trade.get_help(ctx))
+            return
 
         saxo = Saxo()
         # If signal is provided
