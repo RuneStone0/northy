@@ -133,7 +133,15 @@ class Saxo:
         data = {"field_userid": self.username, "field_password": self.password}
         self.logger.info(f"POST {redirect_url}")
         r = self.s.post(redirect_url, data=data, allow_redirects=False)
-        post_login_url = r.headers["Location"]
+
+        # Get redirect URL
+        try:
+            post_login_url = r.headers["Location"]
+        except:
+            # TODO: Add prowl notification here
+            self.logger.error("Unsuccessful logon. Check password and try manual authenticaition.")
+            raise Exception("Unsuccessful logon")
+
 
         if post_login_url == "/sim/login/ChangePassword":
             # TODO: Add prowl notification here
@@ -886,8 +894,8 @@ class Saxo:
 
                 # Skip tweets older than 15 minutes
                 # Safe guard to avoid executing trades on old tweets
-                if saxo_helper.doc_older_than(doc, max_age=20):
-                    continue
+                #if saxo_helper.doc_older_than(doc, max_age=20):
+                #    continue
 
                 # Execute trades for signals in tweet
                 for signal in doc["signals"]:
