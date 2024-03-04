@@ -1,6 +1,7 @@
 import logging
-from northy.config import config
 from postmarker.core import PostmarkClient
+from northy.config import Config
+config = Config().config
 
 class Email:
     def __init__(self, API_KEY=None) -> None:

@@ -1,5 +1,8 @@
 from northy.signal2 import Signal, SignalHelper
 from northy.db import Database
+import logging
+
+logger = logging.getLogger(__name__)
 
 db = Database(production=False)
 signal = Signal(production=False)
@@ -52,6 +55,9 @@ def test_signal2_parse():
     assert signal.parse(123) == None
     assert signal.parse("") == None
 
+    # Valid Twitter IDs
+    assert isinstance(signal.parse("1567150181933617152"), dict)
+
 def test_signal2_parse_update_false():
     # Run parse() without update_db (False)
     pipe = [
@@ -59,6 +65,7 @@ def test_signal2_parse_update_false():
         {"$sample": {"size": 5}}
     ]
     for i in db.tweets.aggregate(pipe):
+        logger.info(f"Testing tweet: {i['tid']}")
         assert isinstance(signal.parse(i["tid"]), dict)
 
 def test_signal2_parse_update_true():
@@ -92,6 +99,7 @@ def test_text_to_signal():
 
     # Loop through all alert Tweets
     for i in db.tweets.find({"alert": True}):
+        logger.info(f"Testing tweet: {i['tid']}")
         assert isinstance(signal.text_to_signal(tweet=i), list) == True
 
     # Invalid action in tweet

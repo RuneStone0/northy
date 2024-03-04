@@ -1,6 +1,6 @@
-import logging
 from northy.email import Email
-from northy.config import config, set_env
+from northy.config import Config
+config = Config().config
 
 def test_send():
     # Use API from environment variable

@@ -1,7 +1,8 @@
 import os
 from northy import utils
 from northy.tweets import Tweets, TweetsDB
-from northy.config import config
+from northy.config import Config
+config = Config().config
 
 tweets = Tweets(config=config)
 

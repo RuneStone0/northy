@@ -4,12 +4,13 @@ import time
 import tweepy
 import logging
 from northy.db import Database
-from northy.config import config
 from northy.color import colored
 from datetime import datetime, timedelta
 from pymongo import DESCENDING
 from pymongo.errors import DuplicateKeyError
 from zoneinfo import ZoneInfo
+from northy.config import Config
+config = Config().config
 
 class Tweets:
     """
