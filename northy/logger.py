@@ -1,7 +1,8 @@
 import os
 import logging
 from colorama import Fore, Style, init
-from northy.config import config
+from northy.config import Config
+config = Config().config
 init(autoreset=True)
 
 class ColoredFormatter(logging.Formatter):

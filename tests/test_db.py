@@ -20,7 +20,8 @@ def test_db_prod():
     assert db.production == True
 
 def test_db_env():
-    from northy.config import config
+    from northy.config import Config
+    config = Config().config
     env_prod = config["PRODUCTION"]
     db = Database()
     assert db.production == env_prod
@@ -31,7 +32,8 @@ def temp_folder():
         yield temp_dir
 
 def test_backup(temp_folder):
-    from northy.config import config
+    from northy.config import Config
+    config = Config().config
 
     # Perform the backup
     connection_string = config["MONGODB_CONN"]

@@ -6,17 +6,16 @@ import sqlite3
 import xmltodict
 import logging
 from datetime import datetime
-from northy.config import config
+from northy.config import Config
 from northy.db import Database
+
+config = Config().config
 
 class Noc:
     """ Windows Notifications Center """
-    def __init__(self, production=None, wpndatabase_path=None):
+    def __init__(self, wpndatabase_path=None):
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
-
-        # Set variables
-        self.production = config["PRODUCTION"] if production is None else production
 
         # Prepare class
         self.__prepare_cache()
@@ -208,7 +207,7 @@ class Noc:
                 for _ in range(int(self.cache_clean)): self.cache.pop(0)
 
     def watch(self):
-        db = Database(production=self.production)
+        db = Database()
         while True:
             self.process_notification(db=db)
             

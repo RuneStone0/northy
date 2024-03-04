@@ -4,16 +4,16 @@ from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 from datetime import datetime
 from northy.color import colored
-from northy.config import config
+from northy.config import Config
 import mongomock
 import bson
 
 class Database(object):
-    def __init__(self, connection_string=None, production=None,
+    def __init__(self, connection_string=None, production:bool=None,
                  database_name="northy", collection_name="tweets") -> None:
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
-        
+        config = Config().config
         self.connection_string = config["MONGODB_CONN"] if connection_string is None else connection_string
         self.production = config["PRODUCTION"] if production is None else production
         self.database_name = database_name
@@ -114,3 +114,23 @@ class Database(object):
             self.logger.error(e)
         
         return False
+
+    def get_tweet(self, tid:str) -> dict:
+        """
+            Get a tweet from the database.
+        """
+        return self.db.tweets.find_one({"tid": tid})
+
+    def find(self, query:dict, limit=0) -> list:
+        """
+            Run find query.
+        """
+        data = list(self.db.tweets.find(query).limit(limit))
+        return data
+
+    def aggregate(self, pipeline: list) -> list:
+        """
+            Run aggregate query.
+        """
+        data = list(self.db.tweets.aggregate(pipeline))
+        return data
