@@ -5,8 +5,13 @@ from pymongo.errors import DuplicateKeyError
 from datetime import datetime
 from northy.color import colored
 from northy.config import Config
+from northy.secrets_manager import SecretsManager
 import mongomock
 import bson
+
+
+sm = SecretsManager()
+sm.read()
 
 class Database(object):
     def __init__(self, connection_string=None, production:bool=None,
@@ -14,7 +19,8 @@ class Database(object):
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
         config = Config().config
-        self.connection_string = config["MONGODB_CONN"] if connection_string is None else connection_string
+        URI = sm.get_dict()["MONGODB"]["URI"]
+        self.connection_string = URI if connection_string is None else connection_string
         self.production = config["PRODUCTION"] if production is None else production
         self.database_name = database_name
         self.collection_name = collection_name
@@ -23,15 +29,14 @@ class Database(object):
         self.__connect()
 
     def __connect(self):
-        self.logger.info("Connecting to DB..")
         if self.production:
-            self.logger.critical("Using MongoDB Atlas (PRODUCTION MODE)")
+            self.logger.critical("Connecting to MongoDB (PRODUCTION)")
             self.client = MongoClient(self.connection_string)
             self.db = self.client[self.database_name]
             self.tweets = self.db[self.collection_name]
             return self.client
         else:
-            self.logger.warning("Using mongomock (testing mode)")
+            self.logger.warning("Connecting to mongomock (TESTING)")
             self.client = mongomock.MongoClient()
 
             # create a database and collection
