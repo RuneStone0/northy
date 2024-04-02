@@ -53,9 +53,8 @@ class ColoredFormatter(logging.Formatter):
         return log_msg
 
 def setup_logger(filename="northy.log"):
-    # crete logs dir if it doesn't exist
-    if not os.path.exists("logs"):
-        os.makedirs("logs")
+    # Ensure logs/ exists
+    os.makedirs("logs", exist_ok=True)
 
     # Configure the root logger
     logging.basicConfig(
