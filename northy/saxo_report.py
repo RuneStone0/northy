@@ -111,6 +111,8 @@ class SaxoReport:
             Sleep until specified time on the next weekday.
         """
         now = datetime.now(ZoneInfo('US/Central'))
+        
+        # Calculate time until next run
         if now.weekday() >= 5:  # If it's weekend
             self.logger.info("Its weekend. Sleeping until Monday at 17:00")
             days_till_monday = 7 - now.weekday()
@@ -123,6 +125,9 @@ class SaxoReport:
         else:  # If it's before the specified hour on a weekday
             self.logger.info("Its before 17:00. Sleeping until 17:00")
             next_time = now.replace(hour=hours, minute=minutes, second=seconds)
+        
+        # Calculate sleep time
         sleep_time = (next_time - now).total_seconds()
+
         self.logger.info(f"Sleeping for {sleep_time} seconds until {next_time}")
         time.sleep(sleep_time)
