@@ -25,16 +25,5 @@ class Utils:
             self.logger.warning(f"File '{filename}' not found.")
             return None
 
-    def json_from_env(self, env_var):
-        """
-            Read JSON from environment variable.
-        """
-        data = os.environ.get(env_var)
-        if data is None:
-            self.logger.warning(f"Environment variable '{env_var}' not found.")
-            return None
-        else:
-            return json.loads(data)[0]
-
     def json_to_string(self, data):
         return json.dumps(data)
