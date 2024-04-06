@@ -36,8 +36,7 @@ def test_backup(temp_folder):
     config = Config().config
 
     # Perform the backup
-    connection_string = config["MONGODB_CONN"]
-    db = Database(connection_string=connection_string)
+    db = Database(production=False)
     result = db.backup(output_directory=temp_folder)
     assert result is None, "Backup should complete without errors"
 
@@ -68,3 +67,33 @@ def test_add_tweet():
     add_tweet = db.add_tweet(data)
     assert isinstance(add_tweet, bool)
     assert add_tweet == False
+
+def test_get_tweet():
+    db = Database(production=False)
+
+    # Test when tweet exists
+    data = db.get_tweet(tid="1547926636393218051")
+    assert isinstance(data, dict)
+    assert data["tid"] == "1547926636393218051"
+
+    # Test when tweet does not exist
+    data = db.get_tweet(tid="1234567891")
+    assert data == None
+
+def test_find():
+    db = Database(production=False)
+
+    # Test when tweet exists
+    data = db.find({"tid": "1547926636393218051"}, limit=1)
+    assert isinstance(data, list)
+    assert len(data) == 1
+    assert data[0]["tid"] == "1547926636393218051"
+
+def test_aggregate():
+    db = Database(production=False)
+
+    # Test when tweet exists
+    data = db.aggregate([{"$match": {"tid": "1547926636393218051"}}])
+    assert isinstance(data, list)
+    assert len(data) == 1
+    assert data[0]["tid"] == "1547926636393218051"
