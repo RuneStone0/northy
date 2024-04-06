@@ -5,7 +5,11 @@ from colorama import Fore, Back, Style, init
 # Initialize Colorama
 init(autoreset=True)
 
-def colored(text, color, bgcolor=Back.BLACK, style=Style.NORMAL):
+def colored(text, color="white", bgcolor=Back.BLACK, style=Style.NORMAL):
+    # Normalize input
+    color = color.lower()
+
+    # Set color
     if color == "red":
         color = Fore.RED
     elif color == "green":
@@ -20,8 +24,5 @@ def colored(text, color, bgcolor=Back.BLACK, style=Style.NORMAL):
         color = Fore.CYAN
     elif color == "white":
         color = Fore.WHITE
-    else:
-        color = Fore.WHITE
-
-    colored_text = f"{style}{color}{bgcolor}{text}{Style.RESET_ALL}"
-    return colored_text
+    
+    return f"{style}{color}{bgcolor}{text}{Style.RESET_ALL}"
