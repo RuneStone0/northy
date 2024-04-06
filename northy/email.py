@@ -8,7 +8,7 @@ class Email:
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
 
-        self.API_KEY = config['POSTMARK_SERVER_TOKEN'] if API_KEY is None else API_KEY
+        self.API_KEY = config["SPARKPOST"]["SERVER_TOKEN"] if API_KEY is None else API_KEY
         self.client = PostmarkClient(server_token=self.API_KEY)
 
     def send(self, _from="rtk@rtk-cv.dk", to="rtk@rtk-cv.dk",
