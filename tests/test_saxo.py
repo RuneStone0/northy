@@ -162,6 +162,9 @@ def test_trade_buysell_all():
     direction = ["LONG", "SHORT"]
     for symbol in symbols:
         for dir in direction:
+            import time
+            time.sleep(5)
+            
             signal = f"{symbol}_TRADE_{dir}_IN_13199_SL_25"
             logger.info(f"Testing {signal}")
             rsp = saxo.trade(signal)
