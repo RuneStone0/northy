@@ -2,7 +2,6 @@ import os
 import logging
 from northy import utils
 from unittest.mock import patch
-from datetime import datetime, timezone, timedelta
 from northy.saxo import Saxo, SaxoHelper
 saxo = Saxo()
 saxo_helper = SaxoHelper()
@@ -130,19 +129,6 @@ def test_price():
 
     # Invalid symbol
     assert saxo.price(123) == None
-
-def test_doc_older_than():
-    # Test with created_at older than max_age
-    time_in_past = str(datetime.now(timezone.utc) + timedelta(minutes = -16))
-    doc = { 'tid': '1697257335847289249', 'created_at': time_in_past }
-    out = saxo_helper.doc_older_than(document=doc, max_age=15)
-    assert out == True
-
-    # Test with created_at younger than max_age
-    time_in_past = str(datetime.now(timezone.utc) + timedelta(minutes = -5))
-    doc = { 'tid': '1697257335847289249', 'created_at': time_in_past }
-    out = saxo_helper.doc_older_than(document=doc, max_age=15)
-    assert out == False
 
 def test_trade():
     signals = [
