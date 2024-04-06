@@ -1,4 +1,3 @@
-tweepy
 python-dotenv
 Click
 colorama
