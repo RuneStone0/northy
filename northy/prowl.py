@@ -1,6 +1,7 @@
 import os
 import pyprowl
 import logging
+from northy.config import Config
 
 class Prowl:
     """
@@ -13,8 +14,9 @@ class Prowl:
     def __init__(self, API_KEY=None) -> None:
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
+        self.config = Config().config
         
-        self.PROWL_API_KEY = os.environ.get('PROWL_API_KEY') if API_KEY is None else API_KEY
+        self.PROWL_API_KEY = self.config["PROWL"]["API_KEY"] if API_KEY is None else API_KEY
         self.prowl = pyprowl.Prowl(API_KEY)
 
     def test(self):
