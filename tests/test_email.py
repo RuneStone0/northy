@@ -7,6 +7,6 @@ def test_send():
     email = Email()
     email.send(subject="pytest", content="Test")
 
-    # Pass API  key as argument
-    email = Email(API_KEY=config["POSTMARK_SERVER_TOKEN"])
+    # Pass API key as argument
+    email = Email(API_KEY=config["SPARKPOST"]["SERVER_TOKEN"])
     email.send(subject="pytest", content="Test")
