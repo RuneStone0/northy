@@ -90,3 +90,4 @@ temp/
 .tox/
 .env
 .key
+conf/secrets.ini
