@@ -32,6 +32,11 @@ class Prowl:
         """
             Send push notification using Prowl.
         """
+        # If not in production, do not send the notification
+        if self.config["PRODUCTION"] == False:
+            self.logger.debug(f"Prowl.send() called with message: {message}")
+            return
+        
         response = self.prowl.notify(event="ALERT", 
                     description=message, 
                     priority=priority, 

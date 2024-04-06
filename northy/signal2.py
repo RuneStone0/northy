@@ -8,7 +8,8 @@ from northy.prowl import Prowl
 from northy.db import Database
 from northy.saxo import SaxoHelper, saxo_tickers
 from northy.color import colored
-from northy.config import config
+from northy.config import Config
+config = Config().config
 
 ignore_tweets = [
     "1557516667357380608", # FLAT STOPPED $SPX | RE-ENTRY SHORT | IN 4211 - 10 PT STOP. | ADJUSTED $NDX STOP TO -25. |  | TAKING THE STOP RISK OVERNIGHT
@@ -19,14 +20,18 @@ ignore_tweets = [
     "1645367498823352320", # REMOVED $SPX 4000 LIMIT BUY ORDER. |  | #HOUSEKEEPING |  | NARRATOR: HA HA HTTPS://T.CO/ZR5COSFEX9
     "1639263064758312965", # ALERT: Flat stopped $SPX (add-on)\n\nRe-entry long\nIN 397 - 10 pt stop
     "1715013850490118431", # ALERT: flat stopped $RUT (add-on)\nRe-entry long\nIN: 17329- 10 pt stop..
-    "1660904073049038848",
+    "1660904073049038848", # ALERT: Flat stopped $NDX | Re-entry short | IN 13866 - 25 pt stop | *3:00am our time stop run. Nice. $SPX held. Now trying to reposition $NDX
     "1730645567368224857", # ALERT: Closed 3rd scale on $RUT IN: 1639 OUT: 1861 +222
     "1734315240756777155", # ALERT: Closed 3rd scale $NDX IN: 14060 OUT: 16215 +2155
     "1735301009012867241", # ALERT: short $SPX IN: 4737 - 10 pt stop
     "1735028643770880079", # ALERT: Short $SPX IN: 4710 - 10 pt stop
     "1734490464969953693", # ALERT: Short $SPX IN: 4628 - 10 pt stop
     "1736735079810928884", # ALERT: Closed final scale $NDX IN: 14060 OUT 16620 +2560
-    "1737565902223130808", # ALERT: Closed 1 scale $SPX IN: 4770 OUT: 4710 +60
+    "1563233875702456320", # ALERT: Closed final scale original scale $RUT long
+    "1584909844867420162", # ALERT: closed 1 scale $RUT
+    "1752340364776648805", # ALERT: $SPX stop moved from flat to -10.
+    "1758203363445907469", # ALERT: CLOSED 3RD SCALE $RUT IN 1960 OUT 2062 +102
+    #"1737565902223130808", # ALERT: Closed 1 scale $SPX IN: 4770 OUT: 4710 +60
 ]
 
 class Signal:
@@ -38,12 +43,12 @@ class Signal:
     def __init__(self, production=None):
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
-        
-        self.prowl = Prowl(API_KEY=config["PROWL_API_KEY"])
+
+        self.prowl = Prowl(API_KEY=config["PROWL"]["API_KEY"])
 
         # MongoDB
-        self.production = config["PRODUCTION"] if production is None else production
-        self.db = Database(production=self.production)
+        self.db = Database(production=production)
+        self.production = self.db.production
         self.db_tweets = self.db.tweets
 
         # SaxoConfig
@@ -71,7 +76,7 @@ class Signal:
         print(f"{tid_color}", "\t IN ", colored(f"{text}\n\t\t\t", "yellow"), "OUT", colored(f"{signal_text}", "green"))
         return signal_text
 
-    def get(self, tid):
+    def get(self, tid) -> list:
         """
             Get alert tweet by ID and return trading signal.
         """
@@ -80,21 +85,8 @@ class Signal:
             self.logger.error(f"Failed getting Tweet by ID '{tid}'.")
             return None
         
-        signals = self.text_to_signal(tweet)
         self.__pretty_print_signal(tweet)
-        return signals
-
-    def getall(self) -> None:
-        """
-            Get all tweets and return trading signal.
-        """
-        self.logger.info("Getting all tweets from DB...")
-        results = self.db_tweets.aggregate([
-            { '$match': { 'alert': True } }, # Filter out alerts
-            { '$sort': { 'created_at': 1 } } # Sort, oldest first
-        ])
-        for tweet in results:
-            self.get(tweet["tid"])
+        return self.text_to_signal(tweet)
 
     def update(self, tid):
         """
@@ -106,14 +98,14 @@ class Signal:
         self.db_tweets.update_one(query, newvalues)
         return signals
 
-    def updateall(self):
+    def updateall(self, limit=0):
         """
             Update trading signal for all tweets.
         """
-        print("Updating all tweets...")
         results = self.db_tweets.aggregate([
             { '$match': { 'alert': True } },  # Filter out alerts
-            { '$sort': { 'created_at': 1 } }  # Sort, oldest first
+            { '$sort': { 'created_at': 1 } },  # Sort, oldest first
+            { '$limit': limit }  # Used for unit testing
         ])
         for tweet in results:
             self.update(tweet["tid"])
@@ -135,15 +127,21 @@ class Signal:
                         "SPX_TRADE_LONG_IN_3609_SL_10"
                     ]
                 }
-
         """
         query = {"tid": tid}
         tweet = self.db.tweets.find_one(query)
-        self.logger.info(f"Parsing tweet {tid}")
+
+        # Handle invalid Tweet ID        
         if tweet is None:
-            self.logger.error(f"Failed getting Tweet by ID '{tid}'.")
+            self.logger.error(f"Failed getting Tweet ID: {tid}")
             return None
-        
+
+        # Log info
+        # Only for console output
+        _text = self.signal_helper.normalize_text(tweet["text"])
+        self.logger.debug(f"Parsing {tid}: {_text}")
+
+        # Prepare data object to return
         data = {}
 
         # Check if tweet is an alert
@@ -166,9 +164,6 @@ class Signal:
             data["signals"] = []
             return data
 
-        # Only for console output
-        text = self.signal_helper.normalize_text(tweet["text"])
-        self.logger.debug(text)
         self.logger.debug(signals)
         #print(colored(f"Input:\t\t{text}", "yellow"))
         #print(colored("Signals:", "green"))
@@ -180,16 +175,6 @@ class Signal:
             self.db_tweets.update_one(query, newvalues)
 
         return data
-
-    def parseall(self):
-        """
-            Parse all tweets and update DB.
-        """
-        batch_size = 100
-        curser = self.db_tweets.find({"alert": True}).sort("created_at", 1).batch_size(batch_size)
-        for tweet in curser:
-            tid = tweet["tid"]
-            self.parse(tid)
 
     def text_to_signal(self, tweet:dict) -> list:
         """
@@ -496,7 +481,7 @@ class Signal:
                 return False
         return True
 
-    def manual(self, tid) -> None:
+    def manual(self, tid) -> None: # pragma: no cover
         """
             Prompt for manually reviewing signals and confirm them.
         """
@@ -528,6 +513,7 @@ class Signal:
                                            tweet["signals_manual"])
 
         # If signals mismatch, prompt user to confirm or manually enter signals
+        self.logger.info(signals_match)
         if not signals_match:
             # signals_manual doesn't exist yet
             # generate signals from text and suggest to use it
@@ -566,7 +552,7 @@ class Signal:
                 self.logger.debug("Invalid input. Exiting..")
                 sys.exit()
 
-    def manualall(self):
+    def manualall(self): # pragma: no cover
         results = self.db_tweets.aggregate([
             {
                 # Filter out alerts
@@ -638,7 +624,7 @@ class Signal:
             data = parse(tid=doc["tid"], update_db=True)
             watch_log(doc, data, prowl_notification=False)
 
-    def watch_stream(self):
+    def watch_stream(self) -> None: # pragma: no cover
         # Watch for new documents (tweets) where "alert" is not set
         pipeline = [
             { "$match": { "operationType": { "$in": ["insert"] } } }, # 'insert', 'update', 'replace', 'delete'
@@ -653,14 +639,15 @@ class Signal:
             data = self.parse(doc["tid"], update_db=True)
             self.watch_log(doc, data)
 
-    def watch(self):
+    def watch(self, refresh_backlog=True, loops=lambda: True) -> None: # pragma: no cover
         """
             Watch for new tweets and parse them.
 
             If a trading signal is found, we add it to the DB.
         """
-        self.refresh_backlog()
-        while True:
+        if refresh_backlog:
+            self.refresh_backlog()
+        while loops():
             try:
                 self.logger.info("Starting change stream...")
                 self.watch_stream()
@@ -687,17 +674,17 @@ class SignalHelper:
 
         # Clean up string
         text = tweet_text
-        text = text.replace("\n", " | ")
-        text = text.replace("ALERT: ", "")
-        text = re.sub(r'\s+', ' ', text)
+        text = text.replace("\n", " | ") # Replace newlines with |
+        text = text.replace("ALERT: ", "") # Remove ALERT: with empty string
+        text = re.sub(r'\s+', ' ', text) # Remove double spaces
         text = text.upper()
 
-        # Fix bug with `| LONG $SPX $NDX | IN 3580 - 10 PT STOP |IN 10900 - 25 PT STOP`   1576847187740266496
+        # Fix bug with 1576847187740266496 `| LONG $SPX $NDX | IN 3580 - 10 PT STOP |IN 10900 - 25 PT STOP`
         if text.startswith("| "):
             text = text[2:]
 
-        # Fix bug with ("FLAT STOPPED $RUT | RE-ENTRY LONG | IN: 1795 - 10 PT STOP") where "IN:" contains a colon, all other tweets doesn't
-        text = text.replace(" IN: ", "IN ")
+        # Fix bug with 1567150181933617152 `FLAT STOPPED $RUT | RE-ENTRY LONG | IN: 1795 - 10 PT STOP` where "IN:" contains a colon, all other tweets doesn't
+        text = text.replace("IN:", "IN")
 
         # Prettify
         text = text.replace("|IN", "| IN")
