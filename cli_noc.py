@@ -71,6 +71,18 @@ if __name__ == '__main__':
         list_tables(database_path)
         read_data_from_db(database_path)
 
+    @click.command()
+    @click.option('--path', required=False, default=None, type=str, help='Path to wpndatabase')
+    def process(path):
+        """
+        Process notifications from DB
+        """
+        from northy.db import Database
+        db = Database()
+        noc = Noc(wpndatabase_path=path)
+        noc.process_notification(db=db)
+
     cli.add_command(watch)
     cli.add_command(read)
+    cli.add_command(process)
     cli()

@@ -19,7 +19,7 @@ class Noc:
 
         # Prepare class
         self.__prepare_cache()
-        self.__check_os()
+        self.check_os()
         if wpndatabase_path is None:
             self.__set_db_path()
         else:
@@ -29,6 +29,17 @@ class Noc:
         self.logger.critical("Enable Twitter notification (https://twitter.com/settings/push_notifications). Setting is managed per-browser and not per Twitter/Chrome profile.")
         self.logger.critical("Add twitter.com / x.com to Always Active Sites (chrome://settings/performance)")
         self.logger.info(f"Using: {self.db_path}")
+
+    def check_os(self):
+        # Check if the OS is Windows
+        _os = os.name
+        if _os != "nt":
+            self.logger.critical("This script only works on Windows")
+
+    def __set_db_path(self):
+        # Get path to noc db
+        path = 'AppData\\Local\\Microsoft\\Windows\\Notifications\\wpndatabase.db'
+        self.db_path = path
 
     def __prepare_cache(self):
         """
@@ -42,18 +53,6 @@ class Noc:
         self.cache = []
         self.cache_max = 100
         self.cache_clean = self.cache_max / 2
-
-    def __set_db_path(self):
-        # Get path to noc db
-        path = 'AppData\\Local\\Microsoft\\Windows\\Notifications\\wpndatabase.db'
-        self.db_path = os.path.join(os.getenv('USERPROFILE'), path)
-
-    def __check_os(self):
-        """ check if we're running on Windows """
-        _os = os.name
-        if _os != "nt":
-            self.logger.critical("This script only works on Windows")
-            sys.exit()
 
     def get_notifications(self) -> dict:
         notidications = []
@@ -162,20 +161,6 @@ class Noc:
             "created_at": created_at
         }
         return tweet
-
-    def delete_notification(self, _id):
-        # TODO: Delete this once proven that its not needed
-        # Deleting notifications from the database is not working
-        # Using cachce to avoid unnecessary database queries
-        """ Delete a notification from the database """
-        conn = sqlite3.connect(self.db_path)
-        cur = conn.cursor()
-
-        cur.execute("DELETE FROM Notification WHERE id = ?", (_id,))
-        conn.commit()
-        self.logger.debug(f"Deleted notification id: {_id}")
-        
-        conn.close()
 
     def process_notification(self, db):
         notifications = self.get_notifications()
