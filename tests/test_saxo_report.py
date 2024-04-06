@@ -6,7 +6,7 @@ from unittest.mock import patch
 from datetime import datetime
 from northy.saxo import Saxo, SaxoHelper
 from northy.saxo_report import SaxoReport
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
 
 tz = ZoneInfo('US/Central')
 saxo = Saxo()

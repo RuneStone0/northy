@@ -19,7 +19,7 @@ class Prowl:
         self.PROWL_API_KEY = self.config["PROWL"]["API_KEY"] if API_KEY is None else API_KEY
         self.prowl = pyprowl.Prowl(API_KEY)
 
-    def test(self):
+    def test(self) -> bool:
         try:
             self.prowl.verify_key()
             self.logger.debug("Prowl API key successfully verified!")
@@ -28,7 +28,7 @@ class Prowl:
             self.logger.error("Error verifying Prowl API key: {}".format(e))
             return False
 
-    def send(self, message, priority=0, url=None, app_name="Northy"):
+    def send(self, message, priority=0, url=None, app_name="Northy") -> None:
         """
             Send push notification using Prowl.
         """
