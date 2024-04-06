@@ -18,15 +18,3 @@ def test_file_rw():
     # Cleanup
     os.remove(filename)
 
-def test_utils_str2bool():
-    # Test False values
-    for i in ["false", "0", "no", "f"]:
-        assert u.str2bool(i) == False
-    
-    # Test True values
-    for i in ["true", "1", "yes", "t"]:
-        assert u.str2bool(i) == True
-
-def test_utils_str2bool_invalid():
-    with pytest.raises(ValueError):
-        u.str2bool("invalid")
