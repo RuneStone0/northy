@@ -360,13 +360,16 @@ class Saxo:
         if rsp.status_code == 429:
             self.logger.warning("409 Too Many Requests - Exceeding Limits (Rate limit)")
             self.logger.critical(rsp.headers)
-            session_reset = rsp.headers["X-RateLimit-SessionOrders-Reset"]
-            self.logger.critical(session_reset)
-            self.logger.warning(f"Retryning after {session_reset} seconds..")
-            time.sleep(session_reset)
+
+            # Not all end-points return X-RateLimit-Session-Reset
+            if "X-RateLimit-Session-Reset" in rsp.headers:
+                session_reset = rsp.headers["X-RateLimit-Session-Reset"]
+                self.logger.warning(f"Retryning after {session_reset} seconds..")
+                time.sleep(session_reset)
+
             self.logger.debug("POST {} (retry)".format(url))
             rsp = self.s.post(url, json=data)
-            sys.exit(1)
+            #sys.exit(1)
 
         if rsp.status_code != 200:
             self.logger.warning(f"POST {url} failed with status code {rsp.status_code}")
@@ -488,6 +491,10 @@ class Saxo:
 
         self.logger.debug("Current positions:")
         self.positions(cfd_only=False, profit_only=False, show=True)
+
+        # Sleep to avoid rate limiting
+        self.logger.info("Sleeping for 15 seconds to avoid rate limiting..")
+        time.sleep(15)
 
     def enable_real_time_prices(self):
         """
@@ -978,10 +985,8 @@ class SaxoHelper():
         # Get current UTC time
         now = datetime.now(tz=timezone.utc)
 
-        # Convert string to datetime
-        # TODO: Can be removed when ES-1015 is fixed
-        created_at = document["created_at"]  # datetime without tzinfo
-        created_at = created_at.replace(tzinfo=timezone.utc) # add UTC tz
+        # Set the timezone to UTC
+        created_at = document["created_at"].replace(tzinfo=timezone.utc)
 
         # Get minutes since created_at and now
         diff = now - created_at 
