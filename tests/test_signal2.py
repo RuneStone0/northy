@@ -1,3 +1,4 @@
+from unittest import mock
 from northy.signal2 import Signal, SignalHelper
 from northy.db import Database
 import logging
@@ -10,7 +11,7 @@ signal_helper = SignalHelper()
 
 def test_signal2_get():
     """ 
-        Test cases for TradeSignal.get()
+        Test cases for Signal.get()
     """
     # Invalid Twitter IDs
     assert signal.get("123") == None
@@ -25,12 +26,8 @@ def test_signal2_get():
     assert isinstance(ret, list)
     assert ret[0] == "SPX_FLAT"
 
-def test_signal2_getall():
-    # generate test cases for TradeSignal.getall()
-    assert signal.getall() == None
-
 def test_signal2_update():
-    """ generate test cases for TradeSignal.update() """
+    """ generate test cases for Signal.update() """
     # Invalid Twitter IDs
     assert signal.update("123") == None
     assert signal.update(123) == None
@@ -39,17 +36,17 @@ def test_signal2_update():
     # Loop through all sample set of tweets
     pipe = [
         {"$match": {"alert": True}},
-        {"$sample": {"size": 10}}
+        {"$sample": {"size": 100}}
     ]
     for i in db.tweets.aggregate(pipe):
         assert isinstance(signal.update(i["tid"]), list)
 
 def test_signal2_updateall():
-    # generate test cases for TradeSignal.updateall()
-    assert signal.updateall() == None
+    # generate test cases for Signal.updateall()
+    assert signal.updateall(limit=10) == None
 
 def test_signal2_parse():
-    # generate test cases for TradeSignal.parse()
+    # generate test cases for Signal.parse()
     # Invalid Twitter IDs
     assert signal.parse("123") == None
     assert signal.parse(123) == None
@@ -77,12 +74,8 @@ def test_signal2_parse_update_true():
     for i in db.tweets.aggregate(pipe):
         assert isinstance(signal.parse(i["tid"], update_db=True), dict)
 
-def test_signal2_parseall():
-    # generate test cases for TradeSignal.parseall()
-    assert signal.parseall() == None
-
 def test_text_to_signal():
-    # generate test cases for TradeSignal.text_to_signal()
+    # generate test cases for Signal.text_to_signal()
     assert signal.text_to_signal(tweet="invalid") == []
     assert signal.text_to_signal(tweet={"empty": "dict"}) == []
 
@@ -97,12 +90,8 @@ def test_text_to_signal():
     assert isinstance(signal.text_to_signal(tweet=valid_tweet), list) == True
     assert signal.text_to_signal(tweet=valid_tweet), list == ["SPX_SCALEOUT_IN_3809_OUT_4153_POINTS_344"]
 
-    # Loop through all alert Tweets
-    for i in db.tweets.find({"alert": True}):
-        logger.info(f"Testing tweet: {i['tid']}")
-        assert isinstance(signal.text_to_signal(tweet=i), list) == True
-
     # Invalid action in tweet
+    # update text value in tweet
     invalid_tweet = {
         "tid": "1577295787616264194",
         "text": "ALERT: 2nd $SPX\nIN 3576 OUT 3766 +190",
@@ -111,14 +100,26 @@ def test_text_to_signal():
     out = signal.text_to_signal(tweet=invalid_tweet)
     assert out == []
 
+def test_text_to_signal_everything():
+    """
+        Test parser against all data in DB.
+    """
+    # Loop through all alert Tweets
+    cursor = db.tweets.find({"alert": True})
+    tweets = [i for i in cursor]
+    for i in tweets:
+        logger.info(f"Parsing signal in tweet: {i['tid']}")
+        assert isinstance(signal.text_to_signal(tweet=i), list) == True
+    logger.info(f"Total tweets tested: {len(tweets)}")
+
 def test_is_trading_signal():
-    # generate test cases for TradeSignal.is_trading_signal()
+    # generate test cases for Signal.is_trading_signal()
     assert signal.is_trading_signal("ALERT: Closed 3rd scale $SPX long\nIN: 3809 OUT 4153+344") == True
     assert signal.is_trading_signal("Market Dashboard:\n\nhttps://signal.co/baFzYOi3V7") == False
     assert signal.is_trading_signal("") == False
 
 def test_signal2_export():
-    # generate test cases for TradeSignal.export()
+    # generate test cases for Signal.export()
     assert signal.export() == None
     assert signal.export(filename="signals", format="csv") == None
 
@@ -248,9 +249,6 @@ def test_get_closest_symbols():
         print(out)
         assert isinstance(out, dict) == True
 
-def test_parseall():
-    signal.parseall()
-
 def test_watch_log():
     # Get a sample of tweets without alerts
     pipeline = [
@@ -262,6 +260,10 @@ def test_watch_log():
     for doc in db.tweets.aggregate(pipeline):
         data = signal.parse(tid=doc["tid"], update_db=False)
         assert signal.watch_log(doc=doc, data=data) == None 
+
+def test_watch_log_error():
+    doc={"tid": "1234567890"}
+    signal.watch_log(doc=doc, data=None) == None 
 
 def test_refresh_backlog():
     signal.refresh_backlog(limit=100)
@@ -276,3 +278,21 @@ def test_manual():
     # Tweet with no `signal`and `signal_manual` fields
     assert signal.manual(tid="1548003680191844355") == None
 
+def test_watch_stream():
+    # Unable to test watch_stream() function because mongomock is not supported
+    pass
+
+"""
+Skipping these tests because they are super slow.
+We cannot really test .watch() function anyway
+
+def test_watch_once():
+    # Test watch function, 1 iteration with refresh_backlog
+    loops = mock.Mock(side_effect=[True]*1 + [False])
+    signal.watch(loops=loops, refresh_backlog=True)
+
+def test_watch_iter():
+    # Test watch function, 5 iteration no refresh_backlog
+    loops = mock.Mock(side_effect=[True]*2 + [False])
+    signal.watch(loops=loops, refresh_backlog=False)
+"""

@@ -191,9 +191,12 @@ class Noc:
                 self.logger.info(f"Remove {self.cache_clean} items from cache")
                 for _ in range(int(self.cache_clean)): self.cache.pop(0)
 
-    def watch(self):
+    def watch(self, loops=lambda: True):
+        """
+            Continuously watch for changes in the Windows Notification Center
+        """
         db = Database()
-        while True:
+        while loops():
             self.process_notification(db=db)
             
             # Check for new notifications every second

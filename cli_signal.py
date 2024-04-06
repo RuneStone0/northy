@@ -1,14 +1,15 @@
 import click
 import logging
+from northy.config import Config
 from northy.prowl import Prowl
 from northy.signal2 import Signal
-from northy.config import Config
 from northy.logger import setup_logger
 
 if __name__ == '__main__':
+    config = Config().config
+    
     setup_logger(filename='signal.log')
     logger = logging.getLogger(__name__)
-    config = Config().config
 
     @click.group()
     def cli():
