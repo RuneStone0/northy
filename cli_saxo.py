@@ -2,7 +2,6 @@ import os
 import click
 import logging
 from northy.prowl import Prowl
-from northy.tweets import TweetsDB
 from northy.logger import setup_logger
 from northy.saxo import Saxo, SaxoHelper
 from northy.config import Config
@@ -123,25 +122,21 @@ if __name__ == '__main__':
     @cli.command()
     @click.option('--signal', default=None, type=str, help='Trade signal (e.g. SPX_TRADE_LONG_IN_3609_SL_10)')
     @click.option('--tweet', default=None, type=str, help='Execute trades for a specific tweet id')
-    @click.pass_context
-    def trade(ctx, signal, tweet):
+    def trade(signal, tweet):
         """ Execute trades based on a signal or tweet id """
-        # No input provided
-        if ctx.args == []:
-            print(trade.get_help(ctx))
-            return
-
         saxo = Saxo()
+
         # If signal is provided
         if signal is not None:
             saxo.trade(signal=signal)
 
         # If tweet is provided
         elif tweet is not None:
-            tdb = TweetsDB(config)
-            doc = tdb.get_tweet(tweet)
-            for signal in doc["signals"]:
-                saxo.trade(signal=signal)
+            from northy.db import Database
+            db = Database()
+            for doc in db.find({"tid": tweet}):
+                for signal in doc["signals"]:
+                    saxo.trade(signal=signal)
         
         else:
             logger.error("Something is not right..")
