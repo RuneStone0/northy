@@ -883,7 +883,6 @@ class Saxo:
         self.logger.info("Starting change stream....")
         while True:
             db = Database().db
-            saxo_helper = SaxoHelper()
             
             # Watch for new documents (tweets) where "alert" is not set
             pipeline = [
