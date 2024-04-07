@@ -6,7 +6,7 @@ import logging
 from datetime import datetime
 from northy.prowl import Prowl
 from northy.db import Database
-from northy.saxo import SaxoHelper, saxo_tickers
+from northy.saxo import SaxoHelper
 from northy.color import colored
 from northy.config import Config
 config = Config().config
@@ -658,7 +658,9 @@ class Signal:
 
 class SignalHelper:
     def __init__(self) -> None:
-        self.ticker_config = saxo_tickers
+        # Load SaxoConfig
+        saxo_helper = SaxoHelper()
+        self.tickers = saxo_helper.tickers
 
     def normalize_text(self, tweet_text:str) -> str:
         """
@@ -758,13 +760,13 @@ class SignalHelper:
         """
         
         # 200ma for each symbol
-        ndx = self.ticker_config["NDX"]["200ma"]
-        spx = self.ticker_config["SPX"]["200ma"]
-        rut = self.ticker_config["RUT"]["200ma"]
-        djia = self.ticker_config["DJIA"]["200ma"]
+        ndx = self.tickers["NDX"]["200ma"]
+        spx = self.tickers["SPX"]["200ma"]
+        rut = self.tickers["RUT"]["200ma"]
+        djia = self.tickers["DJIA"]["200ma"]
 
         avg_price = (ndx + spx + rut) / 3
-        symbols = [key for key in self.ticker_config]
+        symbols = [key for key in self.tickers]
 
         # Handle a list of multiple numbers
         if len(numbers) > 1:
