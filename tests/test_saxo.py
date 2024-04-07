@@ -1,4 +1,5 @@
 import os
+import time
 import logging
 from northy import utils
 from unittest.mock import patch
@@ -162,7 +163,6 @@ def test_trade_buysell_all():
     direction = ["LONG", "SHORT"]
     for symbol in symbols:
         for dir in direction:
-            import time
             time.sleep(5)
             
             signal = f"{symbol}_TRADE_{dir}_IN_13199_SL_25"
@@ -185,7 +185,7 @@ def test_trade_flat():
 def test_scaleout_long():
     """ Test scaleout of LONG position """
     ## Open a new position, that we can scale out of
-    trade_size = saxo.profile["TradeSize"]["SPX"]
+    trade_size = saxo.profile["SPX"]
     trade_size_scale = trade_size * 0.25
     saxo.market(symbol="SPX", buy=True, amount=trade_size_scale)
 
@@ -197,7 +197,7 @@ def test_scaleout_long():
 def test_scaleout_short():
     """ Test scaleout of SHORT position """
     ## Open a new position, that we can scale out of
-    trade_size = saxo.profile["TradeSize"]["SPX"]
+    trade_size = saxo.profile["SPX"]
     trade_size_scale = trade_size * 0.25
     saxo.market(symbol="SPX", buy=False, amount=trade_size_scale)
 

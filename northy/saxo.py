@@ -1,4 +1,3 @@
-import os
 import sys
 from zoneinfo import ZoneInfo
 import dateutil.parser
@@ -6,10 +5,10 @@ import jwt
 import requests
 from requests import Response
 import pandas as pd
-import random, string
 import time, uuid
 from northy.utils import Utils
 from northy.db import Database
+from northy.secrets_manager import SecretsManager
 from datetime import datetime, timezone
 from collections import namedtuple
 from requests.auth import HTTPBasicAuth
@@ -18,49 +17,37 @@ import logging
 
 utils = Utils()
 
-# create random context that contain letters (a-z) and numbers (0-9) as well as - (dash) and _ (underscore). It is case insensitive. Max length is 50 characters.
-ContextId = ''.join(random.choice(string.ascii_letters + string.digits + '-_') for i in range(50))
-ReferenceId = ''.join(random.choice(string.ascii_letters + string.digits + '-_') for i in range(50))
-saxo_tickers = utils.read_json(filename="conf/saxo_tickers.js")[0]
-
-try:
-    # try reading from file
-    saxo_config = utils.read_json(filename="conf/saxo_config.js")[0]
-except:
-    # try reading from env (used by github actions)
-    saxo_config = utils.json_from_env("SAXO_CONFIG")
-
 class Saxo:
-    def __init__(self):
+    def __init__(self, profile_name="default"):
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
         self.saxo_helper = SaxoHelper()
 
-        # Set trade account config
-        self.config = saxo_config
-        self.set_profile()
-        self.tickers = saxo_tickers
+        # Load profile
+        self.set_profile(profile_name)
+        self.tickers = utils.read_json(filename="conf/saxo_tickers.js")[0]
 
         # Misc vars
         self.session_filename = ".saxo-session-{}".format(self.profile["username"])
-        self.base_url = self.environment["OpenApiBaseUrl"]
+        self.base_url = self.profile["OpenApiBaseUrl"]
         self.state = str(uuid.uuid4())
 
         # Setup Saxo API connection
         self.s = requests.session()
         self.token = self.__get_bearer()
 
-    def set_profile(self):
-        """ Set profile based on environment variable SAXO_PROFILE """
-        profile_name = os.getenv("SAXO_PROFILE", "default")
-        self.profile = self.config["profiles"][profile_name]
-        profile_description = self.profile["description"]
-        self.environment_name = self.profile["environment"]
-        self.environment = self.config["environments"][self.environment_name]
-        self.username = self.profile["username"]
-        self.password = self.profile["password"]
-        self.logger.info(f"Saxo profile: {profile_name} ({profile_description})")
-        self.logger.info(f"Saxo Environment: {self.environment_name}")
+    def tradesize(self, symbol):
+        """ Get trade size for symbol """
+        return self.profile[symbol]
+    
+    def set_profile(self, profile_name) -> None:
+        """ Load saxo profile form encrypted file """
+        sm = SecretsManager()
+        sm.read(file="conf/saxo_config.encrypted")
+        self.profile = sm.get_dict()[profile_name]
+
+        # Setting because it's used in multiple places
+        self.AccountKey = self.profile["AccountKey"]
 
     def signal_to_tuple(self, signal):
         """ 
@@ -103,9 +90,9 @@ class Saxo:
     ### Auth ###
     def __auth_request(self):
         # Vars
-        auth_endpoint = self.environment["AuthorizationEndpoint"]
-        client_id = self.environment["AppKey"]
-        redirect_uri = self.environment["RedirectUrls"][0]
+        auth_endpoint = self.profile["AuthorizationEndpoint"]
+        client_id = self.profile["AppKey"]
+        redirect_uri = self.profile["RedirectUrls"]
 
         url = f"{auth_endpoint}?response_type=code&client_id={client_id}&state={self.state}&redirect_uri={redirect_uri}"
         self.logger.debug(f"GET {url}")
@@ -130,7 +117,9 @@ class Saxo:
             return parse_qs(parsed_url.query)
 
         # Login
-        data = {"field_userid": self.username, "field_password": self.password}
+        data = {
+            "field_userid": self.profile["username"],
+            "field_password": self.profile["password"]}
         self.logger.info(f"POST {redirect_url}")
         r = self.s.post(redirect_url, data=data, allow_redirects=False)
 
@@ -167,10 +156,10 @@ class Saxo:
 
     def __access_token(self, auth_code, grant_type):
         # Vars
-        redirect_uri = self.environment["RedirectUrls"][0]
-        token_endpoint = self.environment["TokenEndpoint"]
-        app_key = self.environment["AppKey"]
-        app_secret = self.environment["AppSecret"]
+        redirect_uri = self.profile["RedirectUrls"]
+        token_endpoint = self.profile["TokenEndpoint"]
+        app_key = self.profile["AppKey"]
+        app_secret = self.profile["AppSecret"]
         basic = HTTPBasicAuth(app_key, app_secret)
 
         data = { "redirect_uri": redirect_uri, "grant_type": grant_type}
@@ -406,13 +395,13 @@ class Saxo:
             if self.profile["OrderPreference"].upper() == "MARKET":
                 self.logger.info("Profile OrderPreference is set to MARKET")
                 order = self.market(symbol=s.symbol, 
-                                   amount=self.profile["TradeSize"][s.symbol],
+                                   amount=self.profile[s.symbol],
                                    buy=buy, stoploss_points=s.stoploss)
                 return order
             elif self.profile["OrderPreference"].upper() == "LIMIT":
                 self.logger.info("Profile OrderPreference is set to LIMIT")
                 order = self.limit(symbol=s.symbol, 
-                                  amount=self.profile["TradeSize"][s.symbol],
+                                  amount=self.tradesize(s.symbol),
                                   buy=buy, stoploss_points=s.stoploss)
                 return order
             else:
@@ -422,7 +411,8 @@ class Saxo:
             self.action_flat(symbol=s.symbol)
         if s.action == "SCALEOUT":
             # Scale parameters
-            pos_size = self.profile["TradeSize"][s.symbol]
+            self.logger.info(f"Scaling out {s.symbol} position..))")
+            pos_size = self.tradesize(s.symbol)
             scale_size = pos_size * 0.25
             positions = self.positions(cfd_only=True, profit_only=False,
                                        show=True, symbol=s.symbol)
@@ -547,7 +537,7 @@ class Saxo:
             Example output:
                 See `tests/mock_data/SaxoTrader_Saxo_orders.json`
         """
-        orders = self.get(f"/port/v1/orders?ClientKey=" + self.profile["AccountKey"]).json()
+        orders = self.get(f"/port/v1/orders?ClientKey=" + self.AccountKey).json()
         return orders
 
     def get_stoploss_price(self, entry, stoploss, BuySell):
@@ -651,7 +641,7 @@ class Saxo:
         # Construct stop loss order
         stoploss_order = {
             "Uic": uic,
-            "AccountKey": self.profile["AccountKey"],
+            "AccountKey": self.AccountKey,
             "AssetType": self.saxo_helper.get_asset_type(uic),
             "OrderType": "StopIfTraded",
             "ManualOrder": False,
@@ -692,7 +682,7 @@ class Saxo:
 
         stoploss_order = {
             "Uic": uic,
-            "AccountKey": self.profile["AccountKey"],
+            "AccountKey": self.AccountKey,
             "AssetType": self.saxo_helper.get_asset_type(uic),
             "OrderType": "StopIfTraded",
             "ManualOrder": False,
@@ -720,7 +710,7 @@ class Saxo:
         asset_type = self.saxo_helper.get_asset_type(uic)
         stoploss_order = {
             "Uic": uic,
-            "AccountKey": self.profile["AccountKey"],
+            "AccountKey": self.AccountKey,
             "AssetType": asset_type,
             "OrderType": "StopIfTraded",
             "ManualOrder": False,
@@ -770,7 +760,7 @@ class Saxo:
         # Market order
         self.order["BuySell"] = "Buy" if buy == True else "Sell"
         self.order["Amount"] = amount
-        self.order["AccountKey"] = self.profile["AccountKey"]
+        self.order["AccountKey"] = self.AccountKey
         self.order["OrderDuration"] = { "DurationType": "DayOrder" }
 
         # Limit order
@@ -845,7 +835,7 @@ class Saxo:
         order = {
             "PositionId": PositionId,
             "Orders": [{
-                "AccountKey": self.profile["AccountKey"],
+                "AccountKey": self.AccountKey,
                 "Uic": pb["Uic"],
                 "AssetType": pb["AssetType"],
                 "OrderType": "Market",
@@ -954,8 +944,7 @@ class Saxo:
         """
         self.logger.info("Cancelling orders: {}".format(orders))
         
-        AccountKey = self.profile["AccountKey"]
-        path = f"/trade/v2/orders/{orders}/?AccountKey={AccountKey}"
+        path = f"/trade/v2/orders/{orders}/?AccountKey={self.AccountKey}"
         rsp = self.post(path=path, data=None, method_override="DELETE")
         
         return rsp
@@ -965,9 +954,7 @@ class SaxoHelper():
     def __init__(self):
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
-
-        self.config = saxo_config
-        self.tickers = saxo_tickers
+        self.tickers = utils.read_json(filename="conf/saxo_tickers.js")[0]
 
     def doc_older_than(self, document, max_age=15):
         """
@@ -1154,7 +1141,7 @@ class SaxoHelper():
         """
         # TODO: Split this into two separate functions
         uic = int(uic)
-        for symbol, v in saxo_tickers.items():
+        for symbol, v in self.tickers.items():
             if v["Uic"] == uic:
                 return symbol
         
