@@ -39,6 +39,9 @@ class Noc:
     def __set_db_path(self):
         # Get path to noc db
         path = 'AppData\\Local\\Microsoft\\Windows\\Notifications\\wpndatabase.db'
+        # add userprofile to path
+        path = os.path.join(os.getenv('USERPROFILE'), path)
+        
         self.db_path = path
 
     def __prepare_cache(self):
