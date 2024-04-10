@@ -10,10 +10,13 @@ if __name__ == '__main__':
     logger = logging.getLogger(__name__)
 
     @click.group()
-    def cli():
+    @click.option('--prod', default=False, is_flag=True, type=bool, help='Enable production mode')
+    def cli(prod):
+        # set environment variable
+        os.environ["PRODUCTION"] = str(prod)
         pass
 
-    @click.command()
+    @cli.command()
     @click.option('--path', required=False, default=None, type=str, help='Path to wpndatabase')
     def watch(path):
         """
@@ -22,7 +25,7 @@ if __name__ == '__main__':
         noc = Noc(wpndatabase_path=path)
         noc.watch()
 
-    @click.command()
+    @cli.command()
     @click.option('--path', required=False, default=None, type=str, help='Path to wpndatabase')
     def read(path):
         """
@@ -71,7 +74,7 @@ if __name__ == '__main__':
         list_tables(database_path)
         read_data_from_db(database_path)
 
-    @click.command()
+    @cli.command()
     @click.option('--path', required=False, default=None, type=str, help='Path to wpndatabase')
     def process(path):
         """
