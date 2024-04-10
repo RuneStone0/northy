@@ -1,3 +1,4 @@
+import os
 import click
 import logging
 from northy.config import Config
@@ -12,10 +13,13 @@ if __name__ == '__main__':
     logger = logging.getLogger(__name__)
 
     @click.group()
-    def cli():
+    @click.option('--prod', default=False, is_flag=True, type=bool, help='Enable production mode')
+    def cli(prod):
+        # set environment variable
+        os.environ["PRODUCTION"] = str(prod)
         pass
 
-    @click.command()
+    @cli.command()
     @click.option('--tweet', default=None, type=str, help='Parse Twitter ID')
     def parse(tweet):
         # No input provided
@@ -26,7 +30,7 @@ if __name__ == '__main__':
         signal = Signal()
         signal.parse(tid=tweet)
 
-    @click.command()
+    @cli.command()
     def watch():
         """ 
             Watch for new tweets and signals.
