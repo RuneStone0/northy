@@ -13,11 +13,13 @@ setup_logger(filename='saxo.log')
 logger = logging.getLogger(__name__)
 
 @click.group()
+@click.option('--prod', default=False, is_flag=True, type=bool, help='Enable production mode')
 @click.option('--profile', required=False, default="default", type=str, help='Set Saxo Profile')
 @click.pass_context
-def cli(ctx, profile):
+def cli(ctx, prod, profile):
     ctx.ensure_object(dict)
     profile = profile.lower() # TODO: Currently not impelemented
+    os.environ["PRODUCTION"] = str(prod)
 
 @cli.command()
 def positions():
