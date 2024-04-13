@@ -44,7 +44,7 @@ class Signal:
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
 
-        self.prowl = Prowl(API_KEY=config["PROWL"]["API_KEY"])
+        self.prowl = Prowl()
 
         # MongoDB
         self.db = Database(production=production)

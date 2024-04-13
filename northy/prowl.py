@@ -15,9 +15,7 @@ class Prowl:
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
         self.config = Config().config
-        
-        self.PROWL_API_KEY = self.config["PROWL"]["API_KEY"] if API_KEY is None else API_KEY
-        self.prowl = pyprowl.Prowl(API_KEY)
+        self.prowl = pyprowl.Prowl(apiKey=self.config["PROWL"]["API_KEY"])
 
     def test(self) -> bool:
         try:
@@ -36,11 +34,10 @@ class Prowl:
         if self.config["PRODUCTION"] == False:
             self.logger.debug(f"Prowl.send() called with message: {message}")
             return
-        
-        response = self.prowl.notify(event="ALERT", 
+
+        self.prowl.notify(event="ALERT", 
                     description=message, 
                     priority=priority, 
                     url=url, 
                     appName=app_name)
         self.logger.info("Prowl notification sent: {}".format(message))
-        self.logger.debug("Prowl response: {}".format(response))

@@ -151,7 +151,7 @@ if __name__ == '__main__':
                 saxo = Saxo()
                 saxo.watch()
             except Exception as e:
-                p = Prowl(API_KEY=config["PROWL_API_KEY"])
+                p = Prowl()
                 p.send(f"cli_saxo.py watch crashed \n{e}\nRestarting..")
                 logger.error(e, exc_info=True)
 
