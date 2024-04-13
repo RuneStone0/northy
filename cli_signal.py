@@ -39,7 +39,7 @@ if __name__ == '__main__':
             signal = Signal()
             signal.watch()
         except Exception as e:
-            p = Prowl(API_KEY=config["PROWL_API_KEY"])
+            p = Prowl()
             p.send("Error: cli_signal.py crashed!!")
             logger.critical(e, exc_info=True)
 
