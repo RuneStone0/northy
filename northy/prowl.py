@@ -26,7 +26,7 @@ class Prowl:
             self.logger.error("Error verifying Prowl API key: {}".format(e))
             return False
 
-    def send(self, message, priority=0, url=None, app_name="Northy") -> None:
+    def send(self, message, priority=0, url=None, app_name=" ") -> None:
         """
             Send push notification using Prowl.
         """
@@ -35,8 +35,8 @@ class Prowl:
             self.logger.debug(f"Prowl.send() called with message: {message}")
             return
 
-        self.prowl.notify(event="ALERT", 
-                    description=message, 
+        self.prowl.notify(event=message, 
+                    description="", 
                     priority=priority, 
                     url=url, 
                     appName=app_name)
