@@ -14,8 +14,9 @@ def cli():
 @cli.command()
 @click.option('--keygen', required=False, default=False, is_flag=True, help='Generate new AES key')
 @click.option('--encrypt', required=False, default=None, type=str, help='Encrypt file and save as .encrypted')
+@click.option('--decrypt', required=False, default=None, type=str, help='Decrypt file')
 @click.pass_context
-def secrets(ctx, keygen, encrypt):
+def secrets(ctx, keygen, encrypt, decrypt):
     sm = SecretsManager()
     if keygen:
         sm.generate_key()
@@ -26,6 +27,11 @@ def secrets(ctx, keygen, encrypt):
         sm.encrypt(file_in=encrypt)
         msg = f"Encrypted {encrypt} --> " + encrypt.replace('.ini', '.encrypted')
         logger.info(msg)
+        return
+
+    if decrypt:
+        sm.read(file=decrypt)
+        logger.info(f"Decrypted Content {sm.get_dict()}")
         return
 
     # No input provided
