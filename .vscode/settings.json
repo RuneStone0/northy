@@ -5,7 +5,7 @@
         "**/.saxo-session*": true,
         "**/.coverage": true,
         "**/.tox": true,
-        "**/venv": true,
+        "**/.venv": true,
     },
     "editor.rulers": [
         80
