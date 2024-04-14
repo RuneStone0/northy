@@ -21,15 +21,19 @@ def test_generate_key(temp_folder):
     # Generate key
     sm.generate_key(filename=key)
 
-    # Encrypt
-    sm.encrypt(file_in=unencrypted_file, file_out=encrypted_file, aes_key=key)
+    # Encrypt, with invalid file
+    with pytest.raises(FileNotFoundError):
+        sm.encrypt(file_in=unencrypted_file+"a", file_out=encrypted_file)
+
+    # Encrypt, success
+    sm.encrypt(file_in=unencrypted_file, file_out=encrypted_file)
 
     # Encrypt without specifying file_out & cleanup after test
-    sm.encrypt(file_in=unencrypted_file, aes_key=key)
+    sm.encrypt(file_in=unencrypted_file)
     remove(join(f'{mock_folder}/config.encrypted'))
 
     # Read encrypted file
-    sm.read(file=encrypted_file, aes_key=key)
+    sm.read(file=encrypted_file)
 
     # Get encrypted data as dict
     output = sm.get_dict()

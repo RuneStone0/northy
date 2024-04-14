@@ -7,12 +7,14 @@ class SecretsManager:
     """
     SecretsManager class is used to encrypt and decrypt config (ini) files.
     """
-    def __init__(self) -> None:
+    def __init__(self, key='conf/.key') -> None:
         """
         SecretsManager class is used to encrypt and decrypt config files.
         """
         self.logger = logging.getLogger(__name__)
         self.conf = ConfigParserCrypt()
+        self.key = key
+        self.logger.debug(f"SecretsManager initialized with key '{key}'")
 
     def __write_file(self, filename, data) -> None:
         """ Write data to a file. """
@@ -24,9 +26,7 @@ class SecretsManager:
         with open(filename, 'rb') as f:
             return f.read()
 
-    def encrypt(self, file_in='conf/secrets.ini', 
-              file_out=None,
-              aes_key='conf/.key') -> None:
+    def encrypt(self, file_in='conf/secrets.ini', file_out=None) -> None:
         """
         Encrypt and write a config file.
 
@@ -44,7 +44,7 @@ class SecretsManager:
             file_out = file_in.replace('.ini', '.encrypted')
 
         # Set AES key
-        self.conf.aes_key = self.__read_file(aes_key)
+        self.conf.aes_key = self.__read_file(self.key)
 
         # Read unencrypted .ini file
         self.logger.debug(f"Reading unencrypted data from '{file_in}'..")
@@ -56,8 +56,7 @@ class SecretsManager:
 
         self.logger.debug(f"Saved encrypted data to '{file_out}'")
 
-    def read(self, file = 'conf/secrets.encrypted', 
-             aes_key = 'conf/.key') -> ConfigParserCrypt:
+    def read(self, file='conf/secrets.encrypted') -> ConfigParserCrypt:
         """
         Read and decrypt a config file. 
         
@@ -69,8 +68,7 @@ class SecretsManager:
             ConfigParserCrypt: The decrypted config object.
         """
         # Set AES key
-        self.logger.debug(f"Reading AES key from '{aes_key}'..")
-        self.conf.aes_key = self.__read_file(aes_key)
+        self.conf.aes_key = self.__read_file(self.key)
 
         # Read encrypted config file
         self.logger.debug(f"Reading encrypted data from '{file}'..")
