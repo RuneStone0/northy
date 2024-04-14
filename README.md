@@ -1,71 +1,66 @@
 # Project Northy
-## Monitor for new Northy Tweets
-Watch for new Tweets by Northy every 5 seconds. Tweets are stored in MongoDB.
-Higher detection frequency is not possible because of Twitter API throttling.
-> timon.py watch
+Automated trading system for Northman Trader (Northy) tweets. The system will monitor Northy's tweets and execute trades based on the signals provided. The system will also send notifications to the user when trades are executed.
 
-## Send Tweet notifications to Prowl
-This service will watch for new tweets in MongoDB every second and send Prowl
-notification when a tweet that contains "ALERT" is found. This service is NOT
-required for the system to function. Its nice to have only.
-> timon.py pushalert
+```mermaid
+flowchart LR
+    subgraph "x.com"
+        northy["Northy"]
+    end
+    
+    report["Report \n(cli_saxo.py)"];
+    cliSig["Signal Analyzer \n(cli_signals.py)"];
+    cliSax["Trader \n(cli_saxo.py)"];
+    subgraph "Windows Box"
+        noc["Notifications Center"];
+        cliNoc["Data Collector \n(cli_noc.py)"];
+    end
+    subgraph "Database"
+        DB["MongoDB"]
+    end
+    subgraph "saxobank.com"
+        bank["SaxoBank"]
+    end
+    subgraph "Customer"
+        phone["Phone"]
+        email["Email"]
+    end
+    northy --> |1. Tweets| noc
+    cliNoc --> |Watch for \nNotifications| noc
+    cliNoc --> |Parse| cliNoc
+    cliNoc --> |2. Insert Tweet| DB
+    
+    cliSig --> |3. Watch for \nTweets| DB
+    cliSig --> |Parse| cliSig
+    cliSig --> |4. Insert Trade Signals| DB
 
-
-# Configure Startup Scripts
-## Run fetch on startup
-Open crontab using `sudo crontab -e`. Add the following to the end of the file:
-```
-@reboot cd $HOME/RuneStone0/northy && venv/bin/python timon.py fetch --limit 200
-```
-
-## Configure Background Services
-Let's setup the background services. We will create a service to run on boot:
-* timon.py fetch --limit 200 (to fetch everything we missed during down time)
-* timon.py watch (watch for new tweets)
-* timon.py pushalert (service to send push notifications)
-The services will start automatically whenever the system is booted.
-
-```
-# Add services to system
-sudo cp scripts/watch.service /etc/systemd/system/
-sudo cp scripts/pushalert.service /etc/systemd/system/
-
-# Set exec permissions
-chmod 775 timon.py
-chmod 775 scripts/pushalert.sh
-chmod 775 scripts/watch.sh
-
-# Register (enable) service
-sudo systemctl enable watch
-sudo systemctl enable pushalert
-
-# Start services
-sudo systemctl start watch
-sudo systemctl start pushalert
-
-# Verify they are running
-ps aux|grep pyton
+    cliSax --> |Watch| DB
+    cliSax --> |8. Execute Trade| bank
+    cliSax --> |9. Push Notification| phone
+    report --> |10. P&L Trade Summary| email
 ```
 
-# Saxo Bank
-## Configure Account Timeout
-Login to the Saxo Account.
-Go to Profile > Settings > Login & Security > Automatic Logout > Max
+## Installation
+1. Setup MongoDB Atlas (or local MongoDB)
+2. Setup Prowl for push notifications
+3. Setup SparkPost for email notifications
+4. Setup SaxoBank account and OpenAPI access
+5. Update `conf/secrets.ini` and `conf/saxo_config.ini` with your credentials
+6. Encrypt the secrets file with `python cli_secrets.py --encrypt [filename]`
 
+## Usage
+1. Run `python cli_noc.py --prod watch` on Windows to watch for notifications
+2. Run `python cli_signals.py --prod watch` to start the signal analyzer
+3. Run `python cli_saxo.py --prod watch` to start the trader
+4. Run `python cli_saxo.py --report-closed-positions --job` to generate a report
 
-# TODO
-* Make sure `python tests/test_TradeSignal.py` is using in memory DB to increase speed
-* Use Twitter API v2 instead of v1. (tweepy.API  -->  tweepy.Client)
-* Setup a service to run on boot
-* Unit testing & Code coverage
-* Add allin command with threading to start watch2 + twitter + pushalert
-* Make "Close Position" work
-* Move config to JSON file
-* Move SaxoTrader conf to config file
-* Prevent Twitter API suspension, only fetch when markets are open
+## TODO
+* Get to 100% code coverage
+* Run tests using GitHub Actions
+* Setup branch protection rules
+* Wrap all background jobs into a single threaded service
+* Run background services using GitHub Actions?
 
-## Long-term
-* Look into using ML to parse alert tweets
-* Support multiple "customers" within my own SaxoBank account
-* Support TD365
-
+## Future
+* US LLMs to parse alert tweets
+* Support executing trades for multiple customers (profiles)
+* Support other trading platforms, such as TD365
