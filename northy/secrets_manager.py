@@ -4,6 +4,9 @@ from configparser_crypt import ConfigParserCrypt
 from configparser_crypt.dict_convert import configparser_to_dict
 
 class SecretsManager:
+    """
+    SecretsManager class is used to encrypt and decrypt config (ini) files.
+    """
     def __init__(self) -> None:
         """
         SecretsManager class is used to encrypt and decrypt config files.
@@ -83,11 +86,3 @@ class SecretsManager:
     def get_dict(self):
         """ Return the decrypted config as a dictionary. """
         return configparser_to_dict(self.conf)
-
-"""
-sm = SecretsManager()
-#sm.generate_key()
-sm.encrypt(file_in='conf/secrets.ini', file_out='conf/secrets.encrypted', aes_key='.key')
-sm.read(file='conf/secrets.encrypted', aes_key='.key')
-print(sm.get_dict())
-"""
