@@ -16,8 +16,8 @@ class Utils:
         """
             Read JSON or JS file and return data.
         """
-        self.logger.debug("Reading data from: {}".format(filename))
         try:
+            #self.logger.debug("Reading data from: {}".format(filename))
             with open(filename,'r') as f:
                 minified = jsmin(f.read())
                 return json.loads(minified)
