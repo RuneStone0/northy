@@ -122,6 +122,44 @@ def limit(symbol, amount, buy, price, stoploss_price, points):
     logger.info(order)
 
 @cli.command()
+@click.pass_context
+@click.option('--list', required=False, is_flag=True, default=False, 
+                type=bool, help='List all accounts')
+@click.option('--rename', default=None, required=False, type=str, help='AccountKey to modify')
+@click.option('--name', default=None, required=False, type=str, help='New Account Display Name')
+def accounts(ctx, list, rename, name):
+    """ List accounts """
+    saxo = ctx.obj['SAXO']
+
+    # List accounts
+    if list:
+        accounts = saxo.accounts()
+        for acc in accounts["Data"]:
+            displayName = acc["DisplayName"] if "DisplayName" in acc else ""
+            accId = acc["AccountId"]
+            accKey = acc["AccountKey"]
+            accCurrency = acc["Currency"]
+            accountName = displayName if len(displayName)>0 else accId
+            out = f"{accCurrency} {accKey} {accountName}"
+            logger.info(out)
+
+    # Rename account
+    elif rename:
+        # Check if name is provided
+        if not name:
+            logger.error("--name is required to rename account")
+            return
+        
+        # Update account name
+        update = saxo.account_update(AccountKey=rename, DisplayName=name)
+        logger.info("Updating account (%s) display name to '%s'" % (rename, name))
+        logger.info(update)
+
+    # Show help
+    else:
+        click.echo(ctx.get_help())
+
+@cli.command()
 @click.option('--signal', default=None, type=str, help='Trade signal (e.g. SPX_TRADE_LONG_IN_3609_SL_10)')
 @click.option('--tweet', default=None, type=str, help='Execute trades for a specific tweet id')
 def trade(signal, tweet):
