@@ -232,7 +232,7 @@ class Signal:
             return __ACTION_CODE
 
         # Get all symbols in signal
-        symbols = re.findall(r'(\$\w*)', text)
+        symbols = re.findall(r'(?:\$)(\w*)', text)
         symbols = self.__unique(symbols)
 
         ACTIONS = []
@@ -240,7 +240,6 @@ class Signal:
         # sort symbols alphabetically
         symbols.sort()
         for symbol in symbols:
-            symbol = symbol[1:]  # $SPX --> SPX
             ACTION_CODE = f"{symbol}"
             
             # Move to flat
