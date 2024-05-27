@@ -1,6 +1,7 @@
 import click
 import inspect
 import logging
+from click import Path
 from northy.logger import setup_logger
 from northy.secrets_manager import SecretsManager
 
@@ -13,8 +14,8 @@ def cli():
 
 @cli.command()
 @click.option('--keygen', required=False, default=False, is_flag=True, help='Generate new AES key')
-@click.option('--encrypt', required=False, default=None, type=str, help='Encrypt file and save as .encrypted')
-@click.option('--decrypt', required=False, default=None, type=str, help='Decrypt file')
+@click.option('--encrypt', required=False, default=None, type=Path(exists=True), help='Encrypt file and save as .encrypted')
+@click.option('--decrypt', required=False, default=None, type=Path(exists=True), help='Decrypt file')
 @click.pass_context
 def secrets(ctx, keygen, encrypt, decrypt):
     sm = SecretsManager()
