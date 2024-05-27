@@ -32,6 +32,7 @@ ignore_tweets = [
     "1752340364776648805", # ALERT: $SPX stop moved from flat to -10.
     "1758203363445907469", # ALERT: CLOSED 3RD SCALE $RUT IN 1960 OUT 2062 +102
     #"1737565902223130808", # ALERT: Closed 1 scale $SPX IN: 4770 OUT: 4710 +60
+    "1764613704245485850", # ALERT: Closed final scale $RUT IN: 1960 OUT: 2091 +131
 ]
 
 class Signal:
