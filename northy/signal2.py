@@ -32,7 +32,6 @@ ignore_tweets = [
     "1752340364776648805", # ALERT: $SPX stop moved from flat to -10.
     "1758203363445907469", # ALERT: CLOSED 3RD SCALE $RUT IN 1960 OUT 2062 +102
     #"1737565902223130808", # ALERT: Closed 1 scale $SPX IN: 4770 OUT: 4710 +60
-    "1764613704245485850", # ALERT: Closed final scale $RUT IN: 1960 OUT: 2091 +131
 ]
 
 class Signal:
@@ -218,7 +217,7 @@ class Signal:
             __ACTION_CODE += f"_TRADE_{direction}"
 
             # Find entry
-            __IN = signal_helper.get_closest_symbols(signal_helper.find_INOUT(text, "IN"))[symbol]
+            __IN = signal_helper.get_closest_symbols(signal_helper.find_INOUT(text, "IN"), symbols)[symbol]
             __ACTION_CODE += f"_IN_{__IN}"
         
             # Find stop loss
@@ -289,7 +288,7 @@ class Signal:
                     raise Exception("Unknown action")
 
                 # Set entry price
-                IN = signal_helper.get_closest_symbols(signal_helper.find_INOUT(text, "IN"))[symbol]
+                IN = signal_helper.get_closest_symbols(signal_helper.find_INOUT(text, "IN"), symbols)[symbol]
 
                 # Set stop loss
                 POINTS = self.saxo_helper.get_stoploss(symbol)
@@ -313,8 +312,8 @@ class Signal:
 
                 # SCALEOUT
                 if "OUT" in text:
-                    IN = signal_helper.get_closest_symbols(signal_helper.find_INOUT(text, "IN"))[symbol]
-                    OUT = signal_helper.get_closest_symbols(signal_helper.find_INOUT(text, "OUT"))[symbol]
+                    IN = signal_helper.get_closest_symbols(signal_helper.find_INOUT(text, "IN"), symbols)[symbol]
+                    OUT = signal_helper.get_closest_symbols(signal_helper.find_INOUT(text, "OUT"), symbols)[symbol]
                     POINTS = str(signal_helper.find_SCALE_POINTS(text))
                     ACTION_CODE += f"_SCALEOUT_IN_{IN}_OUT_{OUT}_POINTS_{POINTS}"
                     ACTIONS.append(ACTION_CODE)
@@ -661,6 +660,7 @@ class SignalHelper:
         # Load SaxoConfig
         saxo_helper = SaxoHelper()
         self.tickers = saxo_helper.tickers
+        self.logger = logging.getLogger(__name__)
 
     def normalize_text(self, tweet_text:str) -> str:
         """
@@ -741,14 +741,14 @@ class SignalHelper:
 
         return int(POINTS)
 
-    def get_closest_symbols(self, numbers:list) -> dict:
+    def get_closest_symbols(self, numbers:list, symbols:list) -> dict:
         """
             Given a list of numbers, return a dictionary of the closest symbols to the average price.
             If there is a tie, return the symbols in alphabetical order.
 
             This function is needed to handle this:
                 1. find_INOUT() analyze e.g.: `flat stopped $NDX stopped $RUT Re-entry long IN: 14885 - 25 pt stop IN 1880 - 10pt stop` and return: `[14885,1880]`
-                2. get_closest_symbols() will guess the symbol based on the numbers and returned by find_INOUT()
+                2. get_closest_symbols() will guess the symbol based on the numbers returned by find_INOUT()
                 3. get_closest_symbols() will return a dictionary of the closest symbols to the average price.
 
             Example:
@@ -758,6 +758,10 @@ class SignalHelper:
                 numbers = [3713]
                 get_closest_symbols(numbers) -> {"SPX": 3713}
         """
+        if len(numbers) == 1:
+            # When analyzing a signal with only one symbol, we don't need to guess anything
+            self.logger.debug(f"Only one number found: {numbers[0]}")
+            return {symbols[0]: numbers[0]}
         
         # 200ma for each symbol
         ndx = self.tickers["NDX"]["200ma"]
