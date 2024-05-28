@@ -242,8 +242,9 @@ def test_get_closest_symbols():
         ([1703, 30932], ["RUT", "DJIA"]),
         ([3713, 11348, 1703, 30932], ["SPX", "NDX", "RUT", "DJIA"]),
     ]
-    for num in numbers:
-        out = signal_helper.get_closest_symbols(num)
+    for case in cases:
+        num, symbols = case
+        out = signal_helper.get_closest_symbols(num, symbols)
         print(out)
         assert isinstance(out, dict) == True
 
