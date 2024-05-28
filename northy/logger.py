@@ -57,8 +57,9 @@ def setup_logger(filename="northy.log"):
     os.makedirs("logs", exist_ok=True)
 
     # Configure the root logger
+    logLevel = config["LOG_LEVEL"]
     logging.basicConfig(
-        level=config["LOG_LEVEL"],
+        level=logLevel,
         format='%(asctime)s - %(levelname)s - %(message)s',
         filename=f'logs/{filename}',
         filemode='a',
@@ -67,7 +68,10 @@ def setup_logger(filename="northy.log"):
 
     # Add a console handler for printing logs to the console
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(config["LOG_LEVEL"])
+    console_handler.setLevel(logLevel)
     console_formatter = ColoredFormatter('%(asctime)s %(levelname)s %(message)s')
     console_handler.setFormatter(console_formatter)
     logging.getLogger('').addHandler(console_handler)
+
+    # print to console
+    logging.info("Logger initialized with log level: %s", logLevel)
