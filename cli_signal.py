@@ -20,15 +20,18 @@ def cli(prod):
     pass
 
 @cli.command()
-@click.option('--tweet', default=None, type=str, help='Parse Twitter ID')
-def parse(tweet):
+@click.option('--tid', default=None, type=str, help='Parse Twitter ID')
+@click.pass_context
+def parse(ctx, tid):
+    # Parse the tweet
+    if tid:
+        signal = Signal()
+        res = signal.parse(tid=tid)
+        logger.info(f"{tid} --> {res}")
+    
     # No input provided
-    if tweet is None:
-        logger.info("No tweet id provided")
-        return
-
-    signal = Signal()
-    signal.parse(tid=tweet)
+    else:
+        click.echo(ctx.get_help())
 
 @cli.command()
 def watch():
