@@ -4,6 +4,7 @@ import logging
 from click import Path
 from northy.logger import setup_logger
 from northy.secrets_manager import SecretsManager
+from northy.db import Database
 
 setup_logger(filename='cli_manager.log')
 logger = logging.getLogger(__name__)
@@ -37,6 +38,12 @@ def secrets(ctx, keygen, encrypt, decrypt):
 
     # No input provided
     print(secrets.get_help(ctx))
+
+@cli.command()
+@click.pass_context
+def backup(ctx):
+    db = Database()
+    db.backup()
 
 if __name__ == '__main__':
     # Automatically add all commands to the group

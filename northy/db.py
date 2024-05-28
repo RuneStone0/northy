@@ -1,5 +1,6 @@
 import os
 import logging
+import shutil
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 from datetime import datetime
@@ -8,7 +9,6 @@ from northy.config import Config
 from northy.secrets_manager import SecretsManager
 import mongomock
 import bson
-
 
 sm = SecretsManager()
 sm.read()
@@ -51,7 +51,18 @@ class Database(object):
             self.tweets.insert_many(data)
             return self.client
 
-    def backup(self, output_directory="backups"):
+    def backup(self, output_directory="backups", cluster_name="northy", collection_name="tweets"):
+        """
+            Backup the tweets collection to a BSON file.
+        """
+        # Because this class is used for testing and is often connected to the
+        # mongomock client, we want to force a switch to the prod db before
+        # backing up the data.
+        self.logger.info("Switching to production database for backup")
+        self.production = True
+        self.__connect()
+        collection = self.db[collection_name]
+
         # Create the backups directory if it doesn't exist
         os.makedirs(output_directory, exist_ok=True)
         
@@ -59,20 +70,21 @@ class Database(object):
         current_datetime = datetime.now()
         timestamp = current_datetime.strftime("%Y-%m-%d-%H-%M-%S")
         
-        # Construct the backup file path
-        backup_filename = f"{timestamp}.bson"
-        backup_file_path = os.path.join(output_directory, backup_filename)
+        # Create a folder for the backup
+        backup_folder = os.path.join(output_directory, timestamp, cluster_name)
+        backup_file_path = os.path.join(backup_folder, f"{collection_name}.bson")
+        os.makedirs(backup_folder, exist_ok=True)
         
         # Retrieve all documents from the collection
-        documents = self.db.tweets.find()
-            
-        # Convert documents to BSON format and write to the output file
-        with open(backup_file_path, 'wb') as f:
-            for document in documents:
-                bson_data = bson.BSON.encode(document)
-                f.write(bson_data)
-        
-        print(f"Backup of '{self.db.tweets.name}' collection saved to '{backup_file_path}'")
+        # Save the documents to a BSON file
+        with open(backup_file_path, 'wb') as file:
+            for doc in collection.find():
+                file.write(bson.BSON.encode(doc))
+        self.logger.info(f"Backup of '{collection.name}' collection saved to '{backup_file_path}'")
+
+        # Prepare mock db for testing
+        # Copy backups/$folderName/tweets.bson to backups/tweets.bson
+        shutil.copy(os.path.join(backup_folder, 'tweets.bson'), os.path.join('backups', 'tweets.bson'))
 
     def pprint(self, tweet, inserted=False):
         """
