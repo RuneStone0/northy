@@ -232,17 +232,15 @@ def test_find_SCALE_POINTS():
         assert signal_helper.find_SCALE_POINTS(case["in"]) == case["expected"]
 
 def test_get_closest_symbols():
-    numbers = [
-        # Multiple numbers
-        [3713,11348],
-        [1703,30932],
-        [3713,11348,1703,30932],
-        
-        # Single numbers
-        [3713], # SPX
-        [11348], # NDX
-        [35675], # DJIA
-        [1703] # RUT
+    cases = [
+        # Signals with a single symbol
+        ([3713], ["SPX"]),
+        ([11348], ["NDX"]),
+
+        # Signals with multiple symbols
+        ([3713, 11348], ["SPX", "NDX"]),
+        ([1703, 30932], ["RUT", "DJIA"]),
+        ([3713, 11348, 1703, 30932], ["SPX", "NDX", "RUT", "DJIA"]),
     ]
     for num in numbers:
         out = signal_helper.get_closest_symbols(num)
