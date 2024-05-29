@@ -171,6 +171,7 @@ class Signal:
 
         # Update DB if enabled
         if update_db:
+            self.logger.info(f"Updating {tid} with signals and alert flag")
             newvalues = { "$set": data }
             self.db_tweets.update_one(query, newvalues)
 
@@ -599,20 +600,18 @@ class Signal:
 
     def refresh_backlog(self, limit=1000):
         """
-            Parse old tweets and make sure alert flag is setRefresh 
-            backlog to make sure we're up-to-date before starting change stream.
-
-            TODO: This could be optimized by storing Tweet ID in DB and only refresh since $tid
-            TODO: If above is implemented, .limit(1000) below can be removed
+            Parse old tweets and make sure alert flag is set.
+            Refresh backlog to ensure we're up-to-date before starting change stream.
         """
         self.logger.info("Refreshing backlog...")
-        query = {"alert": {"$exists": False}}
-        
-        # Performance optimization, only return data needed
-        projection = {"tid": 1, "text": 1}
-
-        # Performance optimization, sort by tid and limit to 1000
-        cursor = self.db.tweets.find(query, projection).sort("tid", -1).limit(limit)
+        query = [
+            { '$sort': { 'created_at': -1 }},
+            { '$match': { 'alert': { '$exists': False } } },
+            { '$match': { 'text': { '$not': re.compile(r"live alerts", re.IGNORECASE) } } },
+            { '$match': { 'text': re.compile(r"alert", re.IGNORECASE) } },
+            { '$project': { 'tid': 1,  'text': 1 }}
+        ]
+        cursor = self.db.tweets.aggregate(query)
         documents = [doc for doc in cursor]
 
         # Preload the signal helper function for better performance
