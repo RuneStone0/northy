@@ -971,6 +971,19 @@ class Saxo:
         
         return rsp
 
+    #### ACCOUNTS ####
+    def accounts(self):
+        """ Get account details """
+        rsp = self.get(path="/port/v1/accounts/me")
+        return rsp.json()
+
+    def account_update(self, AccountKey, DisplayName):
+        """ Update account details """
+        data = { "DisplayName": DisplayName }
+        rsp = self.post(path=f"/port/v1/accounts/{AccountKey}",
+                        data=data, method_override="PATCH")
+        return rsp
+
 # Create a SaxoHelper class that inherits from Saxo
 class SaxoHelper():
     def __init__(self):
