@@ -157,7 +157,18 @@ class Saxo:
             self.logger.critical("3. Logout and try to login again programatically.")
             sys.exit(1)
 
-        auth_code_url = r.headers["Location"]
+        try:
+            # Sometimes we don't get the Location header
+            auth_code_url = r.headers["Location"]
+        except:
+            self.logger.warning("No Location header found. Parsing URL..")
+            self.logger.warning(r.headers)
+            self.logger.warning(r.text)
+
+            self.logger.info("Re-trying Login request..")
+            r = self.s.get(post_login_url, allow_redirects=False)
+
+        # Get auth code from URL
         auth_code = __parse_url(auth_code_url)["code"][0]
         self.logger.debug(f"Auth Code: {auth_code}")
         return auth_code
@@ -368,10 +379,16 @@ class Saxo:
             rsp = self.s.post(url, json=data)
             #sys.exit(1)
 
+        if rsp.status_code == 204: # 204 - No Content
+            return rsp
+
         if rsp.status_code != 200:
             self.logger.warning(f"POST {url} failed with status code {rsp.status_code}")
-            self.logger.warning(rsp.json())
-            return rsp
+            try:
+                self.logger.warning(rsp.json())
+            except:
+                # No JSON response
+                return rsp
 
         return rsp
 
