@@ -109,7 +109,7 @@ class Saxo:
 
     def __manual_auth(self, redirect_url):
         """ Authenticate "manually" using user/pass """
-        self.logger.info("Authenticating manually using user/pass")
+        self.logger.debug("Authenticating manually using user/pass")
         def __parse_url(url):
             """ Parse URL and return query string as dict """
             from urllib.parse import urlparse, parse_qs
@@ -120,7 +120,7 @@ class Saxo:
         data = {
             "field_userid": self.profile["username"],
             "field_password": self.profile["password"]}
-        self.logger.info(f"POST {redirect_url}")
+        self.logger.debug(f"POST {redirect_url}")
         r = self.s.post(redirect_url, data=data, allow_redirects=False)
 
         # Get redirect URL
@@ -139,7 +139,7 @@ class Saxo:
             raise Exception("Password change required")
 
         # Post login, fetch auth code
-        self.logger.info(f"GET {post_login_url}")
+        self.logger.debug(f"GET {post_login_url}")
         r = self.s.get(post_login_url, allow_redirects=False)
         if "/disclaimer" in r.text:
             # disclaimer page is shown after a new API App is created.
@@ -229,7 +229,7 @@ class Saxo:
         access_obj = self.__access_token(auth_code, grant_type="authorization_code")
 
         # Append headers to the session object
-        self.logger.info("Connected to SaxoBank. Storing valid headers in session..")
+        self.logger.debug("Connected to SaxoBank. Storing valid headers in session..")
         headers = {
             #'Content-Type': 'application/x-www-form-urlencoded',
             'Authorization': 'Bearer ' + access_obj["access_token"]
@@ -248,13 +248,13 @@ class Saxo:
                 str: Access token (e.g. `eyJhbGciOiJFUzI1NiIsI...`)
         """
 
-        self.logger.info("Refreshing token..")
+        self.logger.debug("Refreshing token..")
         self.access_obj = utils.read_json(filename=self.session_filename)
         _token = self.__access_token(self.access_obj["refresh_token"],
                                      grant_type="refresh_token")
         
         if _token:
-            self.logger.info("Token refreshed.")
+            self.logger.debug("Token refreshed.")
             return _token
         else:
             self.logger.error("Unable to refresh token. Attempting to re-authenticate.")
@@ -380,9 +380,9 @@ class Saxo:
             Example response:
                 `{'OrderId': '5014824029', 'Orders': [{'OrderId': '5014824030'}]}`
         """
-        self.logger.debug(f"Processing signal: {signal}")
-        self.logger.debug("Current positions:")
-        self.positions(cfd_only=False, profit_only=False, show=True)
+        self.logger.info(f"Executing trade signal: {signal}")
+        self.logger.info("Positions prior to trade:")
+        self.positions(cfd_only=False, profit_only=False, show=True, status=["Open"])
 
         # Convert signal to namedtuple
         s = self.signal_to_tuple(signal)
@@ -390,16 +390,13 @@ class Saxo:
 
         # Determine action
         if s.action == "TRADE":
-            self.logger.info(f"Placing trade for {signal}")
             buy = True if s.direction == "LONG" else False
             if self.profile["OrderPreference"].upper() == "MARKET":
-                self.logger.info("Profile OrderPreference is set to MARKET")
                 order = self.market(symbol=s.symbol, 
                                    amount=self.profile[s.symbol],
                                    buy=buy, stoploss_points=s.stoploss)
                 return order
             elif self.profile["OrderPreference"].upper() == "LIMIT":
-                self.logger.info("Profile OrderPreference is set to LIMIT")
                 order = self.limit(symbol=s.symbol, 
                                   amount=self.tradesize(s.symbol),
                                   buy=buy, stoploss_points=s.stoploss)
@@ -411,7 +408,7 @@ class Saxo:
             self.action_flat(symbol=s.symbol)
         if s.action == "SCALEOUT":
             # Scale parameters
-            self.logger.info(f"Scaling out {s.symbol} position..))")
+            self.logger.info(f"Scaling out of {s.symbol}..")
             pos_size = self.tradesize(s.symbol)
             scale_size = pos_size * 0.25
             positions = self.positions(cfd_only=True, profit_only=False,
