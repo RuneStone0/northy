@@ -525,10 +525,17 @@ class Saxo:
         print(rsp)
         time.sleep(10)
 
-    def positions(self, cfd_only=True, profit_only=True, symbol=None, 
-                  status=None, show=False) -> dict:
+    def positions(self, cfd_only:bool=True, profit_only:bool=True, symbol=None, 
+                  status:list=None, show:bool=False) -> dict:
         """
             Get all positions
+
+            Args:
+                cfd_only (bool): Only show CFD positions
+                profit_only (bool): Only show profitable positions
+                symbol (str): Filter by symbol
+                status (list): Filter by status (e.g. ["Open", "Closed", "Working"])
+                show (bool): Print positions
 
             Example output:
                 See `tests/mock_data/SaxoTrader_Saxo_positions.json`
