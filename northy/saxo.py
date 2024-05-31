@@ -557,6 +557,7 @@ class Saxo:
         if show:
             saxo_helper.pprint_positions(pos)
 
+        self.logger.debug(f"Positions: {pos}")
         return pos
 
     def orders(self):
