@@ -74,4 +74,4 @@ def setup_logger(filename="northy.log"):
     logging.getLogger('').addHandler(console_handler)
 
     # print to console
-    logging.info("Logger initialized with log level: %s", logLevel)
+    logging.info(f"Log level: {logLevel}")

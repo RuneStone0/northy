@@ -49,6 +49,14 @@ class Saxo:
         # Setting because it's used in multiple places
         self.AccountKey = self.profile["AccountKey"]
 
+        # Log profile info
+        pinfo = self.profile.copy()
+        for key in ["password", "AccountKey", "AppName", "AppKey", 
+                    "AuthorizationEndpoint", "TokenEndpoint", "GrantType",
+                    "OpenApiBaseUrl", "RedirectUrls", "AppSecret"]:
+            pinfo.pop(key)
+        self.logger.info(f"Using Saxo profile: {profile_name} ({pinfo})")
+
     def signal_to_tuple(self, signal):
         """ 
             Convert signal into a namedtuple
