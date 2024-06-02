@@ -60,10 +60,12 @@ class Saxo:
     def signal_to_tuple(self, signal):
         """ 
             Convert signal into a namedtuple
+            
+            Returns:
+                namedtuple: signal
 
-            Example signal:
-                SPX_TRADE_SHORT_IN_4162_SL_10
-                NDX_FLATSTOP
+            Example namedtuple:
+                signal(symbol='SPX', action='TRADE', direction='SHORT', entry=4162.0, stoploss=10.0, raw='SPX_TRADE_SHORT_IN_4162_SL_10')
         """
         s = signal.split("_")
         __action = s[1]
@@ -71,7 +73,11 @@ class Saxo:
         if __action == "TRADE":
             # NDX_TRADE_SHORT_IN_13199_SL_25
             _entry, _sl = float(s[4]), float(s[6])
-            return namedtuple("signal", ["symbol", "action", "direction", "entry", "stoploss", "raw"])(s[0], s[1], s[2], _entry, _sl, signal)
+            # add buy boolean, if direction is LONG, buy is True else False
+            _buy = True if s[2] == "LONG" else False
+            return namedtuple("signal", [
+                "symbol", "action", "direction", "entry", "stoploss", "raw", 
+                "buy"])(s[0], s[1], s[2], _entry, _sl, signal, _buy)
         
         if __action == "SCALEOUT":
             # SPX_SCALEOUT_IN_3809_OUT_4153_POINTS_344
@@ -93,7 +99,11 @@ class Saxo:
         if __action == "LIMIT":
             # SPX_LIMIT_LONG_IN_3749_OUT_3739_SL_10
             _entry, _exit, _sl = float(s[4]), float(s[6]), float(s[8])
-            return namedtuple("signal", ["symbol", "action", "direction", "entry", "exit", "stoploss", "raw"])(s[0], s[1], s[2], _entry, _exit, _sl, signal)
+            # add buy boolean, if direction is LONG, buy is True else False
+            _buy = True if s[2] == "LONG" else False
+            return namedtuple("signal", [
+                "symbol", "action", "direction", "entry", "exit", "stoploss", 
+                "raw", "buy"])(s[0], s[1], s[2], _entry, _exit, _sl, signal, _buy)
 
     ### Auth ###
     def __auth_request(self):
@@ -415,16 +425,18 @@ class Saxo:
 
         # Determine action
         if s.action == "TRADE":
-            buy = True if s.direction == "LONG" else False
+            # Calculate stoploss price based on signal entry
+            __slp = s.entry - s.stoploss if s.buy else s.entry + s.stoploss
+            
             if self.profile["OrderPreference"].upper() == "MARKET":
                 order = self.market(symbol=s.symbol, 
                                    amount=self.profile[s.symbol],
-                                   buy=buy, stoploss_points=s.stoploss)
+                                   buy=s.buy, stoploss_price=__slp)
                 return order
             elif self.profile["OrderPreference"].upper() == "LIMIT":
                 order = self.limit(symbol=s.symbol, 
                                   amount=self.tradesize(s.symbol),
-                                  buy=buy, stoploss_points=s.stoploss)
+                                  buy=s.buy, stoploss_price=__slp)
                 return order
             else:
                 self.logger.error("Profile OrderPreference is not set")
@@ -557,7 +569,6 @@ class Saxo:
         if show:
             saxo_helper.pprint_positions(pos)
 
-        self.logger.debug(f"Positions: {pos}")
         return pos
 
     def orders(self):
@@ -752,8 +763,7 @@ class Saxo:
         return [stoploss_order]
 
     def base_order(self, symbol, amount, buy=True, limit=None, 
-                   stoploss_points=None, stoploss_price=None, 
-                   OrderType="Market") -> Response:
+                   stoploss_price=None, OrderType="Market") -> Response:
         """
             Handles placing new orders
 
@@ -762,7 +772,6 @@ class Saxo:
                 amount (int): Amount of contracts
                 buy (bool): Buy or Sell
                 limit (float): Limit price
-                stoploss_points (int): Stop loss in points
                 stoploss_price (float): Stop loss price
                 OrderType (str): Market or Limit
 
@@ -801,30 +810,10 @@ class Saxo:
         # Stop Loss
         if stoploss_price is not None:
             # Set fixed Stop Loss
-            order = self.stoploss_order(uic=self.order["Uic"], 
+            self.order["Orders"] = self.stoploss_order(uic=self.order["Uic"], 
                                         stoploss_price=stoploss_price, 
                                         BuySell=self.order["BuySell"],
                                         amount=self.order["Amount"])
-            self.order["Orders"] = order
-        elif stoploss_points is not None:
-            # Set Stop Loss on Market Order
-            
-            # When adding SL to a market order, we don't know the entry price of the trade yet.
-            # We therefore estimate the entry price by looking at the current bid price.
-            bid = self.bid(self.order["Uic"])  # estimated entry price
-            #print("Estimated entry price: {}".format(bid))
-
-            stoploss_price = self.get_stoploss_price(entry=bid, stoploss=stoploss_points, BuySell=self.order["BuySell"])
-
-            order = self.stoploss_order(uic=self.order["Uic"], 
-                                        stoploss_price=stoploss_price, 
-                                        BuySell=self.order["BuySell"],
-                                        amount=self.order["Amount"])
-
-            self.order["Orders"] = order
-        else:
-            # No Stop Loss added to order
-            pass
 
         # Execute order
         self.logger.info(self.order)
@@ -836,11 +825,10 @@ class Saxo:
 
         return rsp
 
-    def market(self, symbol, amount, buy=True, stoploss_points=None, stoploss_price=None):
+    def market(self, symbol, amount, buy=True, stoploss_price=None):
         return self.base_order(symbol=symbol,
                                amount=amount,
                                buy=buy, 
-                               stoploss_points=stoploss_points,
                                stoploss_price=stoploss_price)
 
     def close(self, position) -> Response:
@@ -886,18 +874,13 @@ class Saxo:
         time.sleep(1) # Sleep to avoid rate limiting
         return rsp
 
-    def limit(self, symbol, amount, buy=True, limit=None, stoploss_points=None, stoploss_price=None):
-        print(f"symbol={symbol}, amount={amount}, buy={buy}, price={limit}, stoploss_price={stoploss_price}, points={stoploss_points}")
-        if stoploss_points is not None:
-            stoploss_price = limit - stoploss_points if buy else limit + stoploss_points
+    def limit(self, symbol, amount, buy=True, limit=None, stoploss_price=None):
+        print(f"symbol={symbol}, amount={amount}, buy={buy}, price={limit}, stoploss_price={stoploss_price}")
         return self.base_order(symbol=symbol, 
                                amount=amount, 
                                buy=buy, 
                                limit=limit, 
                                stoploss_price=stoploss_price)
-
-    def bid(self, uic):
-        return self.price(uic)["Quote"]["Bid"]
 
     def watch(self):
         self.logger.info("Starting change stream....")
