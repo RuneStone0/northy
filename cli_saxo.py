@@ -18,22 +18,28 @@ logger = logging.getLogger(__name__)
 @click.pass_context
 def cli(ctx, prod, profile):
     ctx.ensure_object(dict)
-    profile = profile.lower() # TODO: Currently not impelemented
+
+    # Set profile
+    ctx.obj['PROFILE'] = profile
+    # Set Saxo object
+    ctx.obj['SAXO'] = Saxo(profile_name=ctx.obj['PROFILE'])
     os.environ["PRODUCTION"] = str(prod)
 
 @cli.command()
-def positions():
+@click.pass_context
+def positions(ctx):
     """ List positions """
-    saxo = Saxo()
+    saxo = ctx.obj['SAXO']
     positions = saxo.positions(cfd_only=False, profit_only=False)
     saxo_helper = SaxoHelper()
     saxo_helper.pprint_positions(positions)
 
 @cli.command()
 @click.option('--id', required=True, type=str, help='Position ID')
-def close_position(id):
+@click.pass_context
+def close_position(ctx, id):
     """ Close position """
-    saxo = Saxo()
+    saxo = ctx.obj['SAXO']
     # Find position object by looping through all positions
     positions = saxo.positions(cfd_only=False, profit_only=False)
     for position in positions["Data"]:
@@ -49,7 +55,8 @@ def close_position(id):
 @cli.command()
 @click.option('--job', required=False, is_flag=True, default=False, 
                 type=bool, help='Run as background job')
-def report_closed_positions(job):
+@click.pass_context
+def report_closed_positions(ctx, job):
     """ 
         Report Closed Positions 
 
@@ -60,7 +67,7 @@ def report_closed_positions(job):
 
         The report will be sent daily at a specific (hardcoded) time.
     """
-    saxo = Saxo()
+    saxo = ctx.obj['SAXO']
     saxo_report = SaxoReport()
 
     # Run once
@@ -78,29 +85,32 @@ def report_closed_positions(job):
         saxo_report.send_report(positions=positions)
     
 @cli.command()
-def orders():
+@click.pass_context
+def orders(ctx):
     """ List orders """
-    saxo = Saxo()
+    saxo = ctx.obj['SAXO']
     orders = saxo.orders()
     for o in orders["Data"]:
         logger.info(o["BuySell"], o["Uic"], o["Amount"], o["Status"])
 
 @cli.command()
 @click.option('--orders', required=True, type=str, help='Comma separated list of Order IDs')
-def cancel_orders(orders):
+@click.pass_context
+def cancel_orders(ctx, orders):
     """ Cancel Orders """
-    saxo = Saxo()
+    saxo = ctx.obj['SAXO']
     saxo.cancel_order(orders)
 
 @click.command()
 @click.option('--symbol', required=True, type=str, help='Symbol to trade')
 @click.option('--amount', required=True, type=str, help='Amount to trade')
 @click.option('--buy', default=True, type=bool, help='Buy (default) or Sell (False)')
-@click.option('--points', default=None, type=int, help='Stop Loss points')
-def market(symbol, amount, buy, points):
+@click.option('--stoploss', default=None, type=int, help='Stop Loss points')
+@click.pass_context
+def market(ctx, symbol, amount, buy, stoploss):
     """ Execute Trades """
-    saxo = Saxo()
-    order = saxo.market(symbol=symbol, amount=amount, buy=buy, stoploss_points=points)
+    saxo = ctx.obj['SAXO']
+    order = saxo.market(symbol=symbol, amount=amount, buy=buy, stoploss_price=stoploss)
     logger.info(order)
 
 @cli.command()
@@ -110,9 +120,10 @@ def market(symbol, amount, buy, points):
 @click.option('--buy', default=True, type=bool, help='Buy (default) or Sell (False)')
 @click.option('--stoploss_price', default=None, type=int, help='Stop Loss price')
 @click.option('--points', default=None, type=int, help='Stop Loss points')
-def limit(symbol, amount, buy, price, stoploss_price, points):
-    """ Execute rades """
-    saxo = Saxo()
+@click.pass_context
+def limit(ctx, symbol, amount, buy, price, stoploss_price, points):
+    """ Execute Trades """
+    saxo = ctx.obj['SAXO']
     order = saxo.limit(symbol=symbol,
         amount=amount,
         limit=price, 
@@ -128,7 +139,7 @@ def limit(symbol, amount, buy, price, stoploss_price, points):
 @click.option('--rename', default=None, required=False, type=str, help='AccountKey to modify')
 @click.option('--name', default=None, required=False, type=str, help='New Account Display Name')
 def accounts(ctx, list, rename, name):
-    """ List accounts """
+    """ Accounts Management """
     saxo = ctx.obj['SAXO']
 
     # List accounts
@@ -162,9 +173,10 @@ def accounts(ctx, list, rename, name):
 @cli.command()
 @click.option('--signal', default=None, type=str, help='Trade signal (e.g. SPX_TRADE_LONG_IN_3609_SL_10)')
 @click.option('--tweet', default=None, type=str, help='Execute trades for a specific tweet id')
-def trade(signal, tweet):
+@click.pass_context
+def trade(ctx, signal, tweet):
     """ Execute trades based on a signal or tweet id """
-    saxo = Saxo()
+    saxo = ctx.obj['SAXO']
 
     # If signal is provided
     if signal is not None:
@@ -179,16 +191,17 @@ def trade(signal, tweet):
                 saxo.trade(signal=signal)
     
     else:
-        logger.error("Something is not right..")
+        click.echo(ctx.get_help())
 
 @cli.command()
-def watch():
+@click.pass_context
+def watch(ctx):
     """
         Watch for alerts and execute trades
     """
     while True:
         try:
-            saxo = Saxo()
+            saxo = ctx.obj['SAXO']
             saxo.watch()
         except Exception as e:
             p = Prowl()
