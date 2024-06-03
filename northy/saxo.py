@@ -1191,6 +1191,7 @@ class SaxoHelper():
 
     def get_stoploss(self, symbol):
         """
+            TODO: Get actual stop loss instead of using hard coded values.
             Lookup default stoploss points for a symbol.
         """
         symbol = symbol.upper()
