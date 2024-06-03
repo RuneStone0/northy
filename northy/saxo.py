@@ -28,8 +28,8 @@ class Saxo:
         self.tickers = utils.read_json(filename="conf/saxo_tickers.js")[0]
 
         # Misc vars
-        self.session_filename = ".saxo-session-{}".format(self.profile["username"])
-        self.base_url = self.profile["OpenApiBaseUrl"]
+        self.session_filename = ".saxo-session-{}".format(self.env["username"])
+        self.base_url = self.env["OpenApiBaseUrl"]
         self.state = str(uuid.uuid4())
 
         # Setup Saxo API connection
@@ -45,17 +45,13 @@ class Saxo:
         sm = SecretsManager()
         sm.read(file="conf/saxo_config.encrypted")
         self.profile = sm.get_dict()[profile_name]
+        self.env = sm.get_dict()[self.profile["environment"]]
 
         # Setting because it's used in multiple places
         self.AccountKey = self.profile["AccountKey"]
 
         # Log profile info
-        pinfo = self.profile.copy()
-        for key in ["password", "AccountKey", "AppName", "AppKey", 
-                    "AuthorizationEndpoint", "TokenEndpoint", "GrantType",
-                    "OpenApiBaseUrl", "RedirectUrls", "AppSecret"]:
-            pinfo.pop(key)
-        self.logger.info(f"Using Saxo profile: {profile_name} ({pinfo})")
+        self.logger.info(f"Using Saxo profile: {profile_name} ({self.profile})")
 
     def signal_to_tuple(self, signal):
         """ 
@@ -108,9 +104,9 @@ class Saxo:
     ### Auth ###
     def __auth_request(self):
         # Vars
-        auth_endpoint = self.profile["AuthorizationEndpoint"]
-        client_id = self.profile["AppKey"]
-        redirect_uri = self.profile["RedirectUrls"]
+        auth_endpoint = self.env["AuthorizationEndpoint"]
+        client_id = self.env["AppKey"]
+        redirect_uri = self.env["RedirectUrls"]
 
         url = f"{auth_endpoint}?response_type=code&client_id={client_id}&state={self.state}&redirect_uri={redirect_uri}"
         self.logger.debug(f"GET {url}")
@@ -136,8 +132,8 @@ class Saxo:
 
         # Login
         data = {
-            "field_userid": self.profile["username"],
-            "field_password": self.profile["password"]}
+            "field_userid": self.env["username"],
+            "field_password": self.env["password"]}
         self.logger.debug(f"POST {redirect_url}")
         r = self.s.post(redirect_url, data=data, allow_redirects=False)
 
@@ -185,10 +181,10 @@ class Saxo:
 
     def __access_token(self, auth_code, grant_type):
         # Vars
-        redirect_uri = self.profile["RedirectUrls"]
-        token_endpoint = self.profile["TokenEndpoint"]
-        app_key = self.profile["AppKey"]
-        app_secret = self.profile["AppSecret"]
+        redirect_uri = self.env["RedirectUrls"]
+        token_endpoint = self.env["TokenEndpoint"]
+        app_key = self.env["AppKey"]
+        app_secret = self.env["AppSecret"]
         basic = HTTPBasicAuth(app_key, app_secret)
 
         data = { "redirect_uri": redirect_uri, "grant_type": grant_type}
