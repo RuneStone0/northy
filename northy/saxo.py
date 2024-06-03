@@ -426,18 +426,16 @@ class Saxo:
         # Determine action
         if s.action == "TRADE":
             # Calculate stoploss price based on signal entry
-            __slp = s.entry - s.stoploss if s.buy else s.entry + s.stoploss
-            
-            if self.profile["OrderPreference"].upper() == "MARKET":
-                order = self.market(symbol=s.symbol, 
-                                   amount=self.profile[s.symbol],
-                                   buy=s.buy, stoploss_price=__slp)
-                return order
-            elif self.profile["OrderPreference"].upper() == "LIMIT":
-                order = self.limit(symbol=s.symbol, 
+            __stoploss_price = s.entry - s.stoploss if s.buy else s.entry + s.stoploss
+            if self.profile["OrderPreference"] == "Market":
+                return self.market(symbol=s.symbol, 
+                                   amount=self.tradesize(s.symbol),
+                                   buy=s.buy, stoploss_price=__stoploss_price)
+                
+            elif self.profile["OrderPreference"] == "Limit":
+                return self.limit(symbol=s.symbol, limit=s.entry,
                                   amount=self.tradesize(s.symbol),
-                                  buy=s.buy, stoploss_price=__slp)
-                return order
+                                  buy=s.buy, stoploss_price=__stoploss_price)
             else:
                 self.logger.error("Profile OrderPreference is not set")
         if s.action == "FLAT":
@@ -803,9 +801,8 @@ class Saxo:
         self.order["OrderDuration"] = { "DurationType": "DayOrder" }
 
         # Limit order
-        if limit is not None:
+        if OrderType == "Limit" and limit is not None:
             self.order["OrderPrice"] = limit
-            self.order["OrderType"] = "Limit"
 
         # Stop Loss
         if stoploss_price is not None:
@@ -826,6 +823,7 @@ class Saxo:
         return rsp
 
     def market(self, symbol, amount, buy=True, stoploss_price=None):
+        self.logger.debug(f"Placing market order: {symbol} ({amount} contracts)")
         return self.base_order(symbol=symbol,
                                amount=amount,
                                buy=buy, 
@@ -875,12 +873,13 @@ class Saxo:
         return rsp
 
     def limit(self, symbol, amount, buy=True, limit=None, stoploss_price=None):
-        print(f"symbol={symbol}, amount={amount}, buy={buy}, price={limit}, stoploss_price={stoploss_price}")
+        self.logger.debug(f"Placing limit order: {symbol} @ {limit} ({amount} contracts)")
         return self.base_order(symbol=symbol, 
                                amount=amount, 
                                buy=buy, 
                                limit=limit, 
-                               stoploss_price=stoploss_price)
+                               stoploss_price=stoploss_price,
+                               OrderType="Limit")
 
     def watch(self):
         self.logger.info("Starting change stream....")
