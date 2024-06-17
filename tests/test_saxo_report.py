@@ -10,7 +10,7 @@ from functools import wraps
 from datetime import datetime
 
 tz = ZoneInfo('US/Central')
-saxo = Saxo()
+saxo = Saxo(profile_name="testing")
 saxo_helper = SaxoHelper()
 saxo_report = SaxoReport()
 logger = logging.getLogger(__name__)
