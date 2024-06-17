@@ -1,4 +1,6 @@
 import os
+import sys
+import ctypes
 import json
 import logging
 from jsmin import jsmin
@@ -27,3 +29,14 @@ class Utils:
 
     def json_to_string(self, data):
         return json.dumps(data)
+
+    def set_console_window(self):
+        """
+            Set console window title to the command that was run.
+        """
+        _cmd = " ".join(sys.argv)
+        try:
+            ctypes.windll.kernel32.SetConsoleTitleW(_cmd)
+        except Exception as e:
+            self.logger.error(f"Error renaming console window: {e}")
+            pass
