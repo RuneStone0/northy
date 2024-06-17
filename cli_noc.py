@@ -5,9 +5,11 @@ import sqlite3
 import logging
 from northy.noc import Noc
 from northy.logger import setup_logger
+from northy.utils import Utils
 
 setup_logger(filename='noc.log')
 logger = logging.getLogger(__name__)
+utils = Utils()
 
 @click.group()
 @click.option('--prod', default=False, is_flag=True, type=bool, help='Enable production mode')
@@ -91,4 +93,5 @@ if __name__ == '__main__':
         if inspect.isfunction(obj) and obj.__module__ == __name__:
             cli.add_command(obj)
     
+    utils.set_console_window()
     cli()

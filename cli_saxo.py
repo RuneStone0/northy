@@ -7,10 +7,13 @@ from northy.logger import setup_logger
 from northy.saxo import Saxo, SaxoHelper
 from northy.saxo_report import SaxoReport
 from northy.config import Config
+from northy.utils import Utils
+
 config = Config().config
 
 setup_logger(filename='saxo.log')
 logger = logging.getLogger(__name__)
+utils = Utils()
 
 @click.group()
 @click.option('--prod', default=False, is_flag=True, type=bool, help='Enable production mode')
@@ -214,6 +217,8 @@ if __name__ == '__main__':
     for name, obj in globals().copy().items():
         if inspect.isfunction(obj) and obj.__module__ == __name__:
             cli.add_command(obj)
+    
+    utils.set_console_window()
     
     # Run the CLI
     cli()
