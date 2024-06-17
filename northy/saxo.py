@@ -660,7 +660,18 @@ class Saxo:
         rsp = self.get(path=path)
         if rsp.status_code != 200:
             return None
+        
+        rsp_json = rsp.json()
+        self.logger.debug(rsp_json)
+
+        if rsp_json["Quote"]["PriceTypeBid"] == "NoAccess":
+            # https://openapi.help.saxo/hc/en-us/articles/4405160773661
+            # https://openapi.help.saxo/hc/en-us/articles/4416934146449
+            url = "https://openapi.help.saxo/hc/en-us/articles/4416934146449"
+            self.logger.warning(f"No access to price data. See: {url}")
+
         time.sleep(1)  # Lame way to avoid rate limiting
+
         return rsp.json()
 
     ####### TRADING #######
