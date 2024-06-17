@@ -445,9 +445,9 @@ class Saxo:
             positions = self.positions(cfd_only=True, profit_only=False,
                                        show=True, symbol=s.symbol)
 
-            # Ensure we scaleout of an existing position
+            # Ensure we only scaleout of an existing position
             if positions["__count"] == 0:
-                self.logger.info("No positions found. Skipping..")
+                self.logger.warning("No positions found. Skipping..")
                 return None
 
             # Initiate scaleout
