@@ -32,9 +32,6 @@ def temp_folder():
         yield temp_dir
 
 def test_backup(temp_folder):
-    from northy.config import Config
-    config = Config().config
-
     # Perform the backup
     db = Database(production=False)
     result = db.backup(output_directory=temp_folder)
