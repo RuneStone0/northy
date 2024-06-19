@@ -88,13 +88,17 @@ def report_closed_positions(ctx, job):
         saxo_report.send_report(positions=positions)
     
 @cli.command()
+@click.option('--list', is_flag=True, default=None, 
+                type=bool, help='List all open orders')
+@click.option('--id', type=str, default=None, help='Get order by ID')
 @click.pass_context
-def orders(ctx):
+def orders(ctx, id, list):
     """ List orders """
-    saxo = ctx.obj['SAXO']
-    orders = saxo.orders()
-    for o in orders["Data"]:
-        logger.info(o["BuySell"], o["Uic"], o["Amount"], o["Status"])
+    if list or id:
+        saxo = ctx.obj['SAXO']
+        saxo.orders(orderId=id)
+    else:
+        click.echo(ctx.get_help())
 
 @cli.command()
 @click.option('--orders', required=True, type=str, help='Comma separated list of Order IDs')

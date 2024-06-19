@@ -422,7 +422,10 @@ class Saxo:
         # Determine action
         if s.action == "TRADE":
             # Calculate stoploss price based on signal entry
+            self.logger.info(f"Calculating stoploss price for {s.symbol}.."
+                             f"Entry: {s.entry}, Stoploss: {s.stoploss}")
             __stoploss_price = s.entry - s.stoploss if s.buy else s.entry + s.stoploss
+
             if self.profile["OrderPreference"] == "Market":
                 return self.market(symbol=s.symbol, 
                                    amount=self.tradesize(s.symbol),
@@ -532,6 +535,7 @@ class Saxo:
 
     def positions(self, cfd_only:bool=True, profit_only:bool=True, symbol=None, 
                   status:list=None, show:bool=False) -> dict:
+        # TODO: symbol is set to None, it should be a str, default to "" perhaps?
         """
             Get all positions
 
@@ -564,14 +568,25 @@ class Saxo:
 
         return pos
 
-    def orders(self):
+    def orders(self, orderId:str=None):
         """
-            Get all orders
+            Get open order(s)
+
+            Args:
+                orderId (str): Order ID
 
             Example output:
                 See `tests/mock_data/SaxoTrader_Saxo_orders.json`
         """
-        orders = self.get(f"/port/v1/orders?ClientKey=" + self.AccountKey).json()
+        if orderId:
+            # Get specific order
+            ClientKey = self.AccountKey
+            orders = self.get(f"/port/v1/orders/{ClientKey}/{orderId}").json()
+        else:
+            # Get all orders
+            orders = self.get(f"/port/v1/orders/me").json()
+
+        self.logger.info(f"Orders: {orders}")
         return orders
 
     def get_stoploss_price(self, entry, stoploss, BuySell):
