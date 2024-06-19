@@ -133,27 +133,33 @@ def test_price():
     assert saxo.price(123) == None
 
 def test_trade():
-    signals = [
-        "NDX_TRADE_SHORT_IN_13199_SL_25 ",
-        "SPX_SCALEOUT_IN_3809_OUT_4153_POINTS_344",
-        "SPX_FLAT",
-        "SPX_FLATSTOP",
-        "NDX_CLOSED",
-        "SPX_LIMIT_LONG_IN_3749_OUT_3739_SL_10",
-    ]
-    # Test SHORT, valid signals
-    price = saxo.price(saxo_helper.symbol_to_uic("NDX"))["Quote"]["Mid"]
-    price = int(price) + 5
-    signal = f"NDX_TRADE_SHORT_IN_{price}_SL_25"
+    """
+        1. Execute live trade
+        2. Cleanup
+        2a. Attempt to delete open order (if any)
+        2b. Attempt to delete open position (if any)
+    """
+    # Test SHORT using live pricing data
+    symbol = "NDX"
+    uic = saxo_helper.symbol_to_uic(symbol)
+    price_obj = saxo.price(uic=uic)
+    price_mid = price_obj["Quote"]["Mid"]
+    signal = f"{symbol}_TRADE_SHORT_IN_{int(price_mid)}_SL_25"
     order = saxo.trade(signal=signal).json()
-    
-    # Delete order (note: this is only possible if the order is still open)
-    try:
-        order_id = order["OrderId"]
-        saxo.cancel_order(orders=order_id)
-    except:
-        logger.warning("Could not delete order")
-        pass
+    order_id = order["OrderId"]
+
+    # Cleanup order (if any)
+    saxo.cancel_order(orders=order_id)
+
+    # Cleanup position (if any)
+    positions = saxo.positions(profit_only=False, symbol=symbol, show=True, status=["Open", "Working"])
+    for position in positions["Data"]:
+        pos_id = position["PositionId"]
+        # Find position related to order ID we just created
+        if position["PositionBase"]["SourceOrderId"] == order_id:
+            saxo.close(position=position)
+        else:
+            logger.warning(f"Unable to close position ({pos_id}) related to order ({order_id})")
 
 def test_trade_buysell_all():
     """
