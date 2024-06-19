@@ -197,6 +197,27 @@ def trade(ctx, signal, tweet):
         click.echo(ctx.get_help())
 
 @cli.command()
+@click.option('--symbol', default="NDX", type=str, help='Get Latest Price for Symbol')
+@click.pass_context
+def price(ctx, symbol):
+    """ 
+        Get Latest Price for Symbol 
+
+        Example:
+        python cli_saxo.py price --symbol NDX
+    """
+    saxo = ctx.obj['SAXO']
+    saxo_helper = SaxoHelper()
+
+    if symbol:
+        uic = saxo_helper.symbol_to_uic(symbol)
+        price = saxo.price(uic)
+        logger.info(price)
+    
+    else:
+        click.echo(ctx.get_help())
+
+@cli.command()
 @click.pass_context
 def watch(ctx):
     """

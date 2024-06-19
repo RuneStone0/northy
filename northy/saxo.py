@@ -528,7 +528,6 @@ class Saxo:
             self.logger.info("Real-time data is being enabled (might take a while)")
         if rsp.status_code == 200:
             self.logger.info("Real-time data is enabled")
-        print(rsp)
         time.sleep(10)
 
     def positions(self, cfd_only:bool=True, profit_only:bool=True, symbol=None, 
