@@ -826,7 +826,7 @@ class Saxo:
             self.order["OrderPrice"] = limit
 
         # Stop Loss
-        if stoploss_price is not None:
+        if stoploss_price:
             # Set fixed Stop Loss
             self.order["Orders"] = self.stoploss_order(uic=self.order["Uic"], 
                                         stoploss_price=stoploss_price, 
@@ -891,6 +891,12 @@ class Saxo:
         self.logger.info(f"Closing position: {PositionId}")
         rsp = self.post(path="/trade/v2/orders", data=order)
         time.sleep(1) # Sleep to avoid rate limiting
+
+        if rsp.status_code != 200:
+            self.logger.error(f"Failed to close position: {PositionId}. Response: {rsp.json()}")
+        else:
+            self.logger.info(f"Position {PositionId} closed. Order placed to close: {rsp.json()}")
+
         return rsp
 
     def limit(self, symbol, amount, buy=True, limit=None, stoploss_price=None):
@@ -979,6 +985,11 @@ class Saxo:
         
         path = f"/trade/v2/orders/{orders}/?AccountKey={self.AccountKey}"
         rsp = self.post(path=path, data=None, method_override="DELETE")
+
+        if rsp.status_code != 200:
+            self.logger.error(f"Failed to cancel order(s): {rsp.json()}")
+        else:
+            self.logger.info(f"Orders cancelled: {rsp.json()}")
         
         return rsp
 
@@ -1110,6 +1121,7 @@ class SaxoHelper():
     def filter_positions(self, positions:dict, cfd_only:bool=True,
                          profit_only:bool=True, symbol:bool=None,
                          status:list=None) -> dict:
+        # TODO: symbol is set as bool, should be str
         """
             Filter positions
 
