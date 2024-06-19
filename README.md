@@ -1,4 +1,6 @@
 # Project Northy
+![Coverage Status](docs/coverage-badge.svg)
+
 Automated trading system for Northman Trader (Northy) tweets. The system will monitor Northy's tweets and execute trades based on the signals provided. The system will also send notifications to the user when trades are executed.
 
 ```mermaid
