@@ -65,8 +65,6 @@ def report_closed_positions(ctx, job):
 
         This will generate a report of closed positions and send it by email.
         By default, the report will only be sent if there are new closed positions.
-        If the --force option is used, the report will be sent regardless of whether
-        there are new closed positions or not.
 
         The report will be sent daily at a specific (hardcoded) time.
     """
