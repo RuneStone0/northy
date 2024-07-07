@@ -1,0 +1,14 @@
+services:
+  saxo:
+    build: .
+    container_name: saxo
+    volumes:
+      - .:/app
+    command: python /app/cli_saxo.py --prod watch
+
+  signal:
+    build: .
+    container_name: signal
+    volumes:
+      - .:/app
+    command: python /app/cli_signal.py --prod watch
