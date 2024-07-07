@@ -28,8 +28,8 @@ if (Get-Process -Name "chrome" -ErrorAction SilentlyContinue) {
     Start-Process "chrome"
 }
 
-echo "Start watching Windows Notification Center.."
+echo "Start watching Saxo.."
 sleep 1
-[console]::Title = ".\cli_noc.py watch"
-.\cli_noc.py watch
+[console]::Title = ".\cli_saxo.py --prod watch"
+.\cli_saxo.py --prod watch
 
