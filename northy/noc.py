@@ -184,7 +184,7 @@ class Noc:
                 continue
 
             # Check if notification is a tweet
-            is_tweet = "twitter" in notification.get("payload", {}).get("toast", {}).get("@launch", "")
+            is_tweet = "x.com" in notification.get("payload", {}).get("toast", {}).get("@launch", "")
 
             if is_tweet:
                 # Tweet notification
