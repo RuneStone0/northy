@@ -25,7 +25,7 @@ class Noc:
         else:
             self.db_path = wpndatabase_path
         self.logger.critical("The browser must be kept open to receive notifications!")
-        self.logger.critical("Only one browser can Twitter Notifications enabled. If another browser is enabled, it can hijack the notifications")
+        self.logger.critical("Only one browser can receive Twitter Notifications enabled. If another browser is enabled, it can hijack the notifications")
         self.logger.critical("Enable Twitter notification (https://twitter.com/settings/push_notifications). Setting is managed per-browser and not per Twitter/Chrome profile.")
         self.logger.critical("Add twitter.com / x.com to Always Active Sites (chrome://settings/performance)")
         self.logger.info(f"Using: {self.db_path}")
