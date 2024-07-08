@@ -37,12 +37,22 @@ class Noc:
             self.logger.critical("This script only works on Windows")
 
     def __set_db_path(self):
-        # Get path to noc db
-        path = 'AppData\\Local\\Microsoft\\Windows\\Notifications\\wpndatabase.db'
-        # add userprofile to path
-        path = os.path.join(os.getenv('USERPROFILE'), path)
-        
-        self.db_path = path
+        if os.path.exists('/host_notifications/wpndatabase.db'):
+            # Use the mounted path inside the container
+            database_path = '/host_notifications/wpndatabase.db'
+        else:
+            # Use the host OS path
+            user_profile = os.getenv('USERPROFILE')
+            if user_profile:
+                database_path = os.path.join(
+                    user_profile, 'AppData', 'Local', 
+                    'Microsoft', 'Windows', 'Notifications', 'wpndatabase.db')
+            else:
+                raise FileNotFoundError("The database path could not be determined.")
+
+        self.db_path = database_path
+        print(f"Database path is set to: {self.db_path}")
+        return self.db_path
 
     def __prepare_cache(self):
         """
