@@ -225,7 +225,6 @@ def watch(ctx):
     """
         Watch for alerts and execute trades
     """
-    logger.info("Hello, small change...")
     while True:
         try:
             saxo = ctx.obj['SAXO']
