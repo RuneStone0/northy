@@ -1,14 +1,27 @@
+version: '3.8'
+
 services:
   saxo:
-    build: .
+    image: runestone123456789/northy:latest
     container_name: saxo
     volumes:
       - .:/app
     command: python /app/cli_saxo.py --prod watch
 
   signal:
-    build: .
+    image: runestone123456789/northy:latest
     container_name: signal
     volumes:
       - .:/app
     command: python /app/cli_signal.py --prod watch
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+    command: --interval 30 --label-enable
+    environment:
+      - REPO_USER=${DOCKER_USERNAME}
+      - REPO_PASS=${DOCKER_PASSWORD}
