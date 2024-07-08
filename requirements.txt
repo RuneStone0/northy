@@ -2,7 +2,6 @@ Click
 colorama
 pyprowl
 PyJWT
-#flask
 pandas
 jsmin
 configparser_crypt
