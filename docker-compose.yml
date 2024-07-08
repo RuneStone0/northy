@@ -7,6 +7,8 @@ services:
     volumes:
       - .:/app
     command: python /app/cli_saxo.py --prod watch
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
   signal:
     image: runestone123456789/northy:latest
@@ -14,6 +16,8 @@ services:
     volumes:
       - .:/app
     command: python /app/cli_signal.py --prod watch
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
   watchtower:
     image: containrrr/watchtower
