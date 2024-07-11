@@ -19,15 +19,20 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
-  noc:
-    image: runestone123456789/northy:latest
-    container_name: noc
-    volumes:
-      - .:/app
-      - /c/Users/User/AppData/Local/Microsoft/Windows/Notifications/wpndatabase.db:/host_notifications/wpndatabase.db
-    command: python /app/cli_noc.py --prod watch
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
+  # Docker Free, doesn't allow 2-way file sync
+  # Podman is shit and failed to make it work
+  # 
+  #noc:
+  #  image: runestone123456789/northy:latest
+  #  container_name: noc
+  #  volumes:
+  #    - .:/app
+  #    - type: bind
+  #      source: /c/Users/User/AppData/Local/Microsoft/Windows/Notifications/wpndatabase.db
+  #      target: /host_notifications/wpndatabase.db
+  #  command: python /app/cli_noc.py --prod watch
+  #  labels:
+  #    - "com.centurylinklabs.watchtower.enable=true"
 
   watchtower:
     image: containrrr/watchtower
