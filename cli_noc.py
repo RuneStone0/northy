@@ -33,6 +33,7 @@ def read(path):
     """
     Read notifications from DB (used for debugging)
     """
+    # TODO: This part fails inside docker
     database_path = path
     if database_path is None:
         database_path = 'AppData\\Local\\Microsoft\\Windows\\Notifications\\wpndatabase.db'
