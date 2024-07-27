@@ -18,7 +18,7 @@ import logging
 utils = Utils()
 
 class Saxo:
-    def __init__(self, profile_name="default"):
+    def __init__(self, profile_name="dev"):
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
         self.saxo_helper = SaxoHelper()
@@ -44,7 +44,12 @@ class Saxo:
         """ Load saxo profile form encrypted file """
         sm = SecretsManager()
         sm.read(file="conf/saxo_config.encrypted")
-        self.profile = sm.get_dict()[profile_name]
+        try:
+            self.profile = sm.get_dict()[profile_name]
+        except KeyError:
+            profile_names = [p for p in sm.get_dict() if "env" not in p]
+            self.logger.error(f"Profile {profile_name} not found in saxo_config.encrypted. Available profiles: {profile_names}")
+            sys.exit(1)
         self.env = sm.get_dict()[self.profile["environment"]]
 
         # Setting because it's used in multiple places
