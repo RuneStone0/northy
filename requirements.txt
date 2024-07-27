@@ -27,3 +27,6 @@ postmarker
 
 # Windows Notification Center
 xmltodict
+
+# devDependencies
+coverage-badge
