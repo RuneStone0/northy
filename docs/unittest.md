@@ -1,19 +1,12 @@
-# Run all test cases
+# Testing
+## Full test before deployment
 ```
-python -m pytest -c tests/pytest.ini
-```
-
-### Test specific file, while overriding a few settings from pytest.ini
-```
-python -m pytest -c tests/pytest.ini -n 0 tests\test_config.py
+python -m pytest -c tests/pytest.ini -n auto
+coverage-badge -o tests/report/coverage-badge.svg
 ```
 
-### Run specific function within test file
+## Other options
+Run specific test:
 ```
-python -m pytest -v --cov=northy --capture=no --cov-report=html --cov-report=term-missing:skip-covered --cov-append --cov-report=html:tests/report tests/test_db.py::test_backup
-```
-
-### Drop console output by removing
-```
---capture=no
+python -m pytest -c tests/pytest.ini -n 0 .\tests\test_saxo.py::test_price
 ```
