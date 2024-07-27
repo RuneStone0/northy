@@ -3,19 +3,19 @@ version: '3.8'
 services:
   saxo:
     image: runestone123456789/northy:latest
-    container_name: saxo
+    container_name: saxo (staging)
     volumes:
       - .:/app
-    command: python /app/cli_saxo.py --prod watch
+    command: python /app/cli_saxo.py --prod --profile staging watch
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
   signal:
     image: runestone123456789/northy:latest
-    container_name: signal
+    container_name: signal (staging)
     volumes:
       - .:/app
-    command: python /app/cli_signal.py --prod watch
+    command: python /app/cli_signal.py --prod --profile staging watch
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
