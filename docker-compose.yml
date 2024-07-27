@@ -19,6 +19,15 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
+  saxoLimit:
+    image: runestone123456789/northy:latest
+    container_name: saxoStagingLimit
+    volumes:
+      - .:/app
+    command: python /app/cli_saxo.py --prod --profile limit watch
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
   saxoDev:
     image: runestone123456789/northy:latest
     container_name: saxoDev
