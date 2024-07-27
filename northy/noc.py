@@ -25,7 +25,7 @@ class Noc:
         else:
             self.db_path = wpndatabase_path
         self.logger.critical("The browser must be kept open to receive notifications!")
-        self.logger.critical("Only one browser can Twitter Notifications enabled. If another browser is enabled, it can hijack the notifications")
+        self.logger.critical("Only one browser can receive Twitter Notifications enabled. If another browser is enabled, it can hijack the notifications")
         self.logger.critical("Enable Twitter notification (https://twitter.com/settings/push_notifications). Setting is managed per-browser and not per Twitter/Chrome profile.")
         self.logger.critical("Add twitter.com / x.com to Always Active Sites (chrome://settings/performance)")
         self.logger.info(f"Using: {self.db_path}")
@@ -37,12 +37,22 @@ class Noc:
             self.logger.critical("This script only works on Windows")
 
     def __set_db_path(self):
-        # Get path to noc db
-        path = 'AppData\\Local\\Microsoft\\Windows\\Notifications\\wpndatabase.db'
-        # add userprofile to path
-        path = os.path.join(os.getenv('USERPROFILE'), path)
-        
-        self.db_path = path
+        if os.path.exists('/host_notifications/wpndatabase.db'):
+            # Use the mounted path inside the container
+            database_path = '/host_notifications/wpndatabase.db'
+        else:
+            # Use the host OS path
+            user_profile = os.getenv('USERPROFILE')
+            if user_profile:
+                database_path = os.path.join(
+                    user_profile, 'AppData', 'Local', 
+                    'Microsoft', 'Windows', 'Notifications', 'wpndatabase.db')
+            else:
+                raise FileNotFoundError("The database path could not be determined.")
+
+        self.db_path = database_path
+        print(f"Database path is set to: {self.db_path}")
+        return self.db_path
 
     def __prepare_cache(self):
         """
@@ -174,7 +184,7 @@ class Noc:
                 continue
 
             # Check if notification is a tweet
-            is_tweet = "twitter" in notification.get("payload", {}).get("toast", {}).get("@launch", "")
+            is_tweet = "x.com" in notification.get("payload", {}).get("toast", {}).get("@launch", "")
 
             if is_tweet:
                 # Tweet notification

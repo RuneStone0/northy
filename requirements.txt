@@ -1,16 +1,10 @@
-python-dotenv
 Click
 colorama
 pyprowl
 PyJWT
-flask
 pandas
 jsmin
 configparser_crypt
-
-# Logging
-colorlog
-coloredlogs
 
 # MongoDB
 mongomock
