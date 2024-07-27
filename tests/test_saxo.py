@@ -5,7 +5,7 @@ from northy import utils
 from unittest.mock import patch
 from northy.saxo import Saxo, SaxoHelper
 
-saxo = Saxo(profile_name="testing")
+saxo = Saxo(profile_name="UT")
 saxo_helper = SaxoHelper()
 logger = logging.getLogger(__name__)
 
