@@ -12,7 +12,7 @@ services:
 
   saxoStaging:
     image: runestone123456789/northy:latest
-    container_name: saxo (staging)
+    container_name: saxoStaging
     volumes:
       - .:/app
     command: python /app/cli_saxo.py --prod --profile staging watch
@@ -21,7 +21,7 @@ services:
 
   saxoDev:
     image: runestone123456789/northy:latest
-    container_name: saxo (dev)
+    container_name: saxoDev
     volumes:
       - .:/app
     command: python /app/cli_saxo.py --prod --profile dev watch
