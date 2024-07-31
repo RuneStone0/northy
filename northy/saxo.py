@@ -393,6 +393,10 @@ class Saxo:
         if rsp.status_code == 204: # 204 - No Content
             return rsp
 
+        if rsp.status_code == 404:
+            self.logger.error(f"POST {url} failed with status code {rsp.status_code}")
+            raise Exception("404 Not Found. Verify AccountKey in config is correct.")
+        
         if rsp.status_code != 200:
             self.logger.warning(f"POST {url} failed with status code {rsp.status_code}")
             try:
@@ -841,6 +845,7 @@ class Saxo:
         # Execute order
         self.logger.info(self.order)
         rsp = self.post(path="/trade/v2/orders", data=self.order)
+        print(rsp, rsp.content)
         self.logger.debug(f"Response: {rsp.json()}")
         
         # Sleep to avoid rate limiting
