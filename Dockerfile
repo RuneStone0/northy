@@ -10,6 +10,9 @@ COPY requirements.txt .
 # Install the dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy the specific file first to invalidate the cache if it changes
+COPY conf/saxo_config.encrypted conf/saxo_config.encrypted
+
 # Copy the rest of the application code into the container
 COPY . .
 
