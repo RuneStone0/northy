@@ -23,12 +23,13 @@ def cli(prod):
 
 @cli.command()
 @click.option('--tid', default=None, type=str, help='Parse Twitter ID')
+@click.option('--update_db', default=False, is_flag=True, type=bool, help='Update DB (default: False)')
 @click.pass_context
-def parse(ctx, tid):
+def parse(ctx, tid, update_db):
     # Parse the tweet
     if tid:
         signal = Signal()
-        res = signal.parse(tid=tid)
+        res = signal.parse(tid=tid, update_db=update_db)
         logger.info(f"{tid} --> {res}")
     
     # No input provided
