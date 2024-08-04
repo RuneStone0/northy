@@ -1,7 +1,7 @@
 import time
 import logging
 from zoneinfo import ZoneInfo
-from northy.email import Email
+from northy.mailer import Email
 from datetime import datetime, timedelta
 
 class SaxoReport:

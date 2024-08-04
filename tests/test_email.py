@@ -1,4 +1,4 @@
-from northy.email import Email
+from northy.mailer import Email
 from northy.config import Config
 config = Config().config
 
