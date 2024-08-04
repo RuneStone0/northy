@@ -431,7 +431,7 @@ class Saxo:
         # Determine action
         if s.action == "TRADE":
             # Calculate stoploss price based on signal entry
-            self.logger.info(f"Calculating stoploss price for {s.symbol}.."
+            self.logger.info(f"Calculating stoploss price for {s.symbol} "
                              f"Entry: {s.entry}, Stoploss: {s.stoploss}")
             __stoploss_price = s.entry - s.stoploss if s.buy else s.entry + s.stoploss
 
