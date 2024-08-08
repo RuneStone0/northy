@@ -10,12 +10,12 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
-  saxoStaging:
+  saxoMarket:
     image: runestone123456789/northy:latest
-    container_name: saxoStaging
+    container_name: saxoMarket
     volumes:
       - .:/app
-    command: python /app/cli_saxo.py --prod --profile staging watch
+    command: python /app/cli_saxo.py --prod --profile market watch
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
