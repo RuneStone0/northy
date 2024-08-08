@@ -28,14 +28,14 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
-  saxoDev:
-    image: runestone123456789/northy:latest
-    container_name: saxoDev
-    volumes:
-      - .:/app
-    command: python /app/cli_saxo.py --prod --profile dev watch
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
+  #saxoDev:
+  #  image: runestone123456789/northy:latest
+  #  container_name: saxoDev
+  #  volumes:
+  #    - .:/app
+  #  command: python /app/cli_saxo.py --prod --profile dev watch
+  #  labels:
+  #    - "com.centurylinklabs.watchtower.enable=true"
 
   # Docker Free, doesn't allow 2-way file sync
   # Podman is shit and failed to make it work
