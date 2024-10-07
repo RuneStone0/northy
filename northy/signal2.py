@@ -32,6 +32,7 @@ ignore_tweets = [
     "1752340364776648805", # ALERT: $SPX stop moved from flat to -10.
     "1758203363445907469", # ALERT: CLOSED 3RD SCALE $RUT IN 1960 OUT 2062 +102
     #"1737565902223130808", # ALERT: Closed 1 scale $SPX IN: 4770 OUT: 4710 +60
+    "1830969558456565859", # ALERT: Limit buy long $SPX 5572 - 10 pt stop
 ]
 
 class Signal:
@@ -43,7 +44,6 @@ class Signal:
     def __init__(self, production=None):
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
-
         self.prowl = Prowl()
 
         # MongoDB
@@ -88,15 +88,17 @@ class Signal:
         self.__pretty_print_signal(tweet)
         return self.text_to_signal(tweet)
 
-    def update(self, tid):
+    def update(self, tid) -> list:
         """
             Updates auto-generated trading signal by tweet ID.
         """
-        query = {"tid": tid, "alert": True}
         signals = self.get(tid)
-        newvalues = { "$set": { "signals": signals } }
-        self.db_tweets.update_one(query, newvalues)
-        return signals
+        if signals is None:
+            return None
+        else:
+            newvalues = { "$set": { "signals": signals } }
+            self.db_tweets.update_one({"tid": tid, "alert": True}, newvalues)
+            return signals
 
     def updateall(self, limit=0):
         """
@@ -657,9 +659,10 @@ class Signal:
 class SignalHelper:
     def __init__(self) -> None:
         # Load SaxoConfig
-        saxo_helper = SaxoHelper()
-        self.tickers = saxo_helper.tickers
+        self.saxo_helper = SaxoHelper()
         self.logger = logging.getLogger(__name__)
+        self.utils = Utils()
+        self.tickers = self.utils.read_json(".tickers")
 
     def normalize_text(self, tweet_text:str) -> str:
         """
