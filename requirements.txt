@@ -5,6 +5,7 @@ PyJWT
 pandas
 jsmin
 configparser_crypt
+yfinance
 
 # MongoDB
 mongomock

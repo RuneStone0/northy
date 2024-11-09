@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 import dateutil.parser
 import jwt
 import requests
+import yfinance as yf
 from requests import Response
 import pandas as pd
 import time, uuid
@@ -19,7 +20,7 @@ import logging
 utils = Utils()
 
 class Saxo:
-    def __init__(self, profile_name="dev"):
+    def __init__(self, profile_name):
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
         self.saxo_helper = SaxoHelper()
@@ -691,7 +692,7 @@ class Saxo:
             # https://openapi.help.saxo/hc/en-us/articles/4405160773661
             # https://openapi.help.saxo/hc/en-us/articles/4416934146449
             url = "https://openapi.help.saxo/hc/en-us/articles/4416934146449"
-            self.logger.warning(f"No access to price data. See: {url}")
+            self.logger.error(f"No access to price data. See: {url}")
 
         time.sleep(1)  # Lame way to avoid rate limiting
 
@@ -843,10 +844,9 @@ class Saxo:
                                         amount=self.order["Amount"])
 
         # Execute order
-        self.logger.info(self.order)
+        self.logger.info(f"POST /trade/v2/orders --> {self.order}")
         rsp = self.post(path="/trade/v2/orders", data=self.order)
-        print(rsp, rsp.content)
-        self.logger.debug(f"Response: {rsp.json()}")
+        self.logger.info(f"Response: {rsp.json()}")
         
         # Sleep to avoid rate limiting
         time.sleep(2)

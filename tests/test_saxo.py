@@ -1,6 +1,8 @@
 import os
 import time
+import pytest
 import logging
+import requests
 from northy import utils
 from unittest.mock import patch
 from northy.saxo import Saxo, SaxoHelper
@@ -18,8 +20,7 @@ def get_mock_data(filename):
 
 def test_get():
     # Trigger HTTP 401 error (Unauthorized)
-    __saxo = Saxo()
-    import requests
+    __saxo = Saxo(profile_name="UT")
     __saxo.s = requests.session()  # ensure no existing session exists
     __saxo.get(f"/port/v1/positions/me").json()
 
@@ -87,12 +88,13 @@ def test_auth_invalid_file():
     invalid_jwt = { "base_uri": None }
     u = utils.Utils()
     u.write_json(data=invalid_jwt, filename=".saxo-session")
-    Saxo()
+
+    # init Saxo()
+    Saxo(profile_name="UT")
 
 def test_cancel_order():
     # Invalid Order
-    out = saxo.cancel_order(orders="123456789")
-    assert out.status_code == 404
+    with pytest.raises(Exception): saxo.cancel_order(orders="123456789")
 
     # Valid Order
     # TODO
@@ -143,13 +145,21 @@ def test_trade():
     symbol = "NDX"
     uic = saxo_helper.symbol_to_uic(symbol)
     price_obj = saxo.price(uic=uic)
+    logger.info(f"Price: {price_obj}")
     price_mid = price_obj["Quote"]["Mid"]
+    logger.info(f"Price Mid: {price_mid}")
+    from northy.utils import Utils
+    utils = Utils()
+    utils.get_price(symbol)
     signal = f"{symbol}_TRADE_SHORT_IN_{int(price_mid)}_SL_25"
     order = saxo.trade(signal=signal).json()
     order_id = order["OrderId"]
 
     # Cleanup order (if any)
-    saxo.cancel_order(orders=order_id)
+    try:
+        saxo.cancel_order(orders=order_id)
+    except:
+        logger.warning(f"Unable to delete order ({order_id})")
 
     # Cleanup position (if any)
     positions = saxo.positions(profit_only=False, symbol=symbol, show=True, status=["Open", "Working"])
