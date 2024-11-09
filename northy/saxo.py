@@ -1,3 +1,4 @@
+import os
 import sys
 from zoneinfo import ZoneInfo
 import dateutil.parser
@@ -25,7 +26,6 @@ class Saxo:
 
         # Load profile
         self.set_profile(profile_name)
-        self.tickers = utils.read_json(filename="conf/saxo_tickers.js")[0]
 
         # Misc vars
         self.session_filename = ".saxo-session-{}".format(self.env["username"])
@@ -1016,13 +1016,101 @@ class Saxo:
                         data=data, method_override="PATCH")
         return rsp
 
+    #### UTILS ####
+    def instruments(self):
+        """ Get all instruments """
+        rsp = self.get(path=f"/ref/v1/instruments?AccountKey={self.AccountKey}&Keywords=Micro%202000&ExchangeId=CME&AssetTypes=ContractFutures")
+        return rsp.json()
+
+    def tickers(self) -> dict:
+        """
+            Get ticker configuration.
+
+            This method will generate a .tickers file to cache the configuration.
+            The file contains the Saxo configuration for the different indexes.
+            It will calculate the 200-day moving average for each index.
+
+        """
+        filename = ".tickers"
+        
+        def modification_date(filename):
+            t = os.path.getmtime(filename)
+            return datetime.fromtimestamp(t)
+        
+        def get_ma():
+            # Define tickers for RUT, NDX, SPX, DJIA
+            tickers = {
+                'RUT': '^RUT',
+                'NDX': '^NDX',
+                'SPX': '^GSPC',
+                'DJIA': '^DJI'
+            }
+
+            # Fetch data for the past year to calculate the 200-day moving average
+            data = {ticker: yf.download(symbol, period='1y', progress=False) for ticker, symbol in tickers.items()}
+
+            # Calculate the 200-day moving average for each index
+            ma_200 = {ticker: round(data[ticker]['Close'].rolling(window=200).mean().iloc[-1]) for ticker in tickers}
+            return ma_200
+
+        # Default ticker configuration
+        tickers = {
+            "NDX": {
+                "Uic": 4912, # US Tech 100 NAS (tracking NDX Index)
+                "AssetType": "CfdOnIndex",
+                "stoploss_points": 25,
+                #"200ma": 11946
+            },
+            "SPX": {
+                "Uic": 4913, # US 500 (tracking SPX Index)
+                "AssetType": "CfdOnIndex",
+                "stoploss_points": 10,
+                #"200ma": 3946
+            },
+            "DJIA": {
+                "Uic": 4911, # US 30 Wall Street (tracking DJIA Index)
+                "AssetType": "CfdOnIndex",
+                "stoploss_points": 25,
+                #"200ma": 35215
+            },
+            "RUT": {
+                #"Uic": 31933, # iShares Russell 2000 ETF (tracking RUT Index)
+                "Uic": 31933, # iShares Russell 2000 ETF (tracking RUT Index)
+                "AssetType": "CfdOnEtf",
+                "stoploss_points": 10,
+                #"200ma": 170
+            }
+        }
+
+        # if .200ma file is older than 1 day, update it
+        if not os.path.exists(filename) or (datetime.now() - modification_date(filename)).days > 1:
+            self.logger.info(f"Updating ticker config cache ({filename})..")
+
+            # Update 200ma values
+            ma_values = get_ma()
+            for symbol in ma_values:
+                tickers[symbol]["200ma"] = ma_values[symbol]
+
+            # Dynamically set the RUT Futures Uic
+            rut_uic = self.instruments()["Data"][0]["Identifier"]
+            tickers["RUT"]["Uic"] = rut_uic
+
+            tickers = utils.write_json(filename=filename, data=tickers)
+        else:
+            self.logger.info("Getting ticker config from cache (.ticker)")
+            tickers = utils.read_json(filename=filename)
+
+        self.logger.info(tickers)
+        return tickers
+
+
 # Create a SaxoHelper class that inherits from Saxo
 class SaxoHelper():
     def __init__(self):
         # Create a logger instance for the class
         self.logger = logging.getLogger(__name__)
-        self.tickers = utils.read_json(filename="conf/saxo_tickers.js")[0]
-
+        self.tickers = utils.read_json(".tickers")
+        
     def doc_older_than(self, document, max_age=15):
         """
         Check if document is older than max_age. `created_at` from db is

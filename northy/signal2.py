@@ -7,6 +7,7 @@ from datetime import datetime
 from northy.prowl import Prowl
 from northy.db import Database
 from northy.saxo import SaxoHelper
+from northy.utils import Utils
 from northy.color import colored
 from northy.config import Config
 config = Config().config

@@ -4,6 +4,7 @@
         "**/.pytest_cache": true,
         "**/.saxo-session*": true,
         "**/.coverage": true,
+        "**/.tickers": true,
         "**/.tox": true,
         "**/.venv": true,
     },

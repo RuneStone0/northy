@@ -221,6 +221,24 @@ def price(ctx, symbol):
 
 @cli.command()
 @click.pass_context
+def tconf(ctx):
+    """
+        Get Ticker Configuration
+    """
+    saxo = ctx.obj['SAXO']
+    saxo.tickers()
+
+@cli.command()
+@click.pass_context
+def instruments(ctx):
+    """
+        Get Saxo Instruments
+    """
+    saxo = ctx.obj['SAXO']
+    print(saxo.instruments())
+
+@cli.command()
+@click.pass_context
 def watch(ctx):
     """
         Watch for alerts and execute trades
@@ -233,7 +251,6 @@ def watch(ctx):
             p = Prowl()
             p.send(f"cli_saxo.py watch crashed \n{e}\nRestarting..")
             logger.error(e, exc_info=True)
-
 
 if __name__ == '__main__':
     # Automatically add all commands to the group

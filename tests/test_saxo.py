@@ -166,7 +166,7 @@ def test_trade_buysell_all():
     Test all possible combinations of symbols and trade directions
     Attempts to create an order and then deletes it (if possible)
     """
-    symbols = saxo.tickers.keys()
+    symbols = saxo.tickers().keys()
     direction = ["LONG", "SHORT"]
     for symbol in symbols:
         for dir in direction:
