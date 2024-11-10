@@ -10,6 +10,7 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
+
 #  saxoMarket:
 #    image: runestone123456789/northy:latest
 #    container_name: saxoMarket
